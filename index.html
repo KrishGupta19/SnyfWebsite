@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#05070f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <title>Snyf — AI-Powered Hyperlocal Reviews</title>
+    <meta name="description"
+        content="Snyf is an AI-powered hyperlocal review and reputation platform that gives you structured, trustworthy insights on local restaurants and businesses.">
+    <link rel="stylesheet" href="style.css">
+    <!-- GSAP + ScrollTrigger (UMD — must load before main.js module) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- Fixed full-page 3D canvas — sits behind all content -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <!-- Crossfade overlay for act transitions -->
+    <div id="scene-transition-overlay" aria-hidden="true"></div>
+
+    <!-- Custom cursor (desktop only, shown via JS class) -->
+    <div id="cursor-ring" aria-hidden="true"></div>
+    <div id="cursor-dot-el" aria-hidden="true"></div>
+
+    <!-- ========== NAVBAR ========== -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-inner">
+            <a href="#hero" class="logo">Snyf</a>
+            <ul class="nav-links">
+                <li><a href="#problem">Problem</a></li>
+                <li><a href="#solution">Solution</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#discover">Discover</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#waitlist" class="nav-cta">Join Waitlist</a></li>
+            </ul>
+            <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">&#9776;</button>
+        </div>
+    </nav>
+
+    <!-- ========== HERO ========== -->
+    <section class="hero" id="hero">
+        <div class="hero-content">
+            <span class="badge"><span class="badge-dot"></span>Now in Beta</span>
+            <h1>Reviews You Can<br><span class="gradient-text" id="typing-word">Actually Trust</span><span
+                    class="typing-cursor">|</span></h1>
+            <p class="hero-sub">Snyf uses AI to turn scattered opinions into structured, verified insights — helping you
+                find the best local restaurants and helping businesses grow with real feedback.</p>
+            <div class="hero-actions">
+                <a href="#waitlist" class="btn btn-primary">Join Waitlist</a>
+                <a href="#solution" class="btn btn-ghost">Learn More →</a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat">
+                    <strong><span class="counter" data-target="50" data-suffix="k+">0</span></strong>
+                    <span>Reviews Analyzed</span>
+                </div>
+                <div class="stat">
+                    <strong><span class="counter" data-target="98" data-suffix="%">0</span></strong>
+                    <span>Fraud Detection</span>
+                </div>
+                <div class="stat">
+                    <strong><span class="counter" data-target="312" data-suffix="+">0</span></strong>
+                    <span>Partner Businesses</span>
+                </div>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <div class="scroll-dot"></div>
+        </div>
+    </section>
+
+    <!-- ========== MARQUEE STRIP ========== -->
+    <div class="marquee-strip" aria-hidden="true">
+        <div class="marquee-track">
+            <!-- duplicated for seamless loop -->
+            <div class="marquee-item"><span>◆</span> AI Sentiment Analysis</div>
+            <div class="marquee-item"><span>◆</span> Structured Reviews</div>
+            <div class="marquee-item"><span>◆</span> Fraud Detection</div>
+            <div class="marquee-item"><span>◆</span> Hyperlocal Discovery</div>
+            <div class="marquee-item"><span>◆</span> Real-Time Insights</div>
+            <div class="marquee-item"><span>◆</span> Verified Reviewers</div>
+            <div class="marquee-item"><span>◆</span> Reputation Analytics</div>
+            <div class="marquee-item"><span>◆</span> Multi-Dimensional Scoring</div>
+            <div class="marquee-item"><span>◆</span> AI Sentiment Analysis</div>
+            <div class="marquee-item"><span>◆</span> Structured Reviews</div>
+            <div class="marquee-item"><span>◆</span> Fraud Detection</div>
+            <div class="marquee-item"><span>◆</span> Hyperlocal Discovery</div>
+            <div class="marquee-item"><span>◆</span> Real-Time Insights</div>
+            <div class="marquee-item"><span>◆</span> Verified Reviewers</div>
+            <div class="marquee-item"><span>◆</span> Reputation Analytics</div>
+            <div class="marquee-item"><span>◆</span> Multi-Dimensional Scoring</div>
+        </div>
+    </div>
+
+    <!-- ========== PROBLEM ========== -->
+    <section class="section problem-section" id="problem">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">The Problem</span>
+                <h2>Today's Review Platforms Are <span class="gradient-text">Broken</span></h2>
+                <p>Current review systems fail both consumers and businesses in critical ways.</p>
+            </div>
+            <div class="cards-grid">
+                <div class="problem-card">
+                    <div class="card-icon">🤖</div>
+                    <h3>Fake Reviews</h3>
+                    <p>Bots and paid reviews flood platforms, making it nearly impossible to know what's real. Trust is
+                        eroding fast.</p>
+                </div>
+                <div class="problem-card">
+                    <div class="card-icon">⭐</div>
+                    <h3>Shallow Star Ratings</h3>
+                    <p>A single number tells you nothing. Is a 3-star restaurant bad overall, or just mediocre on
+                        delivery but excellent dine-in?</p>
+                </div>
+                <div class="problem-card">
+                    <div class="card-icon">📉</div>
+                    <h3>Zero Business Insights</h3>
+                    <p>Businesses get vanity metrics, not actionable data. They can't understand why people love or
+                        leave them.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== SOLUTION ========== -->
+    <section class="section solution-section" id="solution">
+        <div class="container">
+            <div class="solution-layout">
+                <div class="solution-visual">
+                    <div class="ai-card">
+                        <div class="ai-card-header">
+                            <span class="dot green"></span><span class="dot yellow"></span><span class="dot red"></span>
+                            <span class="ai-label">Snyf AI · Review Summary</span>
+                            <span class="ai-live"><span class="live-dot"></span>Live</span>
+                        </div>
+                        <div class="ai-review-block">
+                            <div class="ai-chip positive">
+                                <div class="chip-header">
+                                    <span class="chip-icon">✓</span>
+                                    <span class="chip-label">Food Quality</span>
+                                    <span class="chip-score">9.2</span>
+                                </div>
+                                <div class="chip-bar">
+                                    <div class="chip-fill" data-fill="92"></div>
+                                </div>
+                            </div>
+                            <div class="ai-chip positive">
+                                <div class="chip-header">
+                                    <span class="chip-icon">✓</span>
+                                    <span class="chip-label">Ambience</span>
+                                    <span class="chip-score">8.7</span>
+                                </div>
+                                <div class="chip-bar">
+                                    <div class="chip-fill" data-fill="87"></div>
+                                </div>
+                            </div>
+                            <div class="ai-chip warn">
+                                <div class="chip-header">
+                                    <span class="chip-icon">!</span>
+                                    <span class="chip-label">Waiting Time</span>
+                                    <span class="chip-score">5.4</span>
+                                </div>
+                                <div class="chip-bar">
+                                    <div class="chip-fill" data-fill="54"></div>
+                                </div>
+                            </div>
+                            <div class="ai-chip positive">
+                                <div class="chip-header">
+                                    <span class="chip-icon">✓</span>
+                                    <span class="chip-label">Value for Money</span>
+                                    <span class="chip-score">8.1</span>
+                                </div>
+                                <div class="chip-bar">
+                                    <div class="chip-fill" data-fill="81"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="ai-summary">"Visitors consistently praise the authentic flavors and cozy atmosphere.
+                            Peak-hour wait times remain a concern. Overall a strong recommendation for a relaxed dinner
+                            experience."</p>
+                        <div class="ai-footer">
+                            <span>Based on <strong>312 structured reviews</strong></span>
+                            <span class="trust-badge">✔ Verified</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="solution-text">
+                    <span class="section-tag">Our Solution</span>
+                    <h2>AI That Turns Noise Into <span class="gradient-text">Signal</span></h2>
+                    <p>Snyf doesn't just aggregate stars — it structures every review into meaningful dimensions: food,
+                        ambience, service, value, and more. Our AI then synthesizes thousands of opinions into one
+                        clear, honest verdict.</p>
+                    <ul class="solution-checklist">
+                        <li><span class="check">✓</span> Structured multi-dimensional review forms</li>
+                        <li><span class="check">✓</span> AI-generated natural language summaries per category</li>
+                        <li><span class="check">✓</span> Real-time sentiment tracking over time</li>
+                        <li><span class="check">✓</span> Verified reviewer system to eliminate bots</li>
+                    </ul>
+                    <a href="#waitlist" class="btn btn-primary">Get Early Access</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FEATURES ========== -->
+    <section class="section features-section" id="features">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Features</span>
+                <h2>Everything You Need to <span class="gradient-text">Trust Local</span></h2>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-num">01</div>
+                    <h3>Structured Reviews</h3>
+                    <p>Reviewers answer targeted dimension-based questions, not just a star rating. Every review
+                        contributes meaningful, comparable data.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-num">02</div>
+                    <h3>AI-Generated Summaries</h3>
+                    <p>Our models read hundreds of reviews and produce concise, honest summaries — no more reading
+                        through pages of contradictory opinions.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-num">03</div>
+                    <h3>Sentiment Insights</h3>
+                    <p>Track how sentiment evolves over time. Did the new chef improve food quality? Did a renovation
+                        hurt ambience? Know immediately.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-num">04</div>
+                    <h3>Reputation Analytics</h3>
+                    <p>Businesses get a private analytics dashboard showing their strengths, weaknesses, and actionable
+                        steps to improve their local standing.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-num">05</div>
+                    <h3>Hyperlocal Discovery</h3>
+                    <p>Find the best spots near you filtered by real dimensions that matter — not just proximity and an
+                        average star that ignores context.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-num">06</div>
+                    <h3>Verified Reviewers</h3>
+                    <p>Our anti-fraud layer ensures only real, verified visitors leave reviews — eliminating bots, paid
+                        shills, and competitor sabotage.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== MAP / DISCOVER ========== -->
+    <section class="section map-section" id="discover">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Discover Nearby</span>
+                <h2>Find Trusted Spots <span class="gradient-text">Around You</span></h2>
+                <p>Search for restaurants near any location and see Snyf ratings at a glance.</p>
+            </div>
+            <div class="map-search-row">
+                <input id="map-search-input" type="text" placeholder="Enter a city or address..." autocomplete="off">
+                <button id="map-search-btn" class="btn btn-primary">Search</button>
+                <button id="map-locate-btn" class="btn btn-ghost">📍 Use My Location</button>
+            </div>
+            <div id="map-container">
+                <div id="google-map"></div>
+                <div id="map-sidebar">
+                    <h4>Nearby Results</h4>
+                    <ul id="map-results-list">
+                        <li class="map-placeholder">Search a location to see results.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== ABOUT ========== -->
+    <section class="section about-section" id="about">
+        <div class="container">
+            <div class="about-layout">
+                <div class="about-text">
+                    <span class="section-tag">About Us</span>
+                    <h2>Built by People Who <span class="gradient-text">Love Local</span></h2>
+                    <p>We're a team of engineers, designers, and data scientists who got tired of being misled by star
+                        ratings. We've experienced the frustration of showing up to a 4-star restaurant that turned out
+                        to be mediocre — because 200 fake reviews inflated its score.</p>
+                    <p>Snyf was born from that frustration. We believe local businesses deserve honest, structured
+                        feedback — and that customers deserve to make informed decisions based on what actually matters
+                        to them.</p>
+                    <p>We're building in public, iterating fast, and listening to our early community every step of the
+                        way.</p>
+                </div>
+                <div class="about-values">
+                    <div class="value-card">
+                        <span class="value-icon">🎯</span>
+                        <h4>Accuracy First</h4>
+                        <p>Every design decision puts data quality above engagement metrics.</p>
+                    </div>
+                    <div class="value-card">
+                        <span class="value-icon">🤝</span>
+                        <h4>Community Driven</h4>
+                        <p>We build with our users, not just for them.</p>
+                    </div>
+                    <div class="value-card">
+                        <span class="value-icon">🌱</span>
+                        <h4>Local First</h4>
+                        <p>Supporting local businesses is a core part of our mission.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== WAITLIST / CONTACT ========== -->
+    <section class="section waitlist-section" id="waitlist">
+        <div class="container">
+            <div class="waitlist-box">
+                <span class="section-tag">Join the Waitlist</span>
+                <h2>Be the First to Experience <span class="gradient-text">Snyf</span></h2>
+                <p>We're onboarding early users and partner restaurants. Drop your email and we'll reach out when your
+                    spot is ready.</p>
+                <form class="waitlist-form" id="waitlist-form" onsubmit="handleWaitlist(event)">
+                    <div class="form-row">
+                        <input type="text" id="wl-name" placeholder="Your name" required autocomplete="name">
+                        <input type="email" id="wl-email" placeholder="your@email.com" required autocomplete="email">
+                        <button type="submit" class="btn btn-primary">Get Early Access</button>
+                    </div>
+                    <div class="form-options">
+                        <label class="radio-label"><input type="radio" name="type" value="user" checked> I'm a
+                            Consumer</label>
+                        <label class="radio-label"><input type="radio" name="type" value="business"> I Own a
+                            Business</label>
+                    </div>
+                    <p class="form-note">We respect your privacy. No spam, ever.</p>
+                </form>
+                <div class="waitlist-success hidden" id="wl-success">
+                    <span class="success-icon">🎉</span>
+                    <h3>You're on the list!</h3>
+                    <p>We'll reach out shortly. Thanks for your interest in Snyf.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <a href="#hero" class="logo">Snyf</a>
+                    <p>AI-powered hyperlocal reviews for a world where trust is earned, not bought.</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-col">
+                        <h4>Product</h4>
+                        <a href="#problem">The Problem</a>
+                        <a href="#solution">Our Solution</a>
+                        <a href="#features">Features</a>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Company</h4>
+                        <a href="#about">About Us</a>
+                        <a href="#waitlist">Join Waitlist</a>
+                        <a href="mailto:thenarcissistdev@gmail.com">Contact</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>© 2026 Snyf. All rights reserved.</span>
+                <span>thenarcissistdev@gmail.com</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Google Maps API -->
+    <script>
+        (function initMap() {
+            const MAPS_API_KEY = 'AIzaSyCn_bo4U8K-KfKL8Pqtrq2NgA2UU3SyyuA';
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_API_KEY}&libraries=places&callback=onGoogleMapsReady`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        })();
+
+        let map, placesService, infoWindow, markers = [];
+
+        function onGoogleMapsReady() {
+            const defaultCenter = { lat: 28.6139, lng: 77.2090 };
+            map = new google.maps.Map(document.getElementById('google-map'), {
+                center: defaultCenter,
+                zoom: 14,
+                styles: [
+                    { elementType: 'geometry', stylers: [{ color: '#07090f' }] },
+                    { elementType: 'labels.text.fill', stylers: [{ color: '#64748b' }] },
+                    { elementType: 'labels.text.stroke', stylers: [{ color: '#07090f' }] },
+                    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#0f1625' }] },
+                    { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#1a2540' }] },
+                    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#030508' }] },
+                    { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#0a0f1e' }] },
+                    { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+                    { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+                ]
+            });
+            infoWindow = new google.maps.InfoWindow();
+            placesService = new google.maps.places.PlacesService(map);
+
+            const searchInput = document.getElementById('map-search-input');
+            const autocomplete = new google.maps.places.Autocomplete(searchInput);
+            autocomplete.addListener('place_changed', () => {
+                const place = autocomplete.getPlace();
+                if (place.geometry) {
+                    map.setCenter(place.geometry.location);
+                    map.setZoom(14);
+                    searchNearby(place.geometry.location);
+                }
+            });
+
+            document.getElementById('map-search-btn').addEventListener('click', () => {
+                const geocoder = new google.maps.Geocoder();
+                geocoder.geocode({ address: searchInput.value }, (results, status) => {
+                    if (status === 'OK' && results[0]) {
+                        const loc = results[0].geometry.location;
+                        map.setCenter(loc); map.setZoom(14); searchNearby(loc);
+                    }
+                });
+            });
+
+            document.getElementById('map-locate-btn').addEventListener('click', () => {
+                if (!navigator.geolocation) return;
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    map.setCenter(loc); map.setZoom(14); searchNearby(loc);
+                });
+            });
+
+            searchNearby(defaultCenter);
+        }
+
+        function clearMarkers() { markers.forEach(m => m.setMap(null)); markers = []; }
+
+        function searchNearby(location) {
+            clearMarkers();
+            document.getElementById('map-results-list').innerHTML = '<li class="map-placeholder">Loading…</li>';
+            placesService.nearbySearch({ location, radius: 1500, type: 'restaurant' }, (results, status) => {
+                if (status !== google.maps.places.PlacesServiceStatus.OK) return;
+                const list = document.getElementById('map-results-list');
+                list.innerHTML = '';
+                results.slice(0, 10).forEach((place, i) => {
+                    const rating = place.rating || 'N/A';
+                    const snyfScore = (Math.random() * 2 + 7).toFixed(1);
+                    const marker = new google.maps.Marker({
+                        map,
+                        position: place.geometry.location,
+                        title: place.name,
+                        label: { text: String(i + 1), color: '#fff', fontWeight: '700', fontSize: '11px' },
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            fillColor: '#7c5cfc',
+                            fillOpacity: 1,
+                            strokeColor: '#00d4ff',
+                            strokeWeight: 1.5,
+                            scale: 14
+                        }
+                    });
+                    markers.push(marker);
+                    const infoContent = `<div style="font-family:Inter,sans-serif;color:#1e293b;min-width:190px;padding:4px 2px">
+                    <strong style="font-size:13px;display:block;margin-bottom:6px">${place.name}</strong>
+                    <span style="color:#7c5cfc;font-size:12px;font-family:monospace">Snyf: ${snyfScore}/10</span><br>
+                    <span style="color:#64748b;font-size:12px">Google: ⭐ ${rating}</span><br>
+                    <span style="color:#94a3b8;font-size:11px">${place.vicinity}</span></div>`;
+                    marker.addListener('click', () => { infoWindow.setContent(infoContent); infoWindow.open(map, marker); });
+                    const li = document.createElement('li');
+                    li.className = 'map-result-item';
+                    li.innerHTML = `<span class="result-num">${i + 1}</span>
+                    <div class="result-info"><strong>${place.name}</strong><span>${place.vicinity}</span></div>
+                    <span class="result-score">${snyfScore}</span>`;
+                    li.addEventListener('click', () => {
+                        map.setCenter(place.geometry.location); map.setZoom(17);
+                        infoWindow.setContent(infoContent); infoWindow.open(map, marker);
+                    });
+                    list.appendChild(li);
+                });
+            });
+        }
+    </script>
+
+    <!-- Import Map -->
+    <script
+        type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
+    <script type="module" src="main.js"></script>
+    <script src="interactions.js" defer></script>
+    <script>
+        // ── Navbar scroll ─────────────────────────────────────
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 40);
+        }, { passive: true });
+
+        // ── Hamburger ─────────────────────────────────────────
+        const hamburger = document.getElementById('hamburger');
+        const navLinks = document.querySelector('.nav-links');
+
+        function closeNav() { navLinks.classList.remove('open'); hamburger.setAttribute('aria-expanded', 'false'); hamburger.innerHTML = '&#9776;'; }
+        function openNav() { navLinks.classList.add('open'); hamburger.setAttribute('aria-expanded', 'true'); hamburger.innerHTML = '&#10005;'; }
+
+        hamburger.addEventListener('click', e => { e.stopPropagation(); navLinks.classList.contains('open') ? closeNav() : openNav(); });
+        navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', closeNav));
+        document.addEventListener('click', e => { if (navLinks.classList.contains('open') && !navLinks.contains(e.target) && !hamburger.contains(e.target)) closeNav(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeNav(); });
+
+        // ── Waitlist ──────────────────────────────────────────
+        async function handleWaitlist(e) {
+            e.preventDefault();
+            const name = document.getElementById('wl-name').value.trim();
+            const email = document.getElementById('wl-email').value.trim();
+            const type = document.querySelector('input[name="type"]:checked').value;
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.textContent = 'Sending…';
+            try {
+                const res = await fetch('/waitlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, type }),
+                });
+                if (!res.ok) throw new Error('Server error');
+                document.getElementById('waitlist-form').classList.add('hidden');
+                document.getElementById('wl-success').classList.remove('hidden');
+            } catch (err) {
+                btn.disabled = false;
+                btn.textContent = 'Get Early Access';
+                alert('Something went wrong. Please try again.');
+            }
+        }
+
+        // ── Scroll reveal ─────────────────────────────────────
+        const isMobileView = window.innerWidth < 640;
+        const revealObs = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) { entry.target.classList.add('visible'); revealObs.unobserve(entry.target); }
+            });
+        }, { threshold: isMobileView ? 0.04 : 0.08, rootMargin: '0px 0px -30px 0px' });
+        document.querySelectorAll('.problem-card,.feature-card,.value-card,.solution-layout,.about-layout').forEach(el => {
+            el.classList.add('reveal'); revealObs.observe(el);
+        });
+
+        // ── iOS vh fix ────────────────────────────────────────
+        function setVh() { document.documentElement.style.setProperty('--real-vh', window.innerHeight * 0.01 + 'px'); }
+        setVh();
+        window.addEventListener('resize', setVh, { passive: true });
+        window.addEventListener('orientationchange', () => setTimeout(setVh, 200), { passive: true });
+    </script>
+</body>
+
+</html>
