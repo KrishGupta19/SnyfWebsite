@@ -1,11 +1,13 @@
 // ============================================================
 //  Snyf — Interactions & Animations
+//  Institutional Light Mode
 // ============================================================
 
 const isFinePonter = window.matchMedia('(pointer: fine)').matches;
 const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ── 1. Custom Cursor ─────────────────────────────────────────
+// Cursor ring color is controlled by CSS: border-color #1A1A1A
 if (isFinePonter && !prefersReduced) {
     document.body.classList.add('has-cursor');
 
@@ -140,7 +142,7 @@ document.querySelectorAll('.cards-grid .problem-card').forEach((card, i) => {
 if (!prefersReduced) {
     const typingEl = document.getElementById('typing-word');
     if (typingEl) {
-        const words = ['Actually Trust', 'Always Real', 'Truly Yours', 'Data-Driven', 'Genuinely Honest'];
+        const words = ['Influence Is Over.', 'Trust Is Restored.', 'Truth Is Indexed.', 'Data Is Verified.', 'Standard Is Set.'];
         let wi = 0, ci = 0, deleting = false;
         const WRITE_MS = 80, DELETE_MS = 45, PAUSE_MS = 2000;
 
