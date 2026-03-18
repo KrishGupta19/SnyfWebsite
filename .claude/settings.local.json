@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_click",
+      "mcp__claude_ai_Netlify__netlify-project-services-reader",
+      "mcp__playwright__browser_navigate"
+    ]
+  }
+}

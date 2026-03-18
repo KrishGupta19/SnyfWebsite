@@ -19,7 +19,7 @@ if (isFinePonter && !prefersReduced) {
     document.addEventListener('mousemove', e => {
         mx = e.clientX; my = e.clientY;
         dot.style.transform = `translate(${mx - 3}px, ${my - 3}px)`;
-    }, { passive: true });
+    }, { passive: true, capture: true });
 
     (function animateRing() {
         rx += (mx - rx) * 0.1;

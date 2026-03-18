@@ -54,7 +54,7 @@
     <section class="hero" id="hero">
         <div class="hero-content">
             <span class="badge"><span class="badge-dot"></span>Institutional Standard · Est. 2026</span>
-            <h1>The Era of Deceptive<br><span class="gradient-text" id="typing-word">Influence Is Over.</span><span
+            <h1><span class="glitch-text" data-text="The Era of Deceptive">The Era of Deceptive</span><br><span class="gradient-text" id="typing-word">Influence Is Over.</span><span
                     class="typing-cursor">|</span></h1>
             <p class="hero-sub">Snyf is the institutional standard for verified, structured local intelligence. We
                 don't aggregate opinions — we authenticate them.</p>
@@ -412,6 +412,8 @@
             map = new google.maps.Map(document.getElementById('google-map'), {
                 center: defaultCenter,
                 zoom: 14,
+                draggableCursor: 'none',
+                draggingCursor: 'none',
                 styles: [
                     { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
                     { elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
@@ -461,6 +463,54 @@
 
         function clearMarkers() { markers.forEach(m => m.setMap(null)); markers = []; }
 
+        function showPlaceDetails(placeId, marker, snyfScore) {
+            infoWindow.setContent('<div style="padding:10px;font-family:Inter,sans-serif;font-size:12px;">Loading intelligence data...</div>');
+            infoWindow.open(map, marker);
+
+            const request = {
+                placeId: placeId,
+                fields: ['name', 'rating', 'formatted_address', 'reviews', 'vicinity']
+            };
+
+            placesService.getDetails(request, (place, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK) {
+                    let reviewsHtml = '';
+                    if (place.reviews && place.reviews.length > 0) {
+                        reviewsHtml = '<div style="margin-top:12px; border-top:1px solid #eee; padding-top:12px;">';
+                        reviewsHtml += '<div style="font-size:10px; font-weight:700; text-transform:uppercase; color:#9CA3AF; letter-spacing:0.05em; margin-bottom:8px;">Top Google Reviews</div>';
+                        place.reviews.slice(0, 5).forEach(review => {
+                            const stars = '⭐'.repeat(Math.round(review.rating));
+                            reviewsHtml += `
+                                <div style="margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #f9fafb;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+                                        <strong style="font-size:11px; color:#1A1A1A;">${review.author_name}</strong>
+                                        <span style="font-size:10px;">${stars}</span>
+                                    </div>
+                                    <p style="font-size:10px; color:#6B7280; margin:0; line-height:1.5; font-style:italic;">"${review.text.length > 85 ? review.text.substring(0, 85) + '...' : review.text}"</p>
+                                </div>
+                            `;
+                        });
+                        reviewsHtml += '</div>';
+                    }
+
+                    const infoContent = `
+                        <div style="font-family:Inter,sans-serif;color:#1A1A1A;min-width:240px;max-width:280px;padding:8px 4px">
+                            <strong style="font-size:14px;display:block;margin-bottom:6px;letter-spacing:-0.01em;">${place.name}</strong>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                                <span style="background:#1A1A1A; color:#fff; font-size:11px; font-family:monospace; font-weight:700; padding:2px 6px; border-radius:2px;">Snyf: ${snyfScore}</span>
+                                <span style="color:#6B7280; font-size:12px; font-weight:500;">⭐ ${place.rating || 'N/A'}</span>
+                            </div>
+                            <span style="color:#9CA3AF;font-size:11px;line-height:1.4;display:block;">${place.formatted_address || place.vicinity}</span>
+                            ${reviewsHtml}
+                        </div>
+                    `;
+                    infoWindow.setContent(infoContent);
+                } else {
+                    infoWindow.setContent('<div style="padding:10px;font-size:12px;">Failed to load verified details.</div>');
+                }
+            });
+        }
+
         function searchNearby(location) {
             clearMarkers();
             document.getElementById('map-results-list').innerHTML = '<li class="map-placeholder">Loading…</li>';
@@ -469,7 +519,6 @@
                 const list = document.getElementById('map-results-list');
                 list.innerHTML = '';
                 results.slice(0, 10).forEach((place, i) => {
-                    const rating = place.rating || 'N/A';
                     const snyfScore = (Math.random() * 2 + 7).toFixed(1);
                     const marker = new google.maps.Marker({
                         map,
@@ -486,20 +535,20 @@
                         }
                     });
                     markers.push(marker);
-                    const infoContent = `<div style="font-family:Inter,sans-serif;color:#1A1A1A;min-width:190px;padding:4px 2px">
-                    <strong style="font-size:13px;display:block;margin-bottom:6px">${place.name}</strong>
-                    <span style="color:#1A1A1A;font-size:12px;font-family:monospace;font-weight:700">Snyf: ${snyfScore}/10</span><br>
-                    <span style="color:#6B7280;font-size:12px">Google: ⭐ ${rating}</span><br>
-                    <span style="color:#9CA3AF;font-size:11px">${place.vicinity}</span></div>`;
-                    marker.addListener('click', () => { infoWindow.setContent(infoContent); infoWindow.open(map, marker); });
+
+                    marker.addListener('click', () => {
+                        showPlaceDetails(place.place_id, marker, snyfScore);
+                    });
+
                     const li = document.createElement('li');
                     li.className = 'map-result-item';
                     li.innerHTML = `<span class="result-num">${i + 1}</span>
                     <div class="result-info"><strong>${place.name}</strong><span>${place.vicinity}</span></div>
                     <span class="result-score">${snyfScore}</span>`;
                     li.addEventListener('click', () => {
-                        map.setCenter(place.geometry.location); map.setZoom(17);
-                        infoWindow.setContent(infoContent); infoWindow.open(map, marker);
+                        map.setCenter(place.geometry.location);
+                        map.setZoom(17);
+                        showPlaceDetails(place.place_id, marker, snyfScore);
                     });
                     list.appendChild(li);
                 });
