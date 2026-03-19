@@ -412,8 +412,7 @@
             map = new google.maps.Map(document.getElementById('google-map'), {
                 center: defaultCenter,
                 zoom: 14,
-                draggableCursor: 'none',
-                draggingCursor: 'none',
+                gestureHandling: 'greedy',
                 styles: [
                     { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
                     { elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
@@ -493,8 +492,9 @@
                         reviewsHtml += '</div>';
                     }
 
+                    const isMobile = window.innerWidth <= 640;
                     const infoContent = `
-                        <div style="font-family:Inter,sans-serif;color:#1A1A1A;min-width:240px;max-width:280px;padding:8px 4px">
+                        <div style="font-family:Inter,sans-serif;color:#1A1A1A;min-width:${isMobile ? '200px' : '240px'};max-width:${isMobile ? '240px' : '280px'};padding:8px 4px">
                             <strong style="font-size:14px;display:block;margin-bottom:6px;letter-spacing:-0.01em;">${place.name}</strong>
                             <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
                                 <span style="background:#1A1A1A; color:#fff; font-size:11px; font-family:monospace; font-weight:700; padding:2px 6px; border-radius:2px;">Snyf: ${snyfScore}</span>
