@@ -107,13 +107,6 @@ label,
 
 /* ---- Gradient text — institutional underline style ---- */
 .gradient-text {
-    color: var(--text-hi);
-    text-decoration: underline;
-    text-decoration-color: var(--accent);
-    text-decoration-thickness: 3px;
-    text-underline-offset: 4px;
-    -webkit-text-fill-color: unset;
-    background: none;
     background: linear-gradient(to right, #1A1A1A, #9CA3AF, #1A1A1A);
     background-size: 200% auto;
     color: transparent;
@@ -204,7 +197,6 @@ label,
 
 .btn-primary:hover {
     background: #374151;
-    transform: translateY(-1px);
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
@@ -218,7 +210,6 @@ label,
 .btn-ghost:hover {
     background: #1A1A1A;
     color: #fff;
-    transform: translateY(-1px);
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
@@ -907,14 +898,12 @@ label,
 .problem-card {
     background: var(--bg);
     padding: 40px 32px;
-    transition: background var(--transition);
     transition: background var(--transition), transform 0.3s ease, box-shadow 0.3s ease;
     position: relative;
     border-top: 3px solid var(--red);
 }
 
 .problem-card:hover {
-    background: var(--bg2);
     transform: translateY(-6px);
     box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
 }
@@ -1159,14 +1148,12 @@ label,
 .feature-card {
     background: var(--bg2);
     padding: 36px 28px;
-    transition: background var(--transition);
     transition: background var(--transition), transform 0.3s ease, box-shadow 0.3s ease;
     position: relative;
     overflow: hidden;
 }
 
 .feature-card:hover {
-    background: var(--bg3);
     transform: translateY(-6px);
     box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
 }
@@ -1245,7 +1232,6 @@ label,
     grid-template-rows: auto auto;
     gap: 4px 16px;
     align-items: start;
-    transition: background var(--transition);
     transition: background var(--transition), transform 0.3s ease, box-shadow 0.3s ease;
     border-bottom: 1px solid var(--border);
     border-top: 2px solid #1A1A1A;
@@ -1261,7 +1247,6 @@ label,
 }
 
 .value-card:hover {
-    background: var(--bg2);
     transform: translateY(-6px);
     box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
 }
