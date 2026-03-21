@@ -114,6 +114,14 @@ label,
     text-underline-offset: 4px;
     -webkit-text-fill-color: unset;
     background: none;
+    background: linear-gradient(to right, #1A1A1A, #9CA3AF, #1A1A1A);
+    background-size: 200% auto;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientShine 4s linear infinite;
+    text-decoration: none;
 }
 
 /* ---- Gradient text inverted (for dark sections) ---- */
@@ -197,6 +205,8 @@ label,
 .btn-primary:hover {
     background: #374151;
     transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 .btn-ghost {
@@ -209,6 +219,8 @@ label,
     background: #1A1A1A;
     color: #fff;
     transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 /* ============================================
@@ -455,51 +467,217 @@ label,
 }
 
 @keyframes glitch-anim {
-    0% { clip-path: inset(80% 0 10% 0); transform: skew(0.5deg); }
-    5% { clip-path: inset(10% 0 70% 0); transform: skew(0.8deg); }
-    10% { clip-path: inset(40% 0 40% 0); transform: skew(0.2deg); }
-    15% { clip-path: inset(60% 0 10% 0); transform: skew(0.5deg); }
-    20% { clip-path: inset(10% 0 80% 0); transform: skew(0.1deg); }
-    25% { clip-path: inset(30% 0 30% 0); transform: skew(0.9deg); }
-    30% { clip-path: inset(50% 0 10% 0); transform: skew(0.3deg); }
-    35% { clip-path: inset(10% 0 60% 0); transform: skew(0.7deg); }
-    40% { clip-path: inset(80% 0 10% 0); transform: skew(0.4deg); }
-    45% { clip-path: inset(10% 0 30% 0); transform: skew(0.6deg); }
-    50% { clip-path: inset(40% 0 40% 0); transform: skew(0.2deg); }
-    55% { clip-path: inset(70% 0 10% 0); transform: skew(0.8deg); }
-    60% { clip-path: inset(10% 0 80% 0); transform: skew(0.5deg); }
-    65% { clip-path: inset(30% 0 30% 0); transform: skew(0.1deg); }
-    70% { clip-path: inset(50% 0 10% 0); transform: skew(0.9deg); }
-    75% { clip-path: inset(10% 0 50% 0); transform: skew(0.3deg); }
-    80% { clip-path: inset(85% 0 1% 0); transform: skew(0.7deg); }
-    85% { clip-path: inset(10% 0 20% 0); transform: skew(0.4deg); }
-    90% { clip-path: inset(45% 0 45% 0); transform: skew(0.6deg); }
-    95% { clip-path: inset(10% 0 75% 0); transform: skew(0.2deg); }
-    100% { clip-path: inset(20% 0 20% 0); transform: skew(0.8deg); }
+    0% {
+        clip-path: inset(80% 0 10% 0);
+        transform: skew(0.5deg);
+    }
+
+    5% {
+        clip-path: inset(10% 0 70% 0);
+        transform: skew(0.8deg);
+    }
+
+    10% {
+        clip-path: inset(40% 0 40% 0);
+        transform: skew(0.2deg);
+    }
+
+    15% {
+        clip-path: inset(60% 0 10% 0);
+        transform: skew(0.5deg);
+    }
+
+    20% {
+        clip-path: inset(10% 0 80% 0);
+        transform: skew(0.1deg);
+    }
+
+    25% {
+        clip-path: inset(30% 0 30% 0);
+        transform: skew(0.9deg);
+    }
+
+    30% {
+        clip-path: inset(50% 0 10% 0);
+        transform: skew(0.3deg);
+    }
+
+    35% {
+        clip-path: inset(10% 0 60% 0);
+        transform: skew(0.7deg);
+    }
+
+    40% {
+        clip-path: inset(80% 0 10% 0);
+        transform: skew(0.4deg);
+    }
+
+    45% {
+        clip-path: inset(10% 0 30% 0);
+        transform: skew(0.6deg);
+    }
+
+    50% {
+        clip-path: inset(40% 0 40% 0);
+        transform: skew(0.2deg);
+    }
+
+    55% {
+        clip-path: inset(70% 0 10% 0);
+        transform: skew(0.8deg);
+    }
+
+    60% {
+        clip-path: inset(10% 0 80% 0);
+        transform: skew(0.5deg);
+    }
+
+    65% {
+        clip-path: inset(30% 0 30% 0);
+        transform: skew(0.1deg);
+    }
+
+    70% {
+        clip-path: inset(50% 0 10% 0);
+        transform: skew(0.9deg);
+    }
+
+    75% {
+        clip-path: inset(10% 0 50% 0);
+        transform: skew(0.3deg);
+    }
+
+    80% {
+        clip-path: inset(85% 0 1% 0);
+        transform: skew(0.7deg);
+    }
+
+    85% {
+        clip-path: inset(10% 0 20% 0);
+        transform: skew(0.4deg);
+    }
+
+    90% {
+        clip-path: inset(45% 0 45% 0);
+        transform: skew(0.6deg);
+    }
+
+    95% {
+        clip-path: inset(10% 0 75% 0);
+        transform: skew(0.2deg);
+    }
+
+    100% {
+        clip-path: inset(20% 0 20% 0);
+        transform: skew(0.8deg);
+    }
 }
 
 @keyframes glitch-anim2 {
-    0% { clip-path: inset(10% 0 85% 0); transform: skew(0.8deg); }
-    5% { clip-path: inset(80% 0 10% 0); transform: skew(0.2deg); }
-    10% { clip-path: inset(10% 0 70% 0); transform: skew(0.5deg); }
-    15% { clip-path: inset(40% 0 40% 0); transform: skew(0.1deg); }
-    20% { clip-path: inset(60% 0 10% 0); transform: skew(0.9deg); }
-    25% { clip-path: inset(10% 0 80% 0); transform: skew(0.3deg); }
-    30% { clip-path: inset(30% 0 30% 0); transform: skew(0.7deg); }
-    35% { clip-path: inset(50% 0 10% 0); transform: skew(0.4deg); }
-    40% { clip-path: inset(10% 0 60% 0); transform: skew(0.6deg); }
-    45% { clip-path: inset(80% 0 10% 0); transform: skew(0.2deg); }
-    50% { clip-path: inset(10% 0 30% 0); transform: skew(0.8deg); }
-    55% { clip-path: inset(40% 0 40% 0); transform: skew(0.5deg); }
-    60% { clip-path: inset(70% 0 10% 0); transform: skew(0.1deg); }
-    65% { clip-path: inset(10% 0 80% 0); transform: skew(0.9deg); }
-    70% { clip-path: inset(30% 0 30% 0); transform: skew(0.3deg); }
-    75% { clip-path: inset(50% 0 10% 0); transform: skew(0.7deg); }
-    80% { clip-path: inset(10% 0 50% 0); transform: skew(0.4deg); }
-    85% { clip-path: inset(85% 0 1% 0); transform: skew(0.6deg); }
-    90% { clip-path: inset(10% 0 20% 0); transform: skew(0.2deg); }
-    95% { clip-path: inset(45% 0 45% 0); transform: skew(0.8deg); }
-    100% { clip-path: inset(10% 0 75% 0); transform: skew(0.5deg); }
+    0% {
+        clip-path: inset(10% 0 85% 0);
+        transform: skew(0.8deg);
+    }
+
+    5% {
+        clip-path: inset(80% 0 10% 0);
+        transform: skew(0.2deg);
+    }
+
+    10% {
+        clip-path: inset(10% 0 70% 0);
+        transform: skew(0.5deg);
+    }
+
+    15% {
+        clip-path: inset(40% 0 40% 0);
+        transform: skew(0.1deg);
+    }
+
+    20% {
+        clip-path: inset(60% 0 10% 0);
+        transform: skew(0.9deg);
+    }
+
+    25% {
+        clip-path: inset(10% 0 80% 0);
+        transform: skew(0.3deg);
+    }
+
+    30% {
+        clip-path: inset(30% 0 30% 0);
+        transform: skew(0.7deg);
+    }
+
+    35% {
+        clip-path: inset(50% 0 10% 0);
+        transform: skew(0.4deg);
+    }
+
+    40% {
+        clip-path: inset(10% 0 60% 0);
+        transform: skew(0.6deg);
+    }
+
+    45% {
+        clip-path: inset(80% 0 10% 0);
+        transform: skew(0.2deg);
+    }
+
+    50% {
+        clip-path: inset(10% 0 30% 0);
+        transform: skew(0.8deg);
+    }
+
+    55% {
+        clip-path: inset(40% 0 40% 0);
+        transform: skew(0.5deg);
+    }
+
+    60% {
+        clip-path: inset(70% 0 10% 0);
+        transform: skew(0.1deg);
+    }
+
+    65% {
+        clip-path: inset(10% 0 80% 0);
+        transform: skew(0.9deg);
+    }
+
+    70% {
+        clip-path: inset(30% 0 30% 0);
+        transform: skew(0.3deg);
+    }
+
+    75% {
+        clip-path: inset(50% 0 10% 0);
+        transform: skew(0.7deg);
+    }
+
+    80% {
+        clip-path: inset(10% 0 50% 0);
+        transform: skew(0.4deg);
+    }
+
+    85% {
+        clip-path: inset(85% 0 1% 0);
+        transform: skew(0.6deg);
+    }
+
+    90% {
+        clip-path: inset(10% 0 20% 0);
+        transform: skew(0.2deg);
+    }
+
+    95% {
+        clip-path: inset(45% 0 45% 0);
+        transform: skew(0.8deg);
+    }
+
+    100% {
+        clip-path: inset(10% 0 75% 0);
+        transform: skew(0.5deg);
+    }
 }
 
 .hero-sub {
@@ -730,12 +908,15 @@ label,
     background: var(--bg);
     padding: 40px 32px;
     transition: background var(--transition);
+    transition: background var(--transition), transform 0.3s ease, box-shadow 0.3s ease;
     position: relative;
     border-top: 3px solid var(--red);
 }
 
 .problem-card:hover {
     background: var(--bg2);
+    transform: translateY(-6px);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
 }
 
 .card-icon {
@@ -749,6 +930,11 @@ label,
     background: var(--bg2);
     border: 1px solid var(--border2);
     border-radius: var(--radius);
+    transition: transform 0.3s ease;
+}
+
+.problem-card:hover .card-icon {
+    transform: scale(1.1) rotate(-5deg);
 }
 
 .problem-card h3 {
@@ -948,6 +1134,7 @@ label,
 /* Solution visual container */
 .solution-visual {
     perspective: 1000px;
+    animation: floaty 6s ease-in-out infinite;
 }
 
 /* ============================================
@@ -973,12 +1160,15 @@ label,
     background: var(--bg2);
     padding: 36px 28px;
     transition: background var(--transition);
+    transition: background var(--transition), transform 0.3s ease, box-shadow 0.3s ease;
     position: relative;
     overflow: hidden;
 }
 
 .feature-card:hover {
     background: var(--bg3);
+    transform: translateY(-6px);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
 }
 
 .feature-num {
@@ -1056,6 +1246,7 @@ label,
     gap: 4px 16px;
     align-items: start;
     transition: background var(--transition);
+    transition: background var(--transition), transform 0.3s ease, box-shadow 0.3s ease;
     border-bottom: 1px solid var(--border);
     border-top: 2px solid #1A1A1A;
 }
@@ -1071,6 +1262,8 @@ label,
 
 .value-card:hover {
     background: var(--bg2);
+    transform: translateY(-6px);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
 }
 
 .value-icon {
@@ -1089,6 +1282,11 @@ label,
     border-radius: var(--radius);
     flex-shrink: 0;
     color: var(--text-hi);
+    transition: transform 0.3s ease;
+}
+
+.value-card:hover .value-icon {
+    transform: scale(1.1) rotate(5deg);
 }
 
 .value-card h4 {
@@ -1102,6 +1300,24 @@ label,
     color: var(--text-muted);
     font-size: 0.83rem;
     line-height: 1.55;
+}
+
+@keyframes gradientShine {
+    to {
+        background-position: 200% center;
+    }
+}
+
+@keyframes floaty {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-12px);
+    }
 }
 
 /* ============================================
@@ -1349,21 +1565,6 @@ label,
     font-size: 0.78rem;
     color: #9CA3AF;
     font-family: var(--font-mono);
-}
-
-/* ============================================
-   SCROLL REVEAL
-   ============================================ */
-.reveal {
-    opacity: 0;
-    transform: translateY(24px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
-    transition-delay: var(--delay, 0ms);
-}
-
-.reveal.visible {
-    opacity: 1;
-    transform: translateY(0);
 }
 
 /* ============================================

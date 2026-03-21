@@ -12,7 +12,7 @@ if (isFinePonter && !prefersReduced) {
     document.body.classList.add('has-cursor');
 
     const ring = document.getElementById('cursor-ring');
-    const dot  = document.getElementById('cursor-dot-el');
+    const dot = document.getElementById('cursor-dot-el');
 
     let mx = -200, my = -200, rx = -200, ry = -200;
 
@@ -45,7 +45,7 @@ document.querySelectorAll('.feature-card, .problem-card, .value-card').forEach(c
     card.addEventListener('mousemove', e => {
         const r = card.getBoundingClientRect();
         card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
-        card.style.setProperty('--my', (e.clientY - r.top)  + 'px');
+        card.style.setProperty('--my', (e.clientY - r.top) + 'px');
         card.style.setProperty('--spotlight', '1');
     }, { passive: true });
     card.addEventListener('mouseleave', () => {
@@ -56,12 +56,12 @@ document.querySelectorAll('.feature-card, .problem-card, .value-card').forEach(c
 // ── 3. AI Card 3D Tilt ────────────────────────────────────────
 if (isFinePonter && !prefersReduced) {
     const visual = document.querySelector('.solution-visual');
-    const card   = document.querySelector('.ai-card');
+    const card = document.querySelector('.ai-card');
     if (visual && card) {
         visual.addEventListener('mousemove', e => {
             const r = visual.getBoundingClientRect();
-            const x = (e.clientX - r.left) / r.width  - 0.5;
-            const y = (e.clientY - r.top)  / r.height - 0.5;
+            const x = (e.clientX - r.left) / r.width - 0.5;
+            const y = (e.clientY - r.top) / r.height - 0.5;
             card.style.transform = `perspective(900px) rotateY(${x * 14}deg) rotateX(${-y * 9}deg) translateZ(16px)`;
         }, { passive: true });
         visual.addEventListener('mouseleave', () => {
@@ -72,16 +72,16 @@ if (isFinePonter && !prefersReduced) {
 
 // ── 4. Animated Number Counters ───────────────────────────────
 function runCounter(el) {
-    const target   = parseFloat(el.dataset.target);
-    const suffix   = el.dataset.suffix  || '';
+    const target = parseFloat(el.dataset.target);
+    const suffix = el.dataset.suffix || '';
     const decimals = el.dataset.decimals ? parseInt(el.dataset.decimals) : 0;
     const duration = 1600;
-    const start    = performance.now();
+    const start = performance.now();
 
     (function tick(now) {
         const t = Math.min((now - start) / duration, 1);
         const eased = 1 - Math.pow(1 - t, 4);
-        const val   = eased * target;
+        const val = eased * target;
         el.textContent = (decimals ? val.toFixed(decimals) : Math.round(val).toLocaleString()) + suffix;
         if (t < 1) requestAnimationFrame(tick);
     })(start);
@@ -120,8 +120,8 @@ if (isFinePonter && !prefersReduced) {
     document.querySelectorAll('.btn-primary').forEach(btn => {
         btn.addEventListener('mousemove', e => {
             const r = btn.getBoundingClientRect();
-            const x = (e.clientX - r.left - r.width  / 2) * 0.25;
-            const y = (e.clientY - r.top  - r.height / 2) * 0.25;
+            const x = (e.clientX - r.left - r.width / 2) * 0.25;
+            const y = (e.clientY - r.top - r.height / 2) * 0.25;
             btn.style.transform = `translate(${x}px, ${y}px) translateY(-2px)`;
         }, { passive: true });
         btn.addEventListener('mouseleave', () => {
@@ -129,14 +129,6 @@ if (isFinePonter && !prefersReduced) {
         });
     });
 }
-
-// ── 7. Staggered Card Entrance ────────────────────────────────
-document.querySelectorAll('.features-grid .feature-card').forEach((card, i) => {
-    card.style.transitionDelay = `${i * 55}ms`;
-});
-document.querySelectorAll('.cards-grid .problem-card').forEach((card, i) => {
-    card.style.transitionDelay = `${i * 80}ms`;
-});
 
 // ── 8. Typing / Word-Cycle in Hero ───────────────────────────
 if (!prefersReduced) {
@@ -164,7 +156,7 @@ if (!prefersReduced) {
 
 // ── 9. Active Nav Link Highlighting ──────────────────────────
 const sections = document.querySelectorAll('section[id]');
-const navAs    = document.querySelectorAll('.nav-links a[href^="#"]');
+const navAs = document.querySelectorAll('.nav-links a[href^="#"]');
 
 const navObs = new IntersectionObserver(entries => {
     entries.forEach(entry => {
