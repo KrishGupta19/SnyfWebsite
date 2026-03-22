@@ -25,7 +25,15 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 </head>
 
-<body>
+<body class="intro-active">
+
+    <!-- ========== INTRO VIDEO OVERLAY ========== -->
+    <div id="intro-overlay">
+        <video id="intro-video" autoplay muted playsinline>
+            <source src="demo.mp4" type="video/mp4">
+        </video>
+        <button id="skip-intro" aria-label="Skip Intro">Skip Sequence &#x25B8;</button>
+    </div>
 
     <!-- Fixed full-page 3D canvas — sits behind all content -->
     <canvas id="bg-canvas" aria-hidden="true"></canvas>
@@ -763,6 +771,27 @@
         setVh();
         window.addEventListener('resize', setVh, { passive: true });
         window.addEventListener('orientationchange', () => setTimeout(setVh, 200), { passive: true });
+
+        // ── Intro Video Logic ─────────────────────────────────
+        const introOverlay = document.getElementById('intro-overlay');
+        const introVideo = document.getElementById('intro-video');
+        const skipBtn = document.getElementById('skip-intro');
+
+        function endIntro() {
+            if (!introOverlay) return;
+            introOverlay.classList.add('hidden');
+            document.body.classList.remove('intro-active');
+            setTimeout(() => { if (introVideo) introVideo.pause(); }, 800);
+        }
+
+        if (introVideo) {
+            introVideo.addEventListener('ended', endIntro);
+            introVideo.addEventListener('error', endIntro);
+            // Fallback if browser blocks autoplay
+            let playPromise = introVideo.play();
+            if (playPromise !== undefined) playPromise.catch(endIntro);
+        }
+        if (skipBtn) skipBtn.addEventListener('click', endIntro);
     </script>
 </body>
 

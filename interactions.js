@@ -150,7 +150,14 @@ if (!prefersReduced) {
                 setTimeout(type, DELETE_MS);
             }
         }
-        setTimeout(type, 1200);
+        function checkAndType() {
+            if (document.body.classList.contains('intro-active')) {
+                setTimeout(checkAndType, 500); // Check again in 500ms
+            } else {
+                setTimeout(type, 600); // Start shortly after intro fades
+            }
+        }
+        checkAndType();
     }
 }
 
