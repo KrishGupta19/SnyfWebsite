@@ -245,6 +245,21 @@ const A2_COUNT = isMobile ? 600 : 1800;
   g2.add(pts);
 }
 
+// ── NEW: Malicious Bot Swarm (Parasites attacking the core truth) ──
+const SWARM_COUNT = isMobile ? 40 : 150;
+const swarmGeo = new THREE.ConeGeometry(0.15, 0.8, 3);
+swarmGeo.rotateX(Math.PI / 2); // Point outward for lookAt
+const swarmMat = new THREE.MeshBasicMaterial({ color: 0xCC3333, wireframe: true, transparent: true, opacity: 0.6 });
+const swarmMesh = new THREE.InstancedMesh(swarmGeo, swarmMat, SWARM_COUNT);
+const swarmDataArr = Array.from({ length: SWARM_COUNT }, () => ({
+  a1: Math.random() * Math.PI * 2,
+  a2: Math.random() * Math.PI * 2,
+  s1: (Math.random() - 0.5) * 3.5,
+  s2: (Math.random() - 0.5) * 3.5,
+  radius: 3.5 + Math.random() * 12,
+}));
+g2.add(swarmMesh);
+
 // Wireframe bot silhouettes — muted
 const act2Bots = [];
 {
@@ -594,6 +609,19 @@ function animate() {
       p.position.y = d.baseY + Math.sin(t * d.freq + d.phase) * d.amp;
       p.rotation.z += d.rspd;
     }
+
+    // Animate Shattered Fragments
+    for (let i = 0; i < FRAG_COUNT; i++) {
+      const fd = fragData[i];
+      fd.y += fd.drift;
+      fd.rx += fd.rs;
+      fd.ry += fd.rs;
+      dummy.position.set(fd.x, fd.y, fd.z);
+      dummy.rotation.set(fd.rx, fd.ry, 0);
+      dummy.updateMatrix();
+      fragMesh.setMatrixAt(i, dummy.matrix);
+    }
+    fragMesh.instanceMatrix.needsUpdate = true;
   }
 
   // ── ACT 2 — Crisis / Muted Red World ─────────────────────────────────────────
@@ -617,6 +645,22 @@ function animate() {
       starsMesh.setMatrixAt(i, dummy.matrix);
     }
     starsMesh.instanceMatrix.needsUpdate = true;
+
+    // Animate Bot Swarm (aggressively orbiting and pointing at the core)
+    for (let i = 0; i < SWARM_COUNT; i++) {
+      const sd = swarmDataArr[i];
+      sd.a1 += sd.s1 * 0.01;
+      sd.a2 += sd.s2 * 0.01;
+      dummy.position.set(
+        Math.cos(sd.a1) * Math.cos(sd.a2) * sd.radius,
+        Math.sin(sd.a1) * sd.radius,
+        Math.cos(sd.a1) * Math.sin(sd.a2) * sd.radius
+      );
+      dummy.lookAt(0, 0, 0);
+      dummy.updateMatrix();
+      swarmMesh.setMatrixAt(i, dummy.matrix);
+    }
+    swarmMesh.instanceMatrix.needsUpdate = true;
 
     // Pulsing muted warning orb
     a2OrbMat.emissiveIntensity = 0.12 + 0.08 * Math.abs(Math.sin(t * 2.8));
@@ -657,6 +701,12 @@ function animate() {
     for (let i = 0; i < nodeMesh3.length; i++) {
       nodeMesh3[i].position.y = nodePos3[i].y + Math.sin(t * 0.5 + i * 0.42) * 0.5;
     }
+
+    // Rotate structured ledger and sweep scanner ring
+    ledgerGroup.rotation.y = t * 0.15;
+    scannerRing.position.y = Math.sin(t * 1.8) * 3.5;
+    const scannerPulse = 1 + Math.sin(t * 8) * 0.04;
+    scannerRing.scale.setScalar(scannerPulse);
   }
 
   renderer.render(scene, camera);
