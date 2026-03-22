@@ -215,6 +215,153 @@ label,
 }
 
 /* ============================================
+   STORY / TIMELINE
+   ============================================ */
+.story-section {
+    background: var(--bg);
+    position: relative;
+}
+
+.story-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    position: relative;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.story-timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: var(--border2);
+    transform: translateX(-50%);
+}
+
+.story-block {
+    display: flex;
+    width: 100%;
+    position: relative;
+}
+
+.story-block.past {
+    justify-content: flex-start;
+    padding-right: 50%;
+}
+
+.story-block.future {
+    justify-content: flex-end;
+    padding-left: 50%;
+    margin-top: 60px;
+}
+
+.story-content {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 40px;
+    border-radius: var(--radius-lg);
+    position: relative;
+    width: 92%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.story-block.past .story-content {
+    border-top: 3px solid var(--red);
+}
+
+.story-block.future .story-content {
+    border-top: 3px solid var(--green);
+}
+
+.story-content:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* Connecting dots on the timeline */
+.story-block::before {
+    content: '';
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    width: 13px;
+    height: 13px;
+    background: var(--text-hi);
+    border-radius: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--border2);
+}
+
+.story-block.past::before {
+    background: var(--red);
+}
+
+.story-block.future::before {
+    background: var(--green);
+}
+
+.era-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    display: block;
+}
+
+.story-content h3 {
+    font-size: 1.4rem;
+    font-family: var(--font-display);
+    color: var(--text-hi);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+}
+
+.story-content p {
+    color: var(--text-muted);
+    line-height: 1.7;
+    font-size: 0.95rem;
+    margin-bottom: 24px;
+}
+
+.story-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.story-list li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.85rem;
+    color: var(--text);
+}
+
+.story-list li span {
+    font-family: var(--font-mono);
+    font-weight: 700;
+}
+
+.story-block.past .story-list li span {
+    color: var(--red);
+}
+
+.story-block.future .story-list li span {
+    color: var(--green);
+}
+
+/* ============================================
    NAVBAR
    ============================================ */
 .navbar {
@@ -2135,6 +2282,7 @@ body.has-cursor #cursor-dot-el {
         font-size: 16px !important;
     }
 
+    /* Map */
     #map-container {
         flex-direction: column;
         height: auto;
@@ -2171,6 +2319,25 @@ body.has-cursor #cursor-dot-el {
 
     .section {
         background: rgba(255, 255, 255, 0.94) !important;
+    }
+
+    /* Story Timeline Mobile */
+    .story-timeline::before {
+        left: 18px;
+    }
+
+    .story-block {
+        justify-content: flex-start !important;
+        padding: 0 0 0 42px !important;
+        margin-top: 0 !important;
+    }
+
+    .story-block::before {
+        left: 18px;
+    }
+
+    .story-content {
+        width: 100%;
     }
 }
 
