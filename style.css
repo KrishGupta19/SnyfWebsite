@@ -268,6 +268,10 @@ label,
     width: 92%;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    gap: 40px;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .story-block.past .story-content {
@@ -359,6 +363,219 @@ label,
 
 .story-block.future .story-list li span {
     color: var(--green);
+}
+
+/* ============================================
+   STORY VISUAL ANIMATIONS
+   ============================================ */
+.story-text {
+    flex: 1;
+}
+
+.story-visual {
+    flex-shrink: 0;
+    width: 140px;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* Chaotic Past Visual */
+.chaotic-visual {
+    border: 1px dashed rgba(220, 38, 38, 0.3);
+    border-radius: 50%;
+    animation: spin-slow 12s linear infinite;
+}
+
+.c-dot {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: var(--red);
+    border-radius: 50%;
+    opacity: 0.7;
+}
+
+.c-dot:nth-child(1) {
+    top: 20%;
+    left: 20%;
+    animation: jitter 3s infinite;
+}
+
+.c-dot:nth-child(2) {
+    top: 60%;
+    left: 10%;
+    animation: jitter 2.5s infinite reverse;
+}
+
+.c-dot:nth-child(3) {
+    top: 15%;
+    left: 60%;
+    animation: jitter 4s infinite;
+}
+
+.c-dot:nth-child(4) {
+    top: 75%;
+    left: 70%;
+    animation: jitter 3.5s infinite reverse;
+}
+
+.c-dot:nth-child(5) {
+    top: 45%;
+    left: 80%;
+    animation: jitter 2s infinite;
+}
+
+.c-dot:nth-child(6) {
+    top: 40%;
+    left: 40%;
+    width: 16px;
+    height: 16px;
+    opacity: 0.9;
+    animation: jitter 1.5s infinite;
+}
+
+@keyframes spin-slow {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes jitter {
+
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    25% {
+        transform: translate(4px, -6px) scale(1.1);
+    }
+
+    50% {
+        transform: translate(-5px, 4px) scale(0.9);
+    }
+
+    75% {
+        transform: translate(6px, 5px) scale(1.2);
+    }
+}
+
+/* Structured Future Visual */
+.structured-visual {
+    background: rgba(5, 150, 105, 0.04);
+    border: 1px solid rgba(5, 150, 105, 0.2);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.s-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    width: 80px;
+    height: 80px;
+}
+
+.s-node {
+    background: rgba(5, 150, 105, 0.3);
+    border-radius: 2px;
+    animation: pulse-node 2s ease-in-out infinite alternate;
+}
+
+.s-node.core {
+    background: var(--green);
+    box-shadow: 0 0 10px rgba(5, 150, 105, 0.5);
+    animation: core-pulse 1.5s ease-in-out infinite alternate;
+}
+
+.s-node:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.s-node:nth-child(2) {
+    animation-delay: 0.3s;
+}
+
+.s-node:nth-child(3) {
+    animation-delay: 0.5s;
+}
+
+.s-node:nth-child(4) {
+    animation-delay: 0.2s;
+}
+
+.s-node:nth-child(6) {
+    animation-delay: 0.4s;
+}
+
+.s-node:nth-child(7) {
+    animation-delay: 0.6s;
+}
+
+.s-node:nth-child(8) {
+    animation-delay: 0.8s;
+}
+
+.s-node:nth-child(9) {
+    animation-delay: 0.7s;
+}
+
+.s-scanline {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: rgba(5, 150, 105, 0.5);
+    box-shadow: 0 0 8px rgba(5, 150, 105, 0.8);
+    animation: scan 3s linear infinite;
+}
+
+@keyframes pulse-node {
+    0% {
+        opacity: 0.2;
+        transform: scale(0.8);
+    }
+
+    100% {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+}
+
+@keyframes core-pulse {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+}
+
+@keyframes scan {
+    0% {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(150px);
+        opacity: 0;
+    }
 }
 
 /* ============================================
@@ -2338,6 +2555,13 @@ body.has-cursor #cursor-dot-el {
 
     .story-content {
         width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 24px;
+    }
+
+    .story-visual {
+        align-self: center;
     }
 }
 
