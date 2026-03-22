@@ -134,7 +134,7 @@ if (isFinePonter && !prefersReduced) {
 if (!prefersReduced) {
     const typingEl = document.getElementById('typing-word');
     if (typingEl) {
-        const words = ['Influence Is Over.', 'Trust Is Restored.', 'Truth Is Indexed.', 'Data Is Verified.', 'Standard Is Set.'];
+        const words = ['Fake Ratings Are Over.', 'Trust Is Restored.', 'The Truth Is Indexed.', 'Bots Are Blocked.', 'Standard Is Set.'];
         let wi = 0, ci = 0, deleting = false;
         const WRITE_MS = 80, DELETE_MS = 45, PAUSE_MS = 2000;
 
