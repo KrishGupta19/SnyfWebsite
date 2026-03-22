@@ -57,11 +57,13 @@
     <section class="hero" id="hero">
         <div class="hero-content">
             <span class="badge"><span class="badge-dot"></span>Institutional Standard · Est. 2026</span>
-            <h1><span class="glitch-text" data-text="The Era of Deceptive">The Era of Deceptive</span><br><span
-                    class="gradient-text" id="typing-word">Influence Is Over.</span><span class="typing-cursor">|</span>
+            <h1><span class="glitch-text" data-text="Never Fall for a Fake">Never Fall for a Fake</span><br><span
+                    class="gradient-text" id="typing-word">5-Star Review Again.</span><span
+                    class="typing-cursor">|</span>
             </h1>
-            <p class="hero-sub">Snyf is the institutional standard for verified, structured local intelligence. We
-                don't aggregate opinions — we authenticate them.</p>
+            <p class="hero-sub">Snyf uses AI and identity verification to eliminate bot farms and paid shills. Discover
+                the
+                actual quality of local businesses based on structured, verified truth.</p>
             <div class="hero-actions">
                 <a href="#waitlist" class="btn btn-primary">Join Waitlist</a>
                 <a href="#solution" class="btn btn-ghost">Learn More →</a>
@@ -116,6 +118,32 @@
             <div class="marquee-item"><span>◆</span> AI Analysis</div>
         </div>
     </div>
+
+    <!-- ========== MAP / DISCOVER — Moved UP to prove value immediately ========== -->
+    <section class="section map-section" id="discover">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <span class="section-tag">Live Intelligence Feed</span>
+                <h2>Search the Real-Time<br><span class="gradient-text">Truth Index</span></h2>
+                <p>Stop guessing. Enter a city or use your location to surface Snyf-verified intelligence and bypass
+                    manipulated ratings.</p>
+            </div>
+            <div class="map-search-row" data-aos="fade-up" data-aos-delay="100">
+                <input id="map-search-input" type="text" placeholder="Enter a city or address..." autocomplete="off">
+                <button id="map-search-btn" class="btn btn-primary">Search</button>
+                <button id="map-locate-btn" class="btn btn-ghost">📍 Use My Location</button>
+            </div>
+            <div id="map-container" data-aos="fade-up" data-aos-delay="200">
+                <div id="google-map"></div>
+                <div id="map-sidebar">
+                    <h4>Nearby Results</h4>
+                    <ul id="map-results-list">
+                        <li class="map-placeholder">Search a location to see results.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- ========== THE STORY - Past vs Future ========== -->
     <section class="section story-section" id="story">
@@ -225,7 +253,7 @@
         <div class="container">
             <div class="section-header" data-aos="fade-up">
                 <span class="section-tag">Status Report · Review Systems</span>
-                <h2>The Trust Crisis<br><span class="gradient-text">Is Already Here</span></h2>
+                <h2>The Trust Crisis<br><span class="gradient-text">In Local Search</span></h2>
                 <p>An independent analysis of current review platforms reveals systemic failures across every critical
                     dimension of trust.</p>
             </div>
@@ -317,8 +345,9 @@
                 <div class="solution-text" data-aos="fade-left">
                     <span class="section-tag">Verification Protocol · Active</span>
                     <h2>The Institutional<br><span class="gradient-text">Remedy</span></h2>
-                    <p>Snyf deploys structured intelligence protocols across every review — transforming scattered noise
-                        into authenticated, multi-dimensional verdicts.</p>
+                    <p>We deploy structured intelligence protocols across every review — transforming scattered,
+                        emotional noise
+                        into authenticated, multi-dimensional verdicts you can actually trust.</p>
                     <ul class="solution-checklist">
                         <li><span class="check">✓</span> Structured dimension-based review protocols</li>
                         <li><span class="check">✓</span> AI-synthesized intelligence summaries per category</li>
@@ -326,6 +355,37 @@
                         <li><span class="check">✓</span> Identity-verified reviewer authentication system</li>
                     </ul>
                     <a href="#waitlist" class="btn btn-primary">Get Early Access</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== HOW IT WORKS (NEW) ========== -->
+    <section class="section" id="how-it-works">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <span class="section-tag">The Process</span>
+                <h2>How Snyf Finds<br><span class="gradient-text">The Truth</span></h2>
+                <p>We don't just aggregate opinions. We structure, verify, and synthesize them.</p>
+            </div>
+            <div class="steps-grid">
+                <div class="step-card" data-aos="fade-up" data-aos-delay="0">
+                    <div class="step-num">1</div>
+                    <h3>Multi-Dimensional Capture</h3>
+                    <p>We ditch the lazy 5-star average. Users rate specific dimensions: food, service, ambience, and
+                        value.</p>
+                </div>
+                <div class="step-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="step-num">2</div>
+                    <h3>AI Fraud Elimination</h3>
+                    <p>Our models detect and eliminate bot networks, paid shills, and unverified rants before they ever
+                        reach the index.</p>
+                </div>
+                <div class="step-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="step-num">3</div>
+                    <h3>Synthesized Output</h3>
+                    <p>You get an objective, easy-to-read dashboard showing exactly where a business excels and where it
+                        fails.</p>
                 </div>
             </div>
         </div>
@@ -379,31 +439,6 @@
         </div>
     </section>
 
-    <!-- ========== MAP / DISCOVER — Beat 6: Real-Time Truth Index ========== -->
-    <section class="section map-section" id="discover">
-        <div class="container">
-            <div class="section-header" data-aos="fade-up">
-                <span class="section-tag">Live Intelligence Feed</span>
-                <h2>The Real-Time<br><span class="gradient-text">Truth Index</span></h2>
-                <p>Search any location. Surface Snyf-verified intelligence on local businesses in real time.</p>
-            </div>
-            <div class="map-search-row" data-aos="fade-up" data-aos-delay="100">
-                <input id="map-search-input" type="text" placeholder="Enter a city or address..." autocomplete="off">
-                <button id="map-search-btn" class="btn btn-primary">Search</button>
-                <button id="map-locate-btn" class="btn btn-ghost">📍 Use My Location</button>
-            </div>
-            <div id="map-container" data-aos="fade-up" data-aos-delay="200">
-                <div id="google-map"></div>
-                <div id="map-sidebar">
-                    <h4>Nearby Results</h4>
-                    <ul id="map-results-list">
-                        <li class="map-placeholder">Search a location to see results.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- ========== ABOUT — Beat 7: Our Constitution ========== -->
     <section class="section about-section" id="about">
         <div class="container">
@@ -445,9 +480,9 @@
         <div class="container">
             <div class="waitlist-box" data-aos="zoom-in">
                 <span class="section-tag">Early Access Program</span>
-                <h2>Take Your Position<br><span class="gradient-text">in the Standard</span></h2>
-                <p>We are onboarding the founding cohort of users and partner businesses. Secure your position in the
-                    verified network.</p>
+                <h2>Secure Your Position<br><span class="gradient-text">In The Founding Cohort</span></h2>
+                <p>Join 10,000+ early adopters demanding a better standard for local search. We are currently onboarding
+                    a limited number of users and partners.</p>
                 <form class="waitlist-form" id="waitlist-form" onsubmit="handleWaitlist(event)">
                     <div class="form-row">
                         <input type="text" id="wl-name" placeholder="Your name" required autocomplete="name">

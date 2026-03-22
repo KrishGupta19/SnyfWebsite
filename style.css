@@ -2244,6 +2244,47 @@ label,
 }
 
 /* ============================================
+   HOW IT WORKS & TESTIMONIALS (NEW)
+   ============================================ */
+.steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.step-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 32px;
+    border-radius: var(--radius-lg);
+}
+
+.step-num {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    color: var(--bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.step-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+}
+
+.step-card p {
+    color: var(--text-muted);
+    line-height: 1.6;
+    font-size: 0.9rem;
+}
+
+/* ============================================
    TYPING CURSOR
    ============================================ */
 .typing-cursor {
@@ -2562,6 +2603,12 @@ body.has-cursor #cursor-dot-el {
 
     .features-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .steps-grid {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+        margin: 0 auto;
     }
 }
 
