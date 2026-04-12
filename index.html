@@ -36,6 +36,19 @@
     <div id="cursor-ring" aria-hidden="true"></div>
     <div id="cursor-dot-el" aria-hidden="true"></div>
 
+    <!-- ========== TOP WAITLIST BANNER ========== -->
+    <div class="top-banner" id="top-banner">
+        <div class="top-banner-inner">
+            <span class="top-banner-label"><span class="badge-dot"></span> Join 10,000+ early adopters —</span>
+            <form class="top-banner-form" id="top-banner-form" onsubmit="handleTopBanner(event)">
+                <input type="email" id="tb-email" placeholder="Your email address" required autocomplete="email">
+                <button type="submit" class="btn-banner">Get Early Access →</button>
+            </form>
+            <span class="top-banner-success hidden" id="tb-success">✓ You're in! We'll be in touch.</span>
+        </div>
+        <button class="top-banner-close" id="top-banner-close" aria-label="Dismiss banner">×</button>
+    </div>
+
     <!-- ========== NAVBAR ========== -->
     <nav class="navbar" id="navbar">
         <div class="nav-inner">
@@ -706,8 +719,61 @@
     <script type="module" src="main.js"></script>
     <script src="interactions.js" defer></script>
     <script>
-        // ── Navbar scroll ─────────────────────────────────────
+        // ── Top Banner ────────────────────────────────────────
+        const topBanner = document.getElementById('top-banner');
         const navbar = document.getElementById('navbar');
+
+        function getBannerHeight() {
+            return topBanner.classList.contains('hidden') ? 0 : topBanner.offsetHeight;
+        }
+
+        function updateNavbarTop() {
+            navbar.style.top = getBannerHeight() + 'px';
+        }
+
+        // Dismiss and remember
+        document.getElementById('top-banner-close').addEventListener('click', () => {
+            topBanner.classList.add('hidden');
+            localStorage.setItem('bannerDismissed', '1');
+            setTimeout(updateNavbarTop, 360);
+        });
+
+        // Restore dismissed state
+        if (localStorage.getItem('bannerDismissed') === '1') {
+            topBanner.classList.add('hidden');
+        }
+
+        updateNavbarTop();
+        window.addEventListener('resize', updateNavbarTop, { passive: true });
+
+        async function handleTopBanner(e) {
+            e.preventDefault();
+            const email = document.getElementById('tb-email').value.trim();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.textContent = 'Sending…';
+            try {
+                const res = await fetch('/.netlify/functions/waitlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: '', email, type: 'user' }),
+                });
+                if (!res.ok) throw new Error('Server error');
+                document.getElementById('top-banner-form').classList.add('hidden');
+                document.getElementById('tb-success').classList.remove('hidden');
+                setTimeout(() => {
+                    topBanner.classList.add('hidden');
+                    localStorage.setItem('bannerDismissed', '1');
+                    setTimeout(updateNavbarTop, 360);
+                }, 3000);
+            } catch (err) {
+                btn.disabled = false;
+                btn.textContent = 'Get Early Access →';
+                alert('Something went wrong. Please try again.');
+            }
+        }
+
+        // ── Navbar scroll ─────────────────────────────────────
         window.addEventListener('scroll', () => {
             navbar.classList.toggle('scrolled', window.scrollY > 40);
         }, { passive: true });
