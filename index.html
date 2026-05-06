@@ -25,7 +25,21 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 </head>
 
-<body>
+<body class="loading">
+
+    <!-- ========== PRELOADER ========== -->
+    <div id="preloader" class="preloader">
+        <div class="preloader-bg"></div>
+        <div class="preloader-inner">
+            <div class="preloader-logo">Snyf</div>
+
+            <div class="preloader-bar">
+                <div class="preloader-fill"></div>
+                <div class="preloader-scan"></div>
+            </div>
+            <div class="preloader-status" id="preloader-status">Initializing Verification Protocols...</div>
+        </div>
+    </div>
 
     <!-- Fixed full-page 3D canvas — sits behind all content -->
     <canvas id="bg-canvas" aria-hidden="true"></canvas>
@@ -52,7 +66,7 @@
     <!-- ========== NAVBAR ========== -->
     <nav class="navbar" id="navbar">
         <div class="nav-inner">
-            <a href="#hero" class="logo">Snyf</a>
+            <a href="#hero" class="logo" id="nav-logo">Snyf</a>
             <ul class="nav-links">
                 <li><a href="#story">Story</a></li>
                 <li><a href="#problem">Problem</a></li>
@@ -69,7 +83,6 @@
     <!-- ========== HERO — Beat 1: The Declaration ========== -->
     <section class="hero" id="hero">
         <div class="hero-content">
-            <span class="badge"><span class="badge-dot"></span>Private Alpha · v0.9</span>
             <h1><span class="glitch-text" data-text="Never Fall for a Fake">Never Fall for a Fake</span><br><span
                     class="gradient-text" id="typing-word">5-Star Review Again.</span><span
                     class="typing-cursor">|</span>
@@ -815,13 +828,7 @@
             }
         }
 
-        // ── AOS Initialize ────────────────────────────────────
-        AOS.init({
-            once: true,
-            offset: 60,
-            duration: 800,
-            easing: 'ease-out-cubic',
-        });
+        // AOS will be initialized after the preloader finishes in interactions.js
 
         // ── iOS vh fix ────────────────────────────────────────
         function setVh() { document.documentElement.style.setProperty('--real-vh', window.innerHeight * 0.01 + 'px'); }

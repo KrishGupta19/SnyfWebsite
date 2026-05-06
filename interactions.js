@@ -3,6 +3,168 @@
 //  Institutional Light Mode
 // ============================================================
 
+// ── 0. Preloader Logic ───────────────────────────────────────
+(function() {
+    const preloader = document.getElementById('preloader');
+    if (!preloader) return;
+
+    const logo = preloader.querySelector('.preloader-logo');
+    const bar = preloader.querySelector('.preloader-bar');
+    const fill = preloader.querySelector('.preloader-fill');
+    const status = preloader.querySelector('.preloader-status');
+    const body = document.body;
+    const gsap = window.gsap;
+
+    if (!gsap) {
+        // Fallback if GSAP fails to load
+        window.addEventListener('load', () => {
+            preloader.style.display = 'none';
+            body.classList.remove('loading');
+        });
+        return;
+    }
+
+    // ── Preloader Data Stream ──────────────────────────────────
+    const bg = preloader.querySelector('.preloader-bg');
+    const technicalTerms = [
+        "VERIFYING_IDENTITY", "AUTHENTICATING_SOURCE", "AI_SYNTHESIS_ACTIVE",
+        "FRAUD_DETECTION_RUNNING", "LOCAL_INTEL_INDEXING", "TRUTH_INDEX_V2.1",
+        "DATA_INTEGRITY_CHECK", "BOT_BLOCK_PROTOCOL", "VERIFIED_SOURCE",
+        "ANALYZING_SENTIMENT", "GEO_LOCATION_CONFIRMED", "TRUST_PROTOCOL_01",
+        "NEURAL_VERIFICATION", "CRYPTOGRAPHIC_HASH", "SECURE_HANDSHAKE"
+    ];
+    
+    function spawnBit() {
+        if (!preloader || preloader.style.display === 'none') return;
+        const bit = document.createElement('div');
+        bit.className = 'data-bit';
+        bit.textContent = technicalTerms[Math.floor(Math.random() * technicalTerms.length)];
+        bit.style.left = Math.random() * 90 + '%';
+        bit.style.top = Math.random() * 90 + '%';
+        bit.style.fontSize = (Math.random() * 4 + 8) + 'px'; // Varied sizes
+        bg.appendChild(bit);
+        setTimeout(() => bit.remove(), 3000);
+        setTimeout(spawnBit, Math.random() * 400 + 200);
+    }
+    spawnBit();
+
+
+    const tl = gsap.timeline();
+
+    // 1. Entrance Animation (Typing Effect)
+    const logoText = "Snyf";
+    logo.textContent = ""; // Clear initial text
+    logo.style.opacity = "1";
+    logo.style.transform = "translateY(0)";
+
+    logoText.split("").forEach((char, i) => {
+        tl.to({}, {
+            duration: 0.15,
+            onStart: () => {
+                logo.textContent += char;
+            }
+        });
+    });
+
+    tl.call(() => logo.classList.add('glitch'))
+      .to(bar, { opacity: 1, duration: 0.6 }, "-=0.2")
+      .to(status, { opacity: 1, duration: 0.6 }, "-=0.4")
+      .to({}, { duration: 1.0 }) // Stay glitchy for a bit
+      .call(() => logo.classList.remove('glitch'));
+
+
+    let isLoaded = false;
+    let progress = 0;
+
+
+    window.addEventListener('load', () => {
+        isLoaded = true;
+    });
+
+    const updateProgress = () => {
+        // Simulated progress that slows down at 90% if not actually loaded
+        let increment = Math.random() * 10;
+        if (progress > 80 && !isLoaded) increment *= 0.2; 
+        
+        progress += increment;
+        
+        if (progress >= 100 && isLoaded) {
+            progress = 100;
+            fill.style.width = '100%';
+            status.textContent = "Verification Complete.";
+            logo.classList.remove('glitch'); // Ensure glitch is off for flight
+            finishLoading();
+        } else {
+
+            if (progress >= 99) progress = 99;
+            fill.style.width = progress + '%';
+            
+            if (progress > 30 && progress < 60) status.textContent = "Authenticating Node Identities...";
+            if (progress > 60 && progress < 90) status.textContent = "Synthesizing Local Intelligence...";
+            if (progress > 90) status.textContent = "Finalizing Secure Handshake...";
+
+            setTimeout(updateProgress, 60 + Math.random() * 100);
+        }
+    };
+
+    const finishLoading = () => {
+        const navLogo = document.getElementById('nav-logo');
+        
+        // 1. Measure target position while still hidden
+        const targetRect = navLogo ? navLogo.getBoundingClientRect() : { top: 20, left: 20, width: 100 };
+        const currentRect = logo.getBoundingClientRect();
+        const targetScale = navLogo ? parseFloat(window.getComputedStyle(navLogo).fontSize) / parseFloat(window.getComputedStyle(logo).fontSize) : 0.4;
+
+        const exitTl = gsap.timeline({
+            onComplete: () => {
+                preloader.style.display = 'none';
+                if (typeof AOS !== 'undefined') {
+                    AOS.init({
+                        once: true,
+                        offset: 60,
+                        duration: 800,
+                        easing: 'ease-out-cubic',
+                    });
+                }
+            }
+        });
+
+        // 2. Animation Sequence: Tightened and simultaneous
+        exitTl.to([bar, status], { 
+            opacity: 0, 
+            y: -10, 
+            duration: 0.3, 
+            stagger: 0.05, 
+            ease: "power2.in" 
+        })
+        .to(logo, {
+            x: targetRect.left - currentRect.left + (targetRect.width - currentRect.width * targetScale) / 2,
+            y: targetRect.top - currentRect.top + (targetRect.height - currentRect.height * targetScale) / 2,
+            scale: targetScale,
+            duration: 1.0,
+            ease: "power4.inOut",
+            onStart: () => {
+                body.classList.remove('loading');
+                if (navLogo) navLogo.style.opacity = '0';
+            },
+            onComplete: () => {
+                if (navLogo) navLogo.style.opacity = '1';
+                gsap.to(logo, { opacity: 0, duration: 0.1 });
+            }
+        }, "-=0.2") // Slight overlap with bar fade-out
+        .to(preloader, { 
+            opacity: 0, 
+            duration: 0.7, 
+            ease: "power2.inOut"
+        }, "-=0.7");
+    };
+
+
+
+
+    updateProgress();
+})();
+
 const isFinePonter = window.matchMedia('(pointer: fine)').matches;
 const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
