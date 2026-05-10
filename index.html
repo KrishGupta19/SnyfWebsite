@@ -29,15 +29,43 @@
 
     <!-- ========== PRELOADER ========== -->
     <div id="preloader" class="preloader">
-        <div class="preloader-bg"></div>
-        <div class="preloader-inner">
-            <div class="preloader-logo">Snyf</div>
+        <div class="pl-grid" aria-hidden="true"></div>
+        <div class="pl-scanlines" aria-hidden="true"></div>
+        <div class="pl-corner pl-corner--tl" aria-hidden="true"></div>
+        <div class="pl-corner pl-corner--tr" aria-hidden="true"></div>
+        <div class="pl-corner pl-corner--bl" aria-hidden="true"></div>
+        <div class="pl-corner pl-corner--br" aria-hidden="true"></div>
 
-            <div class="preloader-bar">
-                <div class="preloader-fill"></div>
-                <div class="preloader-scan"></div>
+        <div class="preloader-inner">
+            <div class="pl-logo-wrap">
+                <div class="pl-eyebrow" id="pl-eyebrow">
+                    <span class="pl-eyebrow-dash">——</span>
+                    VERIFICATION PROTOCOL
+                    <span class="pl-eyebrow-dash">——</span>
+                </div>
+                <div class="preloader-logo" id="preloader-logo">
+                    <span class="pl-char" data-char="S">_</span>
+                    <span class="pl-char" data-char="N">_</span>
+                    <span class="pl-char" data-char="Y">_</span>
+                    <span class="pl-char" data-char="F">_</span>
+                </div>
+                <div class="pl-scan-beam" id="pl-scan-beam"></div>
+                <div class="pl-logo-underline" id="pl-logo-underline"></div>
+                <div class="pl-tagline" id="pl-tagline">AUTHENTICATED LOCAL INTELLIGENCE</div>
             </div>
-            <div class="preloader-status" id="preloader-status">Initializing Verification Protocols...</div>
+
+            <div class="pl-progress-wrap" id="pl-progress-wrap">
+                <div class="preloader-bar">
+                    <div class="preloader-fill" id="preloader-fill"></div>
+                    <div class="pl-fill-glow"></div>
+                </div>
+                <div class="pl-bar-meta">
+                    <span class="preloader-status" id="preloader-status">SYS_INIT</span>
+                    <span class="pl-pct" id="pl-pct">0%</span>
+                </div>
+            </div>
+
+            <div class="pl-terminal" id="pl-terminal"></div>
         </div>
     </div>
 

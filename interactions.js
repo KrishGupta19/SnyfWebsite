@@ -4,165 +4,218 @@
 // ============================================================
 
 // ── 0. Preloader Logic ───────────────────────────────────────
-(function() {
+(function () {
     const preloader = document.getElementById('preloader');
     if (!preloader) return;
 
-    const logo = preloader.querySelector('.preloader-logo');
-    const bar = preloader.querySelector('.preloader-bar');
-    const fill = preloader.querySelector('.preloader-fill');
-    const status = preloader.querySelector('.preloader-status');
-    const body = document.body;
-    const gsap = window.gsap;
+    const chars        = preloader.querySelectorAll('.pl-char');
+    const scanBeam     = document.getElementById('pl-scan-beam');
+    const underline    = document.getElementById('pl-logo-underline');
+    const tagline      = document.getElementById('pl-tagline');
+    const progressWrap = document.getElementById('pl-progress-wrap');
+    const fill         = document.getElementById('preloader-fill');
+    const fillGlow     = preloader.querySelector('.pl-fill-glow');
+    const statusEl     = document.getElementById('preloader-status');
+    const pctEl        = document.getElementById('pl-pct');
+    const terminal     = document.getElementById('pl-terminal');
+    const body         = document.body;
 
-    if (!gsap) {
-        // Fallback if GSAP fails to load
-        window.addEventListener('load', () => {
-            preloader.style.display = 'none';
-            body.classList.remove('loading');
-        });
-        return;
-    }
+    // ── Scramble config ──────────────────────────────────────────
+    const POOL          = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*!?';
+    const SCRAMBLE_ITER = 11;
+    const ITER_MS       = 42;
+    const STAGGER_MS    = 260;
 
-    // ── Preloader Data Stream ──────────────────────────────────
-    const bg = preloader.querySelector('.preloader-bg');
-    const technicalTerms = [
-        "VERIFYING_IDENTITY", "AUTHENTICATING_SOURCE", "AI_SYNTHESIS_ACTIVE",
-        "FRAUD_DETECTION_RUNNING", "LOCAL_INTEL_INDEXING", "TRUTH_INDEX_V2.1",
-        "DATA_INTEGRITY_CHECK", "BOT_BLOCK_PROTOCOL", "VERIFIED_SOURCE",
-        "ANALYZING_SENTIMENT", "GEO_LOCATION_CONFIRMED", "TRUST_PROTOCOL_01",
-        "NEURAL_VERIFICATION", "CRYPTOGRAPHIC_HASH", "SECURE_HANDSHAKE"
-    ];
-    
-    function spawnBit() {
-        if (!preloader || preloader.style.display === 'none') return;
-        const bit = document.createElement('div');
-        bit.className = 'data-bit';
-        bit.textContent = technicalTerms[Math.floor(Math.random() * technicalTerms.length)];
-        bit.style.left = Math.random() * 90 + '%';
-        bit.style.top = Math.random() * 90 + '%';
-        bit.style.fontSize = (Math.random() * 4 + 8) + 'px'; // Varied sizes
-        bg.appendChild(bit);
-        setTimeout(() => bit.remove(), 3000);
-        setTimeout(spawnBit, Math.random() * 400 + 200);
-    }
-    spawnBit();
-
-
-    const tl = gsap.timeline();
-
-    // 1. Entrance Animation (Typing Effect)
-    const logoText = "Snyf";
-    logo.textContent = ""; // Clear initial text
-    logo.style.opacity = "1";
-    logo.style.transform = "translateY(0)";
-
-    logoText.split("").forEach((char, i) => {
-        tl.to({}, {
-            duration: 0.15,
-            onStart: () => {
-                logo.textContent += char;
+    function scrambleChar(el, target, onDone) {
+        let i = 0;
+        el.classList.add('scrambling');
+        const id = setInterval(() => {
+            i++;
+            if (i >= SCRAMBLE_ITER) {
+                clearInterval(id);
+                el.textContent = target;
+                el.classList.remove('scrambling');
+                el.classList.add('decoded');
+                if (onDone) onDone();
+            } else {
+                el.textContent = POOL[Math.floor(Math.random() * POOL.length)];
             }
-        });
-    });
+        }, ITER_MS);
+    }
 
-    tl.call(() => logo.classList.add('glitch'))
-      .to(bar, { opacity: 1, duration: 0.6 }, "-=0.2")
-      .to(status, { opacity: 1, duration: 0.6 }, "-=0.4")
-      .to({}, { duration: 1.0 }) // Stay glitchy for a bit
-      .call(() => logo.classList.remove('glitch'));
+    // ── Progress & log state ─────────────────────────────────────
+    let progress  = 0;
+    let loaded    = false;
+    let logIdx    = 0;
 
+    window.addEventListener('load', () => { loaded = true; });
 
-    let isLoaded = false;
-    let progress = 0;
+    const LOG_LINES = [
+        '› SYS_BOOT SEQUENCE COMPLETE',
+        '› NEURAL_NETWORK ONLINE',
+        '› BOT_DETECTION ENGINE READY',
+        '› CONNECTING TO TRUTH INDEX',
+        '› FRAUD VECTORS NEUTRALIZED',
+        '› IDENTITY PROTOCOLS ACTIVE',
+        '› LOCAL INTEL NODES SYNCED',
+        '› VERIFICATION ENGINE ARMED',
+        '› ALL SYSTEMS NOMINAL',
+    ];
 
+    const STATUS_MAP = [
+        [0,  'SYS_INIT'],
+        [15, 'LOADING_MODULES'],
+        [35, 'AUTH_NODES'],
+        [55, 'SYNCING_INTEL'],
+        [75, 'VERIFYING_SOURCES'],
+        [92, 'FINALIZING'],
+    ];
 
-    window.addEventListener('load', () => {
-        isLoaded = true;
-    });
-
-    const updateProgress = () => {
-        // Simulated progress that slows down at 90% if not actually loaded
-        let increment = Math.random() * 10;
-        if (progress > 80 && !isLoaded) increment *= 0.2; 
-        
-        progress += increment;
-        
-        if (progress >= 100 && isLoaded) {
-            progress = 100;
-            fill.style.width = '100%';
-            status.textContent = "Verification Complete.";
-            logo.classList.remove('glitch'); // Ensure glitch is off for flight
-            finishLoading();
-        } else {
-
-            if (progress >= 99) progress = 99;
-            fill.style.width = progress + '%';
-            
-            if (progress > 30 && progress < 60) status.textContent = "Authenticating Node Identities...";
-            if (progress > 60 && progress < 90) status.textContent = "Synthesizing Local Intelligence...";
-            if (progress > 90) status.textContent = "Finalizing Secure Handshake...";
-
-            setTimeout(updateProgress, 60 + Math.random() * 100);
+    function getStatus(pct) {
+        let s = STATUS_MAP[0][1];
+        for (const [threshold, label] of STATUS_MAP) {
+            if (pct >= threshold) s = label;
         }
-    };
+        return s;
+    }
 
-    const finishLoading = () => {
+    function appendLog() {
+        if (logIdx >= LOG_LINES.length) return;
+        const line = document.createElement('div');
+        line.className = 'pl-log-line';
+        line.textContent = LOG_LINES[logIdx++];
+        terminal.appendChild(line);
+        // Force reflow for animation
+        void line.offsetWidth;
+        line.classList.add('active-line');
+        // Keep max 3 lines
+        while (terminal.children.length > 3) {
+            terminal.removeChild(terminal.firstChild);
+        }
+    }
+
+    function tickProgress() {
+        let step = Math.random() * 7 + 2;
+        if (progress > 78 && !loaded) step *= 0.12;
+        progress = Math.min(progress + step, loaded ? 100 : 98.5);
+
+        const rounded = Math.round(progress);
+        fill.style.width = progress + '%';
+        pctEl.textContent = rounded + '%';
+        statusEl.textContent = getStatus(rounded);
+
+        // Occasional log line
+        if (Math.random() < 0.28 && logIdx < LOG_LINES.length) appendLog();
+
+        if (progress >= 100 && loaded) {
+            fill.style.width = '100%';
+            pctEl.textContent = '100%';
+            pctEl.style.color = 'rgba(255,255,255,0.85)';
+            statusEl.textContent = '✓ AUTHENTICATED';
+            statusEl.classList.add('authenticated');
+            setTimeout(exitPreloader, 520);
+        } else {
+            setTimeout(tickProgress, 55 + Math.random() * 110);
+        }
+    }
+
+    // ── EXIT ─────────────────────────────────────────────────────
+    function exitPreloader() {
+        const gsap    = window.gsap;
         const navLogo = document.getElementById('nav-logo');
-        
-        // 1. Measure target position while still hidden
-        const targetRect = navLogo ? navLogo.getBoundingClientRect() : { top: 20, left: 20, width: 100 };
-        const currentRect = logo.getBoundingClientRect();
-        const targetScale = navLogo ? parseFloat(window.getComputedStyle(navLogo).fontSize) / parseFloat(window.getComputedStyle(logo).fontSize) : 0.4;
+        const logoEl  = document.getElementById('preloader-logo');
+
+        if (!gsap || !navLogo || !logoEl) {
+            preloader.style.transition = 'opacity 0.6s ease';
+            preloader.style.opacity = '0';
+            setTimeout(() => {
+                preloader.style.display = 'none';
+                body.classList.remove('loading');
+                if (typeof AOS !== 'undefined') AOS.init({ once: true, offset: 60, duration: 800, easing: 'ease-out-cubic' });
+            }, 650);
+            return;
+        }
+
+        const targetRect  = navLogo.getBoundingClientRect();
+        const currentRect = logoEl.getBoundingClientRect();
+        const navFontSize = parseFloat(window.getComputedStyle(navLogo).fontSize);
+        const logoFontSize = parseFloat(window.getComputedStyle(logoEl).fontSize);
+        const targetScale = navFontSize / logoFontSize;
 
         const exitTl = gsap.timeline({
             onComplete: () => {
                 preloader.style.display = 'none';
+                body.classList.remove('loading');
                 if (typeof AOS !== 'undefined') {
-                    AOS.init({
-                        once: true,
-                        offset: 60,
-                        duration: 800,
-                        easing: 'ease-out-cubic',
-                    });
+                    AOS.init({ once: true, offset: 60, duration: 800, easing: 'ease-out-cubic' });
                 }
             }
         });
 
-        // 2. Animation Sequence: Tightened and simultaneous
-        exitTl.to([bar, status], { 
-            opacity: 0, 
-            y: -10, 
-            duration: 0.3, 
-            stagger: 0.05, 
-            ease: "power2.in" 
-        })
-        .to(logo, {
-            x: targetRect.left - currentRect.left + (targetRect.width - currentRect.width * targetScale) / 2,
-            y: targetRect.top - currentRect.top + (targetRect.height - currentRect.height * targetScale) / 2,
-            scale: targetScale,
-            duration: 1.0,
-            ease: "power4.inOut",
-            onStart: () => {
-                body.classList.remove('loading');
-                if (navLogo) navLogo.style.opacity = '0';
-            },
-            onComplete: () => {
-                if (navLogo) navLogo.style.opacity = '1';
-                gsap.to(logo, { opacity: 0, duration: 0.1 });
-            }
-        }, "-=0.2") // Slight overlap with bar fade-out
-        .to(preloader, { 
-            opacity: 0, 
-            duration: 0.7, 
-            ease: "power2.inOut"
-        }, "-=0.7");
-    };
+        exitTl
+            .to([progressWrap, terminal], {
+                opacity: 0, y: -10, duration: 0.25, stagger: 0.05, ease: 'power2.in'
+            })
+            .to([tagline, preloader.querySelector('.pl-eyebrow')], {
+                opacity: 0, duration: 0.2, ease: 'power2.in'
+            }, '-=0.2')
+            .to(logoEl, {
+                x: targetRect.left - currentRect.left + (targetRect.width - currentRect.width * targetScale) / 2,
+                y: targetRect.top  - currentRect.top  + (targetRect.height - currentRect.height * targetScale) / 2,
+                scale: targetScale,
+                duration: 0.95,
+                ease: 'power4.inOut',
+                onStart: () => {
+                    body.classList.remove('loading');
+                    navLogo.style.opacity = '0';
+                },
+                onComplete: () => {
+                    navLogo.style.opacity = '1';
+                    gsap.to(logoEl, { opacity: 0, duration: 0.08 });
+                }
+            }, '-=0.1')
+            .to(preloader, {
+                opacity: 0, duration: 0.7, ease: 'power2.inOut'
+            }, '-=0.75');
+    }
 
+    // ── SEQUENCE START ────────────────────────────────────────────
+    // T+0.5s: begin scrambling letters one by one
+    setTimeout(() => {
+        chars.forEach((el, i) => {
+            const isLast = i === chars.length - 1;
+            setTimeout(() => {
+                scrambleChar(el, el.dataset.char, isLast ? onAllDecoded : null);
+            }, i * STAGGER_MS);
+        });
+    }, 500);
 
+    function onAllDecoded() {
+        // Beam sweep
+        setTimeout(() => {
+            scanBeam.classList.add('active');
+        }, 80);
 
+        // Underline draws
+        setTimeout(() => {
+            underline.classList.add('drawn');
+        }, 320);
 
-    updateProgress();
+        // Tagline fades in
+        setTimeout(() => {
+            tagline.classList.add('visible');
+        }, 520);
+
+        // Progress section + terminal appear, tick starts
+        setTimeout(() => {
+            progressWrap.classList.add('visible');
+            terminal.classList.add('visible');
+            appendLog();
+            appendLog();
+            setTimeout(tickProgress, 250);
+        }, 820);
+    }
+
 })();
 
 const isFinePonter = window.matchMedia('(pointer: fine)').matches;

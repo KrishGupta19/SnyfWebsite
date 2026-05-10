@@ -3082,16 +3082,14 @@ body.has-cursor #cursor-dot-el {
     }
 }
 
-/* ============================================
-   PRELOADER
-   ============================================ */
+/* ═══════════════════════════════════════════
+   PRELOADER — GEN-Z TECHY REDESIGN
+═══════════════════════════════════════════ */
+
 .preloader {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--bg);
+    inset: 0;
+    background: #080808;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3099,139 +3097,312 @@ body.has-cursor #cursor-dot-el {
     overflow: hidden;
 }
 
-.preloader-bg {
+/* Animated grid */
+.pl-grid {
     position: absolute;
     inset: 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 52px 52px;
+    animation: pl-grid-breathe 4s ease-in-out infinite;
     pointer-events: none;
-    opacity: 0.4;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-dim);
-    overflow: hidden;
 }
 
-.data-bit {
+@keyframes pl-grid-breathe {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* CRT scanlines */
+.pl-scanlines {
     position: absolute;
-    white-space: nowrap;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0,0,0,0.12) 3px,
+        rgba(0,0,0,0.12) 4px
+    );
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* HUD corner brackets */
+.pl-corner {
+    position: absolute;
+    width: 28px;
+    height: 28px;
     opacity: 0;
-    animation: data-float 3s linear forwards;
-}
-
-@keyframes data-float {
-    0% { opacity: 0; transform: translateY(10px); }
-    20% { opacity: 1; }
-    80% { opacity: 1; }
-    100% { opacity: 0; transform: translateY(-30px); }
-}
-
-.preloader-inner {
-    width: 100%;
-    max-width: 320px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 32px;
-    position: relative;
+    animation: pl-fade-in 0.4s ease forwards 0.2s;
     z-index: 2;
 }
 
+.pl-corner--tl { top: 24px; left: 24px; border-top: 1.5px solid rgba(255,255,255,0.25); border-left: 1.5px solid rgba(255,255,255,0.25); }
+.pl-corner--tr { top: 24px; right: 24px; border-top: 1.5px solid rgba(255,255,255,0.25); border-right: 1.5px solid rgba(255,255,255,0.25); }
+.pl-corner--bl { bottom: 24px; left: 24px; border-bottom: 1.5px solid rgba(255,255,255,0.25); border-left: 1.5px solid rgba(255,255,255,0.25); }
+.pl-corner--br { bottom: 24px; right: 24px; border-bottom: 1.5px solid rgba(255,255,255,0.25); border-right: 1.5px solid rgba(255,255,255,0.25); }
+
+/* Inner layout */
+.preloader-inner {
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+    position: relative;
+    z-index: 3;
+    padding: 0 24px;
+}
+
+/* Logo wrap */
+.pl-logo-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    width: 100%;
+}
+
+/* Eyebrow */
+.pl-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.28em;
+    color: rgba(255,255,255,0.22);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    opacity: 0;
+    animation: pl-fade-in 0.5s ease forwards 0.4s;
+}
+
+.pl-eyebrow-dash {
+    opacity: 0.4;
+    letter-spacing: 0;
+}
+
+/* Main logo — individual scramble chars */
 .preloader-logo {
     font-family: var(--font-display);
-    font-size: 4rem;
+    font-size: clamp(4rem, 12vw, 6.5rem);
     font-weight: 700;
-    letter-spacing: -1px;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--text-hi);
+    display: flex;
+    align-items: center;
     position: relative;
-    opacity: 0;
-    transform: translateY(20px);
     transform-origin: center center;
+    /* Reset old defaults */
+    opacity: 1 !important;
+    transform: none !important;
+    color: transparent;
 }
 
-.preloader-logo.glitch {
-    animation: preloader-glitch 0.3s cubic-bezier(.25,.46,.45,.94) both infinite;
+/* No pseudo-element cursor on new design */
+.preloader-logo::after { content: none !important; }
+
+.pl-char {
+    display: inline-block;
+    min-width: 0.72em;
+    text-align: center;
+    color: rgba(255,255,255,0.1);
+    transition: color 0.06s ease, text-shadow 0.15s ease;
 }
 
-@keyframes preloader-glitch {
-    0% { transform: translate(0); text-shadow: none; }
-    20% { transform: translate(-2px, 2px); text-shadow: 2px 0 #ff00c1, -2px 0 #00fff9; }
-    40% { transform: translate(-2px, -2px); text-shadow: -2px 0 #ff00c1, 2px 0 #00fff9; }
-    60% { transform: translate(2px, 2px); text-shadow: 2px 0 #ff00c1, -2px 0 #00fff9; }
-    80% { transform: translate(2px, -2px); text-shadow: -2px 0 #ff00c1, 2px 0 #00fff9; }
-    100% { transform: translate(0); }
+.pl-char.scrambling {
+    color: rgba(255,255,255,0.55);
+    text-shadow: 0 0 18px rgba(255,255,255,0.35);
 }
 
-.preloader-logo::after {
-    content: '_';
-    color: var(--accent);
-    animation: blink 1.2s step-end infinite;
+.pl-char.decoded {
+    color: #FFFFFF;
+    text-shadow: 0 0 30px rgba(255,255,255,0.25);
+}
+
+/* Scan beam that sweeps after decode */
+.pl-scan-beam {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 2px;
+    background: #FFFFFF;
+    box-shadow: 0 0 14px 3px rgba(255,255,255,0.6);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.pl-scan-beam.active {
+    animation: pl-beam-sweep 0.55s cubic-bezier(0.4, 0, 0.15, 1) forwards;
+}
+
+@keyframes pl-beam-sweep {
+    0%   { left: -2%; opacity: 1; }
+    100% { left: 103%; opacity: 0; }
+}
+
+/* Underline that draws after beam */
+.pl-logo-underline {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    width: 0%;
+    margin-top: 6px;
+    transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    align-self: stretch;
+}
+
+.pl-logo-underline.drawn {
+    width: 100%;
+}
+
+/* Tagline below logo */
+.pl-tagline {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.22em;
+    color: rgba(255,255,255,0.2);
+    text-transform: uppercase;
+    margin-top: 10px;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.pl-tagline.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Progress section */
+.pl-progress-wrap {
+    width: 100%;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.pl-progress-wrap.visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .preloader-bar {
     width: 100%;
-    height: 3px;
-    background: var(--border);
+    height: 1.5px;
+    background: rgba(255,255,255,0.1);
     position: relative;
-    overflow: hidden;
-    opacity: 0;
-    border-radius: 4px;
+    overflow: visible;
+    opacity: 1 !important;
+    border-radius: 0;
 }
 
 .preloader-fill {
     position: absolute;
-    top: 0;
-    left: 0;
+    top: 0; left: 0;
     height: 100%;
     width: 0%;
-    background: var(--accent);
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    transition: width 0.1s linear;
+    background: #FFFFFF;
+    transition: width 0.12s linear;
 }
 
-.preloader-scan {
+.pl-fill-glow {
     position: absolute;
-    top: 0;
-    left: -20%;
-    width: 40%;
-    height: 100%;
-    background: linear-gradient(to right, transparent, rgba(0,0,0,0.2), transparent);
-    animation: preloader-scan 1s infinite linear;
+    top: 50%;
+    right: -1px;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 10px;
+    background: radial-gradient(ellipse at right, rgba(255,255,255,0.9) 0%, transparent 70%);
+    pointer-events: none;
+    border-radius: 50%;
+}
+
+.pl-bar-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
 }
 
 .preloader-status {
     font-family: var(--font-mono);
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    letter-spacing: 0.15em;
+    font-size: 0.58rem;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.18em;
     text-transform: uppercase;
+    opacity: 1 !important;
+    transition: color 0.3s ease;
+}
+
+.preloader-status.authenticated {
+    color: rgba(255,255,255,0.85);
+    text-shadow: 0 0 12px rgba(255,255,255,0.4);
+}
+
+.pl-pct {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+/* Terminal log */
+.pl-terminal {
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    color: rgba(255,255,255,0.18);
+    letter-spacing: 0.1em;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-height: 56px;
     opacity: 0;
-    font-weight: 500;
+    transition: opacity 0.3s ease;
 }
 
-
-@keyframes preloader-scan {
-    0% { left: -20%; }
-    100% { left: 120%; }
+.pl-terminal.visible {
+    opacity: 1;
 }
 
-.preloader.fade-out {
+.pl-log-line {
     opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(-6px);
+    animation: pl-log-enter 0.3s ease forwards;
 }
 
-/* Ensure content is hidden initially to prevent flash */
+.pl-log-line.active-line {
+    color: rgba(255,255,255,0.4);
+}
+
+@keyframes pl-log-enter {
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* Shared fade-in utility */
+@keyframes pl-fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Hide rest of page while loading */
 body.loading {
     overflow: hidden;
 }
 
-body.loading > :not(.preloader) {
+body.loading \u003e :not(.preloader) {
     opacity: 0 !important;
     pointer-events: none !important;
 }
 
-
-body > :not(.preloader) {
+body \u003e :not(.preloader) {
     opacity: 1;
     transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
