@@ -384,3 +384,212 @@ const navObs = new IntersectionObserver(entries => {
 }, { rootMargin: '-40% 0px -55% 0px' });
 
 sections.forEach(s => navObs.observe(s));
+
+// ── 10. Visual Mode Toggle & Bento Grid ──────────────────────
+(function () {
+    const toggle     = document.getElementById('view-toggle');
+    const visualMode = document.getElementById('visual-mode');
+    const pill       = toggle?.querySelector('.vt-pill');
+    const readOpt    = toggle?.querySelector('.vt-opt--read');
+    const visualOpt  = toggle?.querySelector('.vt-opt--visual');
+    const body       = document.body;
+    const gsap       = window.gsap;
+
+    if (!toggle || !visualMode) return;
+
+    let isVisual = localStorage.getItem('snyfView') === 'visual';
+
+    function triggerWipe(callback) {
+        const wipe = document.getElementById('hud-wipe');
+        if (!wipe) return callback();
+        wipe.classList.remove('active');
+        void wipe.offsetWidth;
+        wipe.classList.add('active');
+        setTimeout(callback, 400);
+    }
+
+    // ── Pill positioning ──────────────────────────────
+    function positionPill(mode) {
+        if (!pill || !readOpt || !visualOpt) return;
+        if (mode === 'visual') {
+            pill.style.width     = visualOpt.offsetWidth + 'px';
+            pill.style.transform = `translateX(${readOpt.offsetWidth}px)`;
+        } else {
+            pill.style.width     = readOpt.offsetWidth + 'px';
+            pill.style.transform = 'translateX(0)';
+        }
+    }
+
+    // ── Animate metric fills ──────────────────────────
+    function animateFills() {
+        visualMode.querySelectorAll('.vmc-metric-fill').forEach((el, i) => {
+            el.style.width = '0%';
+            setTimeout(() => {
+                el.style.width = (el.dataset.fill || 0) + '%';
+            }, 350 + i * 130);
+        });
+    }
+
+    // ── Page sections list ────────────────────────────
+    function getPageSections() {
+        return document.querySelectorAll(
+            '.hero, .proof-section, .marquee-strip, .section, .top-banner'
+        );
+    }
+
+    // ── ENTER ─────────────────────────────────────────
+    function enterVisual() {
+        triggerWipe(() => {
+            isVisual = true;
+            localStorage.setItem('snyfView', 'visual');
+            window.scrollTo(0, 0);
+            body.classList.add('visual-mode-on');
+            positionPill('visual');
+
+            if (window.snyfTransitionAct) window.snyfTransitionAct(3);
+
+            const sections = getPageSections();
+
+            if (gsap) {
+                gsap.to(sections, {
+                    opacity: 0, scale: 0.97, duration: 0.3, ease: 'power2.in',
+                    onComplete: () => sections.forEach(s => s.style.visibility = 'hidden')
+                });
+                visualMode.style.visibility = 'visible';
+                const cards = visualMode.querySelectorAll('.vm-card');
+                gsap.fromTo(visualMode, { opacity: 0 }, { opacity: 1, duration: 0.35, ease: 'power2.out', delay: 0.2 });
+                gsap.fromTo(cards,
+                    { opacity: 0, y: 24, scale: 0.96 },
+                    { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.07,
+                      ease: 'power3.out', delay: 0.3,
+                      onStart: animateFills }
+                );
+            } else {
+                sections.forEach(s => { s.style.visibility = 'hidden'; s.style.opacity = '0'; });
+                visualMode.style.visibility = 'visible';
+                visualMode.style.opacity = '1';
+                animateFills();
+            }
+
+            visualMode.setAttribute('aria-hidden', 'false');
+        });
+    }
+
+    // ── EXIT ──────────────────────────────────────────
+    function exitVisual() {
+        triggerWipe(() => {
+            isVisual = false;
+            localStorage.setItem('snyfView', 'read');
+            body.classList.remove('visual-mode-on');
+            positionPill('read');
+
+            if (window.snyfTransitionAct) window.snyfTransitionAct(1);
+            if (window.ScrollTrigger) window.ScrollTrigger.refresh();
+
+            const sections = getPageSections();
+
+            if (gsap) {
+                const cards = visualMode.querySelectorAll('.vm-card');
+                gsap.to(cards, {
+                    opacity: 0, y: -16, scale: 0.97, duration: 0.25, stagger: 0.04,
+                    ease: 'power2.in',
+                    onComplete: () => {
+                        visualMode.style.visibility = 'hidden';
+                        visualMode.style.opacity = '0';
+                        gsap.set(cards, { clearProps: 'all' });
+                    }
+                });
+                sections.forEach(s => { s.style.visibility = 'visible'; });
+                gsap.to(sections, { opacity: 1, scale: 1, duration: 0.4, ease: 'power2.out', delay: 0.2 });
+            } else {
+                visualMode.style.visibility = 'hidden';
+                visualMode.style.opacity = '0';
+                sections.forEach(s => { s.style.visibility = 'visible'; s.style.opacity = '1'; });
+            }
+
+            visualMode.setAttribute('aria-hidden', 'true');
+        });
+    }
+
+    // ── Toggle click ──────────────────────────────────
+    toggle.addEventListener('click', () => isVisual ? exitVisual() : enterVisual());
+
+    // ── Exit when nav links clicked ───────────────────
+    document.querySelectorAll('.vmc-btn-primary, .vmc-btn-ghost, .nav-links a').forEach(a => {
+        a.addEventListener('click', () => { if (isVisual) exitVisual(); });
+    });
+
+    // ── Waitlist form handler ─────────────────────────
+    const vmForm = document.getElementById('vm-waitlist-form');
+    if (vmForm) {
+        vmForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name  = document.getElementById('vm-wl-name').value.trim();
+            const email = document.getElementById('vm-wl-email').value.trim();
+            const type  = vmForm.querySelector('input[name="vm-type"]:checked')?.value || 'user';
+            const btn   = vmForm.querySelector('.vmc-submit');
+            btn.disabled = true;
+            btn.textContent = 'Sending…';
+            try {
+                const res = await fetch('/.netlify/functions/waitlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, type }),
+                });
+                if (!res.ok) throw new Error();
+                btn.textContent = '✓ You\'re in!';
+                btn.style.background = 'rgba(80,200,120,0.9)';
+                btn.style.color = '#000';
+            } catch {
+                btn.disabled = false;
+                btn.textContent = 'Try Again';
+            }
+        });
+    }
+
+    // ── Mouse spotlight & Magnetic Tilt ─────────────────
+    visualMode.querySelectorAll('.vm-card').forEach(card => {
+        card.addEventListener('mousemove', e => {
+            const r = card.getBoundingClientRect();
+            const x = e.clientX - r.left;
+            const y = e.clientY - r.top;
+            
+            // Spotlight
+            card.style.setProperty('--mx', x + 'px');
+            card.style.setProperty('--my', y + 'px');
+            card.style.setProperty('--spotlight', '1');
+
+            // Magnetic Tilt
+            const dx = (x - r.width / 2) / (r.width / 2);
+            const dy = (y - r.height / 2) / (r.height / 2);
+            gsap.to(card, {
+                rotateY: dx * 4,
+                rotateX: -dy * 4,
+                x: dx * 8,
+                y: dy * 8,
+                duration: 0.4,
+                ease: 'power2.out'
+            });
+        }, { passive: true });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.setProperty('--spotlight', '0');
+            gsap.to(card, {
+                rotateY: 0,
+                rotateX: 0,
+                x: 0,
+                y: 0,
+                duration: 0.6,
+                ease: 'elastic.out(1, 0.3)'
+            });
+        });
+    });
+
+    // ── Init ──────────────────────────────────────────
+    requestAnimationFrame(() => {
+        positionPill(isVisual ? 'visual' : 'read');
+        if (isVisual) enterVisual();
+    });
+
+})();
+

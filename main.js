@@ -477,6 +477,8 @@ function transitionToAct(newAct) {
     .to(overlay, { opacity: 0, duration: 0.6, ease: 'power2.out' });
 }
 
+window.snyfTransitionAct = transitionToAct;
+
 // ── Mouse/parallax state — declared here so applyActTheme can reset them ─────
 let mouseX = 0, mouseY = 0, camLX = 0, camLY = 0;
 
