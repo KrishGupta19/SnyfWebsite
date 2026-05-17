@@ -4745,3 +4745,55 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   position: relative;
   z-index: 2 !important;
 }
+
+/* ── Broken Loop Diagram ───────────────────────────────────────── */
+.broken-loop-wrap {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto 60px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.broken-loop-wrap.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#broken-loop-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.broken-loop-caption {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: rgba(30, 30, 27, 0.55);
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-transform: uppercase;
+}
+
+.caption-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--orange);
+  display: inline-block;
+  animation: pulse-dot 2s infinite;
+}
+
+/* Mobile: shrink viewBox padding */
+@media (max-width: 600px) {
+  .broken-loop-wrap {
+    margin-bottom: 40px;
+  }
+}

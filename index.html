@@ -592,6 +592,23 @@
                 <p>We don't aggregate opinions. We authenticate reality. The current review systems are fundamentally
                     broken.</p>
             </div>
+            
+            <!-- ── Broken Loop Diagram ── -->
+            <div class="broken-loop-wrap" id="broken-loop" aria-hidden="true">
+              <svg id="broken-loop-svg" viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+                <!-- Edges rendered by JS into this group -->
+                <g id="bl-edges"></g>
+                <!-- Nodes rendered by JS into this group -->
+                <g id="bl-nodes"></g>
+                <!-- Traveler dot rendered by JS -->
+                <g id="bl-traveler"></g>
+              </svg>
+              <p class="broken-loop-caption">
+                <span class="caption-dot"></span>
+                The cycle repeats. Every. Single. Time.
+              </p>
+            </div>
+
             <div class="cards-grid">
                 <div class="problem-card" data-aos="fade-up" data-aos-delay="0">
                     <div class="card-icon">🤖</div>
@@ -2329,6 +2346,498 @@
                 animateNetwork();
             }
         });
+
+    })();
+    </script>
+
+    <!-- ========== BROKEN LOOP DIAGRAM SYSTEM ========== -->
+    <script id="broken-loop-js">
+    (function initBrokenLoop() {
+
+        const NODES = [
+            {
+                id: 'search',
+                label: 'SEARCH',
+                sublabel: 'for a place',
+                x: 350, y: 36,
+                type: 'neutral',
+            },
+            {
+                id: 'results',
+                label: 'RESULTS',
+                sublabel: '4.8★ everywhere',
+                x: 590, y: 110,
+                type: 'neutral',
+            },
+            {
+                id: 'overwhelm',
+                label: 'OVERWHELM',
+                sublabel: 'too many options',
+                x: 630, y: 210,
+                type: 'warn',
+            },
+            {
+                id: 'decision',
+                label: 'DECIDE',
+                sublabel: 'pick the top rated',
+                x: 480, y: 288,
+                type: 'neutral',
+            },
+            {
+                id: 'experience',
+                label: 'EXPERIENCE',
+                sublabel: 'reality vs expectation',
+                x: 220, y: 288,
+                type: 'neutral',
+            },
+            {
+                id: 'disappointment',
+                label: 'DISAPPOINT',
+                sublabel: 'it was average at best',
+                x: 70, y: 210,
+                type: 'danger',
+            },
+            {
+                id: 'silence',
+                label: 'SILENCE',
+                sublabel: 'you say nothing',
+                x: 110, y: 110,
+                type: 'warn',
+            },
+        ];
+
+        const LOOP = [0, 1, 2, 3, 4, 5, 6, 0];
+
+        const PALETTE = {
+            neutral: {
+                fill:   'rgba(30,30,27,0.04)',
+                stroke: 'rgba(30,30,27,0.25)',
+                text:   'rgba(30,30,27,0.75)',
+                sub:    'rgba(110,106,100,0.7)',
+                glow:   'none',
+            },
+            warn: {
+                fill:   'rgba(217,122,74,0.08)',
+                stroke: 'rgba(217,122,74,0.6)',
+                text:   '#C06838',
+                sub:    'rgba(185,95,45,0.75)',
+                glow:   'rgba(217,122,74,0.12)',
+            },
+            danger: {
+                fill:   'rgba(217,122,74,0.12)',
+                stroke: 'rgba(200,100,50,0.85)',
+                text:   '#B85C2A',
+                sub:    'rgba(180,90,40,0.85)',
+                glow:   'rgba(217,122,74,0.18)',
+            },
+            active: {
+                fill:   'rgba(111,183,214,0.18)',
+                stroke: '#4A95B5',
+                text:   '#1E1E1B',
+                sub:    'rgba(50,120,160,0.85)',
+                glow:   'rgba(111,183,214,0.18)',
+            },
+            passed: {
+                fill:   'rgba(111,183,214,0.06)',
+                stroke: 'rgba(80,150,190,0.35)',
+                text:   'rgba(30,30,27,0.5)',
+                sub:    'rgba(80,150,190,0.55)',
+                glow:   'none',
+            },
+        };
+
+        const NODE_R = 34;
+        const NODE_R_MOBILE = 26;
+
+        const svg  = document.getElementById('broken-loop-svg');
+        const gEdges   = document.getElementById('bl-edges');
+        const gNodes   = document.getElementById('bl-nodes');
+        const gTraveler = document.getElementById('bl-traveler');
+
+        if (!svg || !gEdges || !gNodes || !gTraveler) return;
+
+        const isMobile = window.innerWidth < 560;
+        const R = isMobile ? NODE_R_MOBILE : NODE_R;
+
+        // Draw edges
+        const edgePaths = [];
+        for (let i = 0; i < LOOP.length - 1; i++) {
+            const from = NODES[LOOP[i]];
+            const to   = NODES[LOOP[i + 1]];
+
+            const mx = (from.x + to.x) / 2;
+            const my = (from.y + to.y) / 2;
+
+            const cx = 350, cy = 170;
+            const dx = mx - cx;
+            const dy = my - cy;
+            const len = Math.sqrt(dx * dx + dy * dy) || 1;
+            const nudge = 18;
+            const cpx = mx + (dx / len) * nudge;
+            const cpy = my + (dy / len) * nudge;
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', `M ${from.x} ${from.y} Q ${cpx} ${cpy} ${to.x} ${to.y}`);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', 'rgba(30,30,27,0.2)');
+            path.setAttribute('stroke-width', '1.2');
+            path.setAttribute('stroke-dasharray', '4 5');
+            path.dataset.edgeIdx = i;
+            gEdges.appendChild(path);
+            edgePaths.push({ el: path, from, to, cpx, cpy });
+        }
+
+        // Draw arrow heads
+        edgePaths.forEach(({ from, to, cpx, cpy }) => {
+            const t = 0.65;
+            const ax = (1-t)*(1-t)*from.x + 2*(1-t)*t*cpx + t*t*to.x;
+            const ay = (1-t)*(1-t)*from.y + 2*(1-t)*t*cpy + t*t*to.y;
+            const dtx = 2*(1-t)*(cpx-from.x) + 2*t*(to.x-cpx);
+            const dty = 2*(1-t)*(cpy-from.y) + 2*t*(to.y-cpy);
+            const angle = Math.atan2(dty, dtx) * 180 / Math.PI;
+
+            const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            arrow.setAttribute('points', '-5,-3 5,0 -5,3');
+            arrow.setAttribute('fill', 'rgba(30,30,27,0.35)');
+            arrow.setAttribute('transform', `translate(${ax},${ay}) rotate(${angle})`);
+            gEdges.appendChild(arrow);
+        });
+
+        // Draw nodes
+        const nodeEls = {};
+
+        NODES.forEach(node => {
+            const p = PALETTE[node.type];
+
+            const glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            glow.setAttribute('cx', node.x);
+            glow.setAttribute('cy', node.y);
+            glow.setAttribute('r', R + 10);
+            glow.setAttribute('fill', p.glow === 'none' ? 'transparent' : p.glow);
+            glow.setAttribute('opacity', '0');
+            glow.dataset.glowFor = node.id;
+            gNodes.appendChild(glow);
+
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', node.x);
+            circle.setAttribute('cy', node.y);
+            circle.setAttribute('r', R);
+            circle.setAttribute('fill', p.fill);
+            circle.setAttribute('stroke', p.stroke);
+            circle.setAttribute('stroke-width', node.type === 'danger' ? '1.5' : '1');
+            gNodes.appendChild(circle);
+
+            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label.setAttribute('x', node.x);
+            label.setAttribute('y', node.y - 4);
+            label.setAttribute('text-anchor', 'middle');
+            label.setAttribute('dominant-baseline', 'middle');
+            label.setAttribute('fill', p.text);
+            label.setAttribute('font-family', 'var(--font-mono), monospace');
+            label.setAttribute('font-size', isMobile ? '7' : '8.5');
+            label.setAttribute('font-weight', '700');
+            label.setAttribute('letter-spacing', '0.1em');
+            label.textContent = node.label;
+            gNodes.appendChild(label);
+
+            const sub = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            sub.setAttribute('x', node.x);
+            sub.setAttribute('y', node.y + 10);
+            sub.setAttribute('text-anchor', 'middle');
+            sub.setAttribute('dominant-baseline', 'middle');
+            sub.setAttribute('fill', p.sub);
+            sub.setAttribute('font-family', 'var(--font-sans), sans-serif');
+            sub.setAttribute('font-size', isMobile ? '6' : '7.5');
+            sub.setAttribute('font-weight', '400');
+            sub.textContent = node.sublabel;
+            gNodes.appendChild(sub);
+
+            if (node.type === 'danger') {
+                const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                ring.setAttribute('cx', node.x);
+                ring.setAttribute('cy', node.y);
+                ring.setAttribute('r', R + 6);
+                ring.setAttribute('fill', 'none');
+                ring.setAttribute('stroke', 'rgba(217,122,74,0.65)');
+                ring.setAttribute('stroke-width', '1');
+                ring.id = 'bl-danger-ring';
+                gNodes.insertBefore(ring, glow);
+            }
+
+            nodeEls[node.id] = { circle, label, sub, glow };
+        });
+
+        // Traveler dot
+        const travDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        travDot.setAttribute('r', '5');
+        travDot.setAttribute('fill', '#6FB7D6');
+        travDot.setAttribute('filter', 'url(#bl-glow-filter)');
+        gTraveler.appendChild(travDot);
+
+        const travCore = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        travCore.setAttribute('r', '2.5');
+        travCore.setAttribute('fill', '#1E1E1B');
+        gTraveler.appendChild(travCore);
+
+        const travHalo = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        travHalo.setAttribute('r', '10');
+        travHalo.setAttribute('fill', 'rgba(111,183,214,0.15)');
+        gTraveler.appendChild(travHalo);
+
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        defs.innerHTML = `
+            <filter id="bl-glow-filter" x="-100%" y="-100%" width="300%" height="300%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+                <feMerge>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+            <filter id="bl-danger-glow" x="-100%" y="-100%" width="300%" height="300%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+                <feMerge>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+        `;
+        svg.insertBefore(defs, svg.firstChild);
+
+        const gsap = window.gsap;
+        if (!gsap) { console.warn('Broken Loop: GSAP not found'); return; }
+
+        let currentSegment = 0;
+        let isRunning = false;
+
+        const SEGMENT_SPEED = {
+            default: 1.1,
+            warn:    1.4,
+            danger:  0.8,
+        };
+
+        const DWELL = {
+            neutral:      0.25,
+            warn:         0.4,
+            danger:       1.2,
+            search_loop:  0.6,
+        };
+
+        function getPointOnQuadratic(from, cpx, cpy, to, t) {
+            return {
+                x: (1-t)*(1-t)*from.x + 2*(1-t)*t*cpx + t*t*to.x,
+                y: (1-t)*(1-t)*from.y + 2*(1-t)*t*cpy + t*t*to.y,
+            };
+        }
+
+        function setTravelerPos(x, y) {
+            [travDot, travCore, travHalo].forEach(el => {
+                el.setAttribute('cx', x);
+                el.setAttribute('cy', y);
+            });
+        }
+
+        function setTravelerColor(color, coreColor) {
+            travDot.setAttribute('fill', color);
+            travCore.setAttribute('fill', coreColor || '#1E1E1B');
+            travHalo.setAttribute('fill', color.replace(')', ',0.15)').replace('rgb(', 'rgba('));
+        }
+
+        function activateNode(nodeId) {
+            const node = NODES.find(n => n.id === nodeId);
+            if (!node) return;
+            const els = nodeEls[nodeId];
+            if (!els) return;
+
+            const isDanger = node.type === 'danger';
+            const isWarn = node.type === 'warn';
+
+            gsap.to(els.circle, {
+                attr: {
+                    fill: isDanger ? 'rgba(217,122,74,0.18)' : 'rgba(111,183,214,0.16)',
+                    stroke: isDanger ? '#D97A4A' : '#6FB7D6',
+                    strokeWidth: isDanger ? '2' : '1.5',
+                },
+                duration: 0.2,
+            });
+            gsap.to(els.label, { attr: { fill: isDanger ? '#B85C2A' : '#1E1E1B' }, duration: 0.2 });
+            gsap.to(els.sub, { attr: { fill: isDanger ? 'rgba(180,90,40,0.9)' : 'rgba(50,120,160,0.85)' }, duration: 0.2 });
+            gsap.to(els.glow, { opacity: 1, duration: 0.3 });
+        }
+
+        function deactivateNode(nodeId) {
+            const node = NODES.find(n => n.id === nodeId);
+            if (!node) return;
+            const els = nodeEls[nodeId];
+            if (!els) return;
+            const p = PALETTE[node.type];
+
+            gsap.to(els.circle, {
+                attr: { fill: p.fill, stroke: p.stroke, strokeWidth: node.type === 'danger' ? '1.5' : '1' },
+                duration: 0.5,
+            });
+            gsap.to(els.label, { attr: { fill: p.text }, duration: 0.5 });
+            gsap.to(els.sub, { attr: { fill: p.sub }, duration: 0.5 });
+            gsap.to(els.glow, { opacity: 0, duration: 0.4 });
+        }
+
+        function triggerDisappointmentEffect() {
+            const dangerId = 'disappointment';
+            const els = nodeEls[dangerId];
+            const dangerNode = NODES.find(n => n.id === dangerId);
+
+            setTravelerColor('#D97A4A', '#1E1E1B');
+            gsap.to(travDot, { attr: { r: '7' }, duration: 0.15, yoyo: true, repeat: 5 });
+
+            const baseX = dangerNode.x;
+            const baseY = dangerNode.y;
+            const shudderTL = gsap.timeline();
+            for (let i = 0; i < 8; i++) {
+                const ox = (Math.random() - 0.5) * 6;
+                const oy = (Math.random() - 0.5) * 4;
+                shudderTL.to([travDot, travCore, travHalo], {
+                    attr: { cx: baseX + ox, cy: baseY + oy },
+                    duration: 0.06,
+                    ease: 'none',
+                });
+            }
+            shudderTL.to([travDot, travCore, travHalo], {
+                attr: { cx: baseX, cy: baseY },
+                duration: 0.1,
+            });
+
+            gsap.to(els.circle, {
+                attr: { fill: 'rgba(217,122,74,0.35)' },
+                duration: 0.1,
+                yoyo: true,
+                repeat: 5,
+            });
+
+            const ring = document.getElementById('bl-danger-ring');
+            if (ring) {
+                gsap.fromTo(ring,
+                    { attr: { r: R + 6, opacity: 0.7 } },
+                    { attr: { r: R + 22, opacity: 0 }, duration: 0.8, ease: 'power2.out' }
+                );
+            }
+        }
+
+        function runLoop() {
+            if (!isRunning) return;
+            let segIdx = 0;
+
+            function runSegment() {
+                if (!isRunning) return;
+
+                const fromNodeId = NODES[LOOP[segIdx]].id;
+                const toNodeId   = NODES[LOOP[segIdx + 1]].id;
+                const fromNode   = NODES[LOOP[segIdx]];
+                const toNode     = NODES[LOOP[segIdx + 1]];
+                const edge       = edgePaths[segIdx];
+
+                highlightEdge(segIdx, toNode.type === 'danger' ? '#D97A4A' : '#6FB7D6');
+                activateNode(toNodeId);
+
+                const isLoopBack = segIdx === LOOP.length - 2;
+
+                const speed = toNode.type === 'warn' ? SEGMENT_SPEED.warn
+                            : toNode.type === 'danger' ? SEGMENT_SPEED.danger
+                            : SEGMENT_SPEED.default;
+
+                const fromPt = fromNode;
+                const toPt   = toNode;
+                const { cpx, cpy } = edge;
+
+                if (toNode.type !== 'danger') {
+                    setTravelerColor('#6FB7D6');
+                }
+
+                gsap.to({}, {
+                    duration: speed,
+                    ease: 'power1.inOut',
+                    onUpdate: function() {
+                        const t = this.progress();
+                        const pt = getPointOnQuadratic(fromPt, cpx, cpy, toPt, t);
+                        setTravelerPos(pt.x, pt.y);
+                    },
+                    onComplete: function() {
+                        const dwell = toNode.type === 'danger' ? DWELL.danger
+                                    : toNode.type === 'warn'   ? DWELL.warn
+                                    : isLoopBack               ? DWELL.search_loop
+                                    : DWELL.neutral;
+
+                        if (toNode.type === 'danger') {
+                            triggerDisappointmentEffect();
+                        }
+
+                        setTimeout(() => deactivateNode(fromNodeId), 200);
+
+                        setTimeout(() => {
+                            segIdx = isLoopBack ? 0 : segIdx + 1;
+                            runSegment();
+                        }, dwell * 1000);
+                    },
+                });
+            }
+
+            setTravelerPos(NODES[0].x, NODES[0].y);
+            activateNode(NODES[0].id);
+            setTimeout(runSegment, 500);
+        }
+
+        function pulsesDangerRing() {
+            const ring = document.getElementById('bl-danger-ring');
+            if (!ring) return;
+            gsap.to(ring, {
+                attr: { opacity: [0.6, 0.15, 0.6] },
+                duration: 2.2,
+                repeat: -1,
+                ease: 'sine.inOut',
+            });
+        }
+
+        function highlightEdge(edgeIdx, color) {
+            const path = edgePaths[edgeIdx]?.el;
+            if (!path) return;
+            gsap.to(path, {
+                attr: { stroke: color, strokeOpacity: 0.6 },
+                duration: 0.3,
+            });
+            gsap.to(path, {
+                attr: { stroke: 'rgba(30,30,27,0.2)', strokeOpacity: 1 },
+                duration: 0.8,
+                delay: 0.3,
+            });
+        }
+
+        const wrap = document.getElementById('broken-loop');
+        if (!wrap) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !isRunning) {
+                    isRunning = true;
+                    wrap.classList.add('visible');
+                    pulsesDangerRing();
+                    setTimeout(runLoop, 600);
+                }
+            });
+        }, { threshold: 0.3 });
+
+        observer.observe(wrap);
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                isRunning = false;
+            } else if (wrap.classList.contains('visible') && !isRunning) {
+                isRunning = true;
+                runLoop();
+            }
+        });
+
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            wrap.style.display = 'none';
+            return;
+        }
 
     })();
     </script>
