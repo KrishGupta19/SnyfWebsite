@@ -3191,6 +3191,7 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     grid-template-areas:
         "hero  hero  ai"
         "prob1 prob2 ai"
+        "map   map   wl"
         "hiw   hiw   wl";
     position: relative;
     z-index: 92;
@@ -3262,6 +3263,7 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
 .vmc-ai       { grid-area: ai;   }
 .vmc-prob-1   { grid-area: prob1; }
 .vmc-prob-2   { grid-area: prob2; }
+.vmc-map      { grid-area: map;  }
 .vmc-hiw      { grid-area: hiw;  }
 .vmc-waitlist { grid-area: wl;   }
 
@@ -3869,6 +3871,7 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
             "hero  hero"
             "ai    ai"
             "prob1 prob2"
+            "map   map"
             "hiw   hiw"
             "wl    wl";
     }
@@ -4002,7 +4005,7 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     .vm-grid {
         grid-template-columns: 1fr;
         grid-template-areas:
-            "hero" "ai" "prob1" "prob2" "hiw" "wl";
+            "hero" "ai" "prob1" "prob2" "map" "hiw" "wl";
     }
     .visual-mode { padding: 80px 14px 24px; }
     .vm-grid { gap: 10px; }
@@ -4797,3 +4800,125 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     margin-bottom: 40px;
   }
 }
+
+/* ── Radar chart upgrades ───────────────────────────────────────── */
+.radar-polygon-glowing {
+  fill: rgba(111,183,214,0.08);
+  stroke: #6FB7D6;
+  stroke-width: 1.2;
+  filter: drop-shadow(0 0 4px rgba(111,183,214,0.3));
+  transition: filter 0.3s ease;
+}
+
+.radar-polygon-glowing:hover {
+  filter: drop-shadow(0 0 8px rgba(111,183,214,0.5));
+}
+
+.radar-polygon-inner {
+  fill: rgba(111,183,214,0.04);
+  stroke: rgba(111,183,214,0.3);
+  stroke-width: 0.6;
+  stroke-dasharray: 3 3;
+}
+
+.radar-circle-bg {
+  fill: none;
+  stroke: rgba(255,255,255,0.04);
+  stroke-width: 0.8;
+}
+
+.radar-axis {
+  stroke: rgba(255,255,255,0.05);
+  stroke-width: 0.6;
+}
+
+.radar-node {
+  fill: #6FB7D6;
+  filter: drop-shadow(0 0 3px rgba(111,183,214,0.6));
+  transition: cx 0.8s ease, cy 0.8s ease;
+}
+
+@keyframes radar-node-ping {
+  0%   { r: 3; opacity: 1; }
+  100% { r: 8; opacity: 0; }
+}
+
+/* ── City Heatmap Card ──────────────────────────────────────────── */
+.vmc-map {
+  grid-area: map;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vmc-map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.vmc-map-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: 0.06em;
+}
+
+.legend-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 3px;
+}
+
+.legend-verified { background: #6FB7D6; box-shadow: 0 0 4px rgba(111,183,214,0.6); }
+.legend-flagged  { background: #D97A4A; box-shadow: 0 0 4px rgba(217,122,74,0.6); }
+.legend-new      { background: #7BC6A4; box-shadow: 0 0 4px rgba(123,198,164,0.6); }
+
+.vmc-map-body {
+  flex: 1;
+  position: relative;
+  min-height: 140px;
+}
+
+#vmc-city-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 8px;
+}
+
+.vmc-map-overlay-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.map-zone-label {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.vmc-map-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+
+.vmc-map-divider { color: rgba(255,255,255,0.1); }

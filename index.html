@@ -1419,6 +1419,39 @@
                 <div class="vmc-prob-tag">THREAT · CRITICAL</div>
             </div>
 
+            <!-- CITY TRUST HEATMAP -->
+            <div class="vm-card vmc-map" data-spotlight>
+                <div class="vm-card-glow"></div>
+                <div class="vmc-map-header">
+                    <div class="vmc-eyebrow" style="margin-bottom:0">
+                        <span class="vmc-dot vmc-dot--green"></span>
+                        NCR TRUST NETWORK · LIVE
+                    </div>
+                    <span class="vmc-map-legend">
+                        <span class="legend-dot legend-verified"></span>Verified
+                        <span class="legend-dot legend-flagged"></span>Flagged
+                        <span class="legend-dot legend-new"></span>New
+                    </span>
+                </div>
+                <div class="vmc-map-body">
+                    <canvas id="vmc-city-canvas" aria-label="NCR city trust heatmap"></canvas>
+                    <div class="vmc-map-overlay-labels">
+                        <span class="map-zone-label" style="left:18%;top:22%">Cyber Hub</span>
+                        <span class="map-zone-label" style="left:52%;top:15%">Sector 29</span>
+                        <span class="map-zone-label" style="left:72%;top:38%">DLF Phase 4</span>
+                        <span class="map-zone-label" style="left:28%;top:65%">Khan Market</span>
+                        <span class="map-zone-label" style="left:62%;top:72%">Sushant Lok</span>
+                    </div>
+                </div>
+                <div class="vmc-map-footer">
+                    <span id="vmc-map-stat-verified">0 verified</span>
+                    <span class="vmc-map-divider">·</span>
+                    <span id="vmc-map-stat-flagged">0 flagged</span>
+                    <span class="vmc-map-divider">·</span>
+                    <span id="vmc-map-stat-new">0 new today</span>
+                </div>
+            </div>
+
             <!-- HOW IT WORKS -->
             <div class="vm-card vmc-hiw" data-spotlight>
                 <div class="vm-card-glow"></div>
@@ -1471,11 +1504,12 @@
                                 <circle cx="100" cy="100" r="80" class="radar-circle-bg"></circle>
                                 <circle cx="100" cy="100" r="55" class="radar-circle-bg"></circle>
                                 <circle cx="100" cy="100" r="30" class="radar-circle-bg"></circle>
-                                <!-- Axes lines -->
-                                <line x1="100" y1="20" x2="100" y2="180" class="radar-axis"></line>
-                                <line x1="20" y1="100" x2="180" y2="100" class="radar-axis"></line>
-                                <line x1="43" y1="43" x2="157" y2="157" class="radar-axis"></line>
-                                <line x1="43" y1="157" x2="157" y2="43" class="radar-axis"></line>
+                                <!-- Axes lines (5-axis pentagon) -->
+                                <line x1="100" y1="100" x2="100" y2="20" class="radar-axis"></line>
+                                <line x1="100" y1="100" x2="176.1" y2="75.1" class="radar-axis"></line>
+                                <line x1="100" y1="100" x2="147.0" y2="164.7" class="radar-axis"></line>
+                                <line x1="100" y1="100" x2="53.0" y2="164.7" class="radar-axis"></line>
+                                <line x1="100" y1="100" x2="23.9" y2="75.1" class="radar-axis"></line>
                                 <!-- Animated Radar Web -->
                                 <polygon points="100,35 150,70 140,140 70,130 50,80" class="radar-polygon-glowing"></polygon>
                                 <polygon points="100,50 135,80 125,125 80,120 65,85" class="radar-polygon-inner"></polygon>
@@ -2839,6 +2873,373 @@
             return;
         }
 
+    })();
+    </script>
+
+    <!-- ========== LINKED RADAR CHART SYSTEM ========== -->
+    <script id="linked-radar-js">
+    (function initLinkedRadar() {
+        const gsap = window.gsap;
+        if (!gsap) return;
+
+        const AXES_DEG = [270, 342, 54, 126, 198];
+
+        function scoreToRadius(score) {
+            return (score / 10) * 78;
+        }
+
+        function axisPoint(angleDeg, radius) {
+            const rad = (angleDeg - 90) * Math.PI / 180;
+            return {
+                x: 100 + radius * Math.cos(rad),
+                y: 100 + radius * Math.sin(rad),
+            };
+        }
+
+        function scoresToPolygonPoints(scores) {
+            const dims = [
+                scores.foodQuality, scores.ambience, scores.serviceQuality,
+                scores.valueForMoney, scores.waitingTime,
+            ];
+            return dims.map((score, i) => {
+                const pt = axisPoint(AXES_DEG[i], scoreToRadius(score));
+                return `${pt.x.toFixed(1)},${pt.y.toFixed(1)}`;
+            }).join(' ');
+        }
+
+        function updateRadarNodes(scores) {
+            const dims = [scores.foodQuality, scores.ambience, scores.serviceQuality, scores.valueForMoney, scores.waitingTime];
+            const nodeClasses = ['node-food', 'node-ambience', 'node-service', 'node-value', 'node-wait'];
+            dims.forEach((score, i) => {
+                const pt = axisPoint(AXES_DEG[i], scoreToRadius(score));
+                const node = document.querySelector(`.radar-svg .${nodeClasses[i]}`);
+                if (node) {
+                    gsap.to(node, { attr: { cx: pt.x.toFixed(1), cy: pt.y.toFixed(1) }, duration: 0.8, ease: 'power2.inOut' });
+                }
+            });
+        }
+
+        function parsePoints(el) {
+            return el.getAttribute('points').trim().split(/\s+/).map(p => {
+                const [x, y] = p.split(',').map(Number);
+                return { x, y };
+            });
+        }
+
+        function animateRadarToScores(scores) {
+            const dims = [
+                scores.foodQuality, scores.ambience, scores.serviceQuality,
+                scores.valueForMoney, scores.waitingTime,
+            ];
+
+            const outerPoly = document.querySelector('.radar-polygon-glowing');
+            const innerPoly = document.querySelector('.radar-polygon-inner');
+            if (!outerPoly || !innerPoly) return;
+
+            const targetOuter = dims.map((score, i) => axisPoint(AXES_DEG[i], scoreToRadius(score)));
+            const targetInner = dims.map((score, i) => axisPoint(AXES_DEG[i], scoreToRadius(score) * 0.85));
+
+            const currentOuter = parsePoints(outerPoly);
+            const currentInner = parsePoints(innerPoly);
+
+            const proxyOuter = currentOuter.map(p => ({ ...p }));
+            const proxyInner = currentInner.map(p => ({ ...p }));
+
+            proxyOuter.forEach((proxy, i) => {
+                gsap.to(proxy, {
+                    x: targetOuter[i].x, y: targetOuter[i].y,
+                    duration: 0.8, ease: 'power2.inOut',
+                    onUpdate: () => {
+                        outerPoly.setAttribute('points', proxyOuter.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
+                    },
+                });
+            });
+
+            proxyInner.forEach((proxy, i) => {
+                gsap.to(proxy, {
+                    x: targetInner[i].x, y: targetInner[i].y,
+                    duration: 0.8, ease: 'power2.inOut', delay: 0.05,
+                    onUpdate: () => {
+                        innerPoly.setAttribute('points', proxyInner.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
+                    },
+                });
+            });
+
+            updateRadarNodes(scores);
+
+            const panel = document.getElementById('vm-panel-1');
+            if (panel) {
+                gsap.fromTo(panel, { opacity: 0.6 }, { opacity: 1, duration: 0.4 });
+            }
+        }
+
+        function addRadarAxisLabels(svgEl, scores) {
+            if (!svgEl) return;
+            svgEl.querySelectorAll('.radar-axis-label').forEach(el => el.remove());
+
+            const dims = ['Food', 'Ambience', 'Service', 'Value', 'Wait'];
+            const values = [scores.foodQuality, scores.ambience, scores.serviceQuality, scores.valueForMoney, scores.waitingTime];
+            const labelOffsets = [
+                { dx: 0,   dy: -10 },
+                { dx: 10,  dy: -4  },
+                { dx: 10,  dy: 6   },
+                { dx: -10, dy: 6   },
+                { dx: -10, dy: -4  },
+            ];
+
+            values.forEach((val, i) => {
+                const pt = axisPoint(AXES_DEG[i], 88);
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.classList.add('radar-axis-label');
+
+                const name = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                name.setAttribute('x', (pt.x + labelOffsets[i].dx).toFixed(1));
+                name.setAttribute('y', (pt.y + labelOffsets[i].dy).toFixed(1));
+                name.setAttribute('text-anchor', 'middle');
+                name.setAttribute('fill', 'rgba(180,175,168,0.5)');
+                name.setAttribute('font-size', '7');
+                name.setAttribute('font-family', 'var(--font-mono), monospace');
+                name.setAttribute('letter-spacing', '0.05em');
+                name.textContent = dims[i];
+                g.appendChild(name);
+
+                const score = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                score.setAttribute('x', (pt.x + labelOffsets[i].dx).toFixed(1));
+                score.setAttribute('y', (pt.y + labelOffsets[i].dy + 8).toFixed(1));
+                score.setAttribute('text-anchor', 'middle');
+                score.setAttribute('fill', val < 5.0 ? '#D97A4A' : '#6FB7D6');
+                score.setAttribute('font-size', '8');
+                score.setAttribute('font-family', 'var(--font-mono), monospace');
+                score.setAttribute('font-weight', '700');
+                score.textContent = val.toFixed(1);
+                g.appendChild(score);
+
+                svgEl.appendChild(g);
+            });
+        }
+
+        // Seeded random to get default scores for init
+        function seededRandom(seed) {
+            let s = 0;
+            for (let i = 0; i < seed.length; i++) s += seed.charCodeAt(i);
+            return function() { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+        }
+
+        function getCafeScoresLocal(cafeName) {
+            const rand = seededRandom(cafeName.toLowerCase().trim());
+            const base = () => 4.0 + rand() * 5.5;
+            return {
+                foodQuality:    parseFloat(base().toFixed(1)),
+                ambience:       parseFloat(base().toFixed(1)),
+                serviceQuality: parseFloat(base().toFixed(1)),
+                valueForMoney:  parseFloat(base().toFixed(1)),
+                waitingTime:    parseFloat(base().toFixed(1)),
+            };
+        }
+
+        window.addEventListener('snyf:cafechange', (e) => {
+            animateRadarToScores(e.detail.scores);
+            addRadarAxisLabels(document.querySelector('.radar-svg'), e.detail.scores);
+        });
+
+        window.addEventListener('snyf:vmopen', () => {
+            const defaultScores = getCafeScoresLocal('Blue Tokai, Gurugram');
+            setTimeout(() => {
+                animateRadarToScores(defaultScores);
+                addRadarAxisLabels(document.querySelector('.radar-svg'), defaultScores);
+            }, 500);
+        });
+    })();
+    </script>
+
+    <!-- ========== CITY TRUST HEATMAP SYSTEM ========== -->
+    <script id="city-heatmap-js">
+    (function initCityHeatmap() {
+        const canvas = document.getElementById('vmc-city-canvas');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        let animFrame;
+        let nodes = [];
+        let time = 0;
+        let isVisible = false;
+
+        const NODE_TYPES = {
+            verified: { color: '111,183,214', r: 3.5,  glowR: 10, count: 28 },
+            flagged:  { color: '217,122,74',  r: 2.5,  glowR: 8,  count: 8  },
+            newNode:  { color: '123,198,164', r: 3,    glowR: 9,  count: 12  },
+            inactive: { color: '110,106,100', r: 1.8,  glowR: 5,  count: 18  },
+        };
+
+        const ZONES = [
+            { x: 0.20, y: 0.28, weight: 3 },
+            { x: 0.54, y: 0.20, weight: 2 },
+            { x: 0.74, y: 0.42, weight: 2 },
+            { x: 0.30, y: 0.68, weight: 2 },
+            { x: 0.65, y: 0.74, weight: 1 },
+            { x: 0.48, y: 0.50, weight: 1 },
+        ];
+
+        function weightedZonePoint() {
+            const total = ZONES.reduce((s, z) => s + z.weight, 0);
+            let r = Math.random() * total;
+            let zone = ZONES[0];
+            for (const z of ZONES) { r -= z.weight; if (r <= 0) { zone = z; break; } }
+            return {
+                x: zone.x + (Math.random() - 0.5) * 0.22,
+                y: zone.y + (Math.random() - 0.5) * 0.22,
+            };
+        }
+
+        function createNode(type) {
+            const pt = weightedZonePoint();
+            return {
+                type,
+                nx: Math.max(0.04, Math.min(0.96, pt.x)),
+                ny: Math.max(0.04, Math.min(0.96, pt.y)),
+                pulsePhase: Math.random() * Math.PI * 2,
+                pulseSpeed: 0.6 + Math.random() * 1.2,
+                spawnTime: time,
+                isPinging: type === 'newNode',
+                pingProgress: 0,
+            };
+        }
+
+        function initNodes() {
+            nodes = [];
+            Object.entries(NODE_TYPES).forEach(([type, cfg]) => {
+                for (let i = 0; i < cfg.count; i++) nodes.push(createNode(type));
+            });
+            updateStats();
+        }
+
+        function updateStats() {
+            const v = nodes.filter(n => n.type === 'verified').length;
+            const f = nodes.filter(n => n.type === 'flagged').length;
+            const nw = nodes.filter(n => n.type === 'newNode').length;
+            const vs = document.getElementById('vmc-map-stat-verified');
+            const fs = document.getElementById('vmc-map-stat-flagged');
+            const ns = document.getElementById('vmc-map-stat-new');
+            if (vs) vs.textContent = `${v} verified`;
+            if (fs) fs.textContent = `${f} flagged`;
+            if (ns) ns.textContent = `${nw} new today`;
+        }
+
+        function resize() {
+            const parent = canvas.parentElement;
+            if (!parent) return;
+            const rect = parent.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            const h = Math.max(rect.height, 140);
+            canvas.width  = rect.width * dpr;
+            canvas.height = h * dpr;
+            canvas.style.width  = rect.width + 'px';
+            canvas.style.height = h + 'px';
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function drawNode(node, W, H) {
+            const cfg = NODE_TYPES[node.type];
+            if (!cfg) return;
+            const x = node.nx * W, y = node.ny * H;
+            const breathe = 1 + 0.2 * Math.sin(time * node.pulseSpeed + node.pulsePhase);
+            const r = cfg.r * breathe;
+
+            const grd = ctx.createRadialGradient(x, y, 0, x, y, cfg.glowR * breathe);
+            grd.addColorStop(0, `rgba(${cfg.color},0.25)`);
+            grd.addColorStop(1, `rgba(${cfg.color},0)`);
+            ctx.beginPath(); ctx.arc(x, y, cfg.glowR * breathe, 0, Math.PI * 2);
+            ctx.fillStyle = grd; ctx.fill();
+
+            ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${cfg.color},0.9)`; ctx.fill();
+
+            if (node.isPinging && node.pingProgress < 1) {
+                node.pingProgress += 0.012;
+                const pingR = r + node.pingProgress * 20;
+                const pingA = (1 - node.pingProgress) * 0.5;
+                ctx.beginPath(); ctx.arc(x, y, pingR, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(${cfg.color},${pingA})`; ctx.lineWidth = 1; ctx.stroke();
+                if (node.pingProgress >= 1) node.isPinging = false;
+            }
+        }
+
+        function drawConnections(W, H) {
+            const verified = nodes.filter(n => n.type === 'verified');
+            for (let i = 0; i < verified.length; i++) {
+                for (let j = i + 1; j < verified.length; j++) {
+                    const dx = verified[i].nx - verified[j].nx;
+                    const dy = verified[i].ny - verified[j].ny;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 0.22) {
+                        const alpha = (1 - dist / 0.22) * 0.12;
+                        ctx.beginPath();
+                        ctx.moveTo(verified[i].nx * W, verified[i].ny * H);
+                        ctx.lineTo(verified[j].nx * W, verified[j].ny * H);
+                        ctx.strokeStyle = `rgba(111,183,214,${alpha})`; ctx.lineWidth = 0.5; ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function drawGridLines(W, H) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.025)'; ctx.lineWidth = 0.5;
+            for (let i = 0; i <= 12; i++) { const x = (i / 12) * W; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+            for (let i = 0; i <= 7; i++)  { const y = (i / 7) * H;  ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+        }
+
+        function animate() {
+            if (!isVisible) return;
+            animFrame = requestAnimationFrame(animate);
+            time += 0.016;
+            const dpr = window.devicePixelRatio || 1;
+            const W = canvas.width / dpr, H = canvas.height / dpr;
+            ctx.clearRect(0, 0, W, H);
+            drawGridLines(W, H);
+            drawConnections(W, H);
+            for (const node of nodes) drawNode(node, W, H);
+        }
+
+        function addLiveEvent() {
+            if (!isVisible) return;
+            const types = ['verified', 'verified', 'verified', 'newNode', 'flagged'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            const newNode = createNode(type);
+            newNode.isPinging = true; newNode.pingProgress = 0;
+            nodes.push(newNode);
+            const typeNodes = nodes.filter(n => n.type === type);
+            if (typeNodes.length > NODE_TYPES[type].count + 3) {
+                const idx = nodes.indexOf(typeNodes[0]);
+                if (idx > -1) nodes.splice(idx, 1);
+            }
+            updateStats();
+        }
+
+        setInterval(addLiveEvent, 2800);
+
+        window.addEventListener('snyf:vmopen', () => {
+            isVisible = true; resize();
+            if (nodes.length === 0) initNodes();
+            animate();
+        });
+
+        window.addEventListener('snyf:vmclose', () => {
+            isVisible = false; cancelAnimationFrame(animFrame);
+        });
+
+        window.addEventListener('resize', resize, { passive: true });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) { isVisible = false; cancelAnimationFrame(animFrame); }
+            else if (document.getElementById('visual-mode')?.classList.contains('active') ||
+                     document.body.classList.contains('visual-mode-on')) {
+                isVisible = true; animate();
+            }
+        });
+
+        if (document.body.classList.contains('visual-mode-on')) {
+            isVisible = true; resize(); initNodes(); animate();
+        }
     })();
     </script>
 </body>

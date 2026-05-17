@@ -675,6 +675,7 @@ sections.forEach(s => navObs.observe(s));
             }
 
             visualMode.setAttribute('aria-hidden', 'false');
+            window.dispatchEvent(new CustomEvent('snyf:vmopen'));
         });
     }
 
@@ -711,6 +712,7 @@ sections.forEach(s => navObs.observe(s));
             }
 
             visualMode.setAttribute('aria-hidden', 'true');
+            window.dispatchEvent(new CustomEvent('snyf:vmclose'));
         });
     }
 
@@ -1125,6 +1127,9 @@ sections.forEach(s => navObs.observe(s));
 
                 // Update dynamic review counts in footer
                 sourceText.innerHTML = `Based on <strong>${scores.reviewCount}</strong> authenticated reviews`;
+
+                // Dispatch café change event for radar chart and other listeners
+                window.dispatchEvent(new CustomEvent('snyf:cafechange', { detail: { scores, cafeName } }));
 
             }, 1800);
         }
