@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Write a Field Report - Snyf Commons</title>
+  <meta name="description" content="Submit a structured Snyf Commons field report.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Oswald:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="community.css">
+</head>
+<body>
+  <nav class="navbar scrolled" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo" id="nav-logo">
+        <svg class="nav-logo-icon" width="22" height="22" viewBox="0 0 32 32" fill="none">
+          <defs>
+            <linearGradient id="nav-logo-grad-report" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#6FB7D6"/>
+              <stop offset="100%" stop-color="#A59BB7"/>
+            </linearGradient>
+          </defs>
+          <path d="M22 9 C 22 4, 10 4, 10 11 C 10 16, 22 16, 22 21 C 22 28, 10 28, 10 23" stroke="url(#nav-logo-grad-report)" stroke-width="3.2" stroke-linecap="round"/>
+          <circle cx="16" cy="16" r="5" stroke="#7BC6A4" stroke-width="1.2" stroke-dasharray="2 2" opacity="0.75"/>
+          <path d="M13.5 13.5 L18.5 18.5 M18.5 13.5 L13.5 18.5" stroke="#7BC6A4" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+        <span>Snyf</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html#story">Story</a></li>
+        <li><a href="index.html#problem">Problem</a></li>
+        <li><a href="index.html#solution">Solution</a></li>
+        <li><a href="index.html#features">Features</a></li>
+        <li><a href="community.html" class="nav-cta">Commons</a></li>
+      </ul>
+      <a href="community.html" class="btn btn-primary" style="font-size:13px;padding:8px 18px;">Back to Commons</a>
+      <button class="hamburger" id="hamburger" aria-label="Open menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <main class="report-page-main">
+    <div class="report-page-shell">
+      <div class="report-page-top">
+        <div>
+          <div class="report-page-kicker">Snyf Commons</div>
+          <h1 class="report-page-title">Field Report</h1>
+        </div>
+        <a class="btn btn-ghost report-page-home" href="community.html">Back</a>
+      </div>
+
+      <section class="report-page-card" aria-label="Write a Field Report">
+        <div class="wr-steps-bar">
+          <div class="wr-step-dot active" data-step="1"></div>
+          <div class="wr-step-line"></div>
+          <div class="wr-step-dot" data-step="2"></div>
+          <div class="wr-step-line"></div>
+          <div class="wr-step-dot" data-step="3"></div>
+          <div class="wr-step-line"></div>
+          <div class="wr-step-dot" data-step="4"></div>
+        </div>
+        <div class="wr-step-labels">
+          <span>Place</span><span>Score</span><span>Note</span><span>Verify</span>
+        </div>
+
+        <div class="wr-step-panel active" id="wr-step-1">
+          <div class="wr-step-header">
+            <span class="wr-step-num">01</span>
+            <h3>Which place did you visit?</h3>
+            <p>Select from the list or type any cafe name.</p>
+          </div>
+          <input type="text" class="wr-input" id="wr-place-input" placeholder="Search or type cafe name..." autocomplete="off">
+          <div class="wr-place-chips">
+            <button type="button" class="wr-place-chip" data-place="Blue Tokai, Cyber Hub">Blue Tokai</button>
+            <button type="button" class="wr-place-chip" data-place="Ivy & Bean, Cyber Hub">Ivy & Bean</button>
+            <button type="button" class="wr-place-chip" data-place="Nook Cafe, Sector 29">Nook Cafe</button>
+            <button type="button" class="wr-place-chip" data-place="Perch, Khan Market">Perch</button>
+            <button type="button" class="wr-place-chip" data-place="The Grind, DLF Phase 4">The Grind</button>
+            <button type="button" class="wr-place-chip" data-place="Fig & Maple, Sushant Lok">Fig & Maple</button>
+          </div>
+          <div class="wr-selected-place" id="wr-selected-place" style="display:none;">
+            <span class="wr-selected-label">Selected:</span>
+            <span class="wr-selected-name" id="wr-selected-name"></span>
+            <button type="button" class="wr-clear-place" id="wr-clear-place">x</button>
+          </div>
+          <button type="button" class="btn btn-primary wr-next-btn" id="wr-next-1" disabled>Continue</button>
+        </div>
+
+        <div class="wr-step-panel" id="wr-step-2">
+          <div class="wr-step-header">
+            <span class="wr-step-num">02</span>
+            <h3>Rate each dimension</h3>
+            <p>Move the sliders honestly. No star ratings here.</p>
+          </div>
+          <div class="wr-sliders" id="wr-sliders"></div>
+          <div class="wr-score-preview">
+            <span class="wsp-label">Composite Trust Score</span>
+            <span class="wsp-score" id="wr-composite-score">5.0</span>
+            <span class="wsp-label">/10</span>
+          </div>
+          <div class="wr-step-nav">
+            <button type="button" class="btn btn-ghost wr-back-btn" data-back="1">Back</button>
+            <button type="button" class="btn btn-primary wr-next-btn" id="wr-next-2">Continue</button>
+          </div>
+        </div>
+
+        <div class="wr-step-panel" id="wr-step-3">
+          <div class="wr-step-header">
+            <span class="wr-step-num">03</span>
+            <h3>One honest observation</h3>
+            <p>Optional. 180 characters max.</p>
+          </div>
+          <div class="wr-note-wrap">
+            <textarea class="wr-textarea" id="wr-note" placeholder="Genuinely great flat white. Crowded on weekends." maxlength="180" rows="4"></textarea>
+            <div class="wr-char-counter"><span id="wr-char-count">0</span>/180</div>
+          </div>
+          <div class="wr-step-nav">
+            <button type="button" class="btn btn-ghost wr-back-btn" data-back="2">Back</button>
+            <button type="button" class="btn btn-primary wr-next-btn" id="wr-next-3">Continue</button>
+          </div>
+        </div>
+
+        <div class="wr-step-panel" id="wr-step-4">
+          <div class="wr-step-header">
+            <span class="wr-step-num">04</span>
+            <h3>Verify your visit</h3>
+            <p>Only people who actually visited can submit a field report.</p>
+          </div>
+          <div class="wr-verify-fields">
+            <input type="text" class="wr-input" id="wr-handle" placeholder="Your name or handle" autocomplete="off">
+            <input type="email" class="wr-input" id="wr-email" placeholder="Email for verification" autocomplete="email">
+            <label class="wr-checkbox-row">
+              <input type="checkbox" id="wr-visited-check">
+              <span>I personally visited this place</span>
+            </label>
+          </div>
+          <div class="wr-step-nav">
+            <button type="button" class="btn btn-ghost wr-back-btn" data-back="3">Back</button>
+            <button type="button" class="btn btn-primary" id="wr-submit-btn" disabled>Submit Field Report</button>
+          </div>
+        </div>
+
+        <div class="wr-step-panel" id="wr-step-success">
+          <div class="wr-success-terminal" id="wr-success-terminal"></div>
+          <div class="report-page-actions">
+            <a class="btn btn-ghost" href="community.html">Back to Commons</a>
+            <button type="button" class="btn btn-primary" id="wr-new-report">Write Another</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const dimensions = [
+      { key: 'food', label: 'Food Quality', desc: 'How was the food or drink?' },
+      { key: 'ambience', label: 'Ambience', desc: 'Atmosphere, noise, comfort?' },
+      { key: 'service', label: 'Service Quality', desc: 'Staff attentiveness and speed?' },
+      { key: 'value', label: 'Value for Money', desc: 'Worth the price paid?' },
+      { key: 'wait', label: 'Waiting Time', desc: 'How long did you wait?' },
+    ];
+
+    const formData = { place: '', scores: {}, note: '', handle: '', email: '' };
+
+    function el(id) {
+      return document.getElementById(id);
+    }
+
+    function goToStep(step) {
+      document.querySelectorAll('.wr-step-panel').forEach(panel => panel.classList.remove('active'));
+      el(`wr-step-${step}`).classList.add('active');
+      document.querySelectorAll('.wr-step-dot').forEach(dot => {
+        const dotStep = Number(dot.dataset.step);
+        dot.classList.toggle('active', dotStep <= step);
+        dot.classList.toggle('done', dotStep < step);
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateCompositeScore() {
+      const s = formData.scores;
+      const score = ((s.food || 5) * 0.3 + (s.ambience || 5) * 0.2 + (s.service || 5) * 0.2 + (s.value || 5) * 0.2 + (s.wait || 5) * 0.1).toFixed(1);
+      el('wr-composite-score').textContent = score;
+    }
+
+    function initSliders() {
+      el('wr-sliders').innerHTML = dimensions.map(dim => `
+        <div class="wr-slider-row">
+          <div class="wr-slider-meta">
+            <span class="wr-slider-label">${dim.label}</span>
+            <span class="wr-slider-desc">${dim.desc}</span>
+          </div>
+          <div class="wr-slider-control">
+            <input type="range" class="wr-slider" id="slider-${dim.key}" min="1" max="10" step="0.1" value="5" data-dim="${dim.key}">
+            <div class="wr-slider-value-wrap">
+              <span class="wr-slider-value" id="slider-val-${dim.key}">5.0</span>
+              <span class="wr-slider-qual" id="slider-qual-${dim.key}">Average</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      document.querySelectorAll('.wr-slider').forEach(slider => {
+        formData.scores[slider.dataset.dim] = 5;
+        slider.addEventListener('input', () => {
+          const value = Number(slider.value);
+          const dim = slider.dataset.dim;
+          formData.scores[dim] = value;
+          el(`slider-val-${dim}`).textContent = value.toFixed(1);
+          el(`slider-qual-${dim}`).textContent = value >= 9 ? 'Exceptional' : value >= 7.5 ? 'Good' : value >= 6 ? 'Average' : value >= 4 ? 'Below Avg' : 'Poor';
+          updateCompositeScore();
+        });
+      });
+      updateCompositeScore();
+    }
+
+    function setPlace(place) {
+      formData.place = place.trim();
+      el('wr-place-input').value = formData.place;
+      el('wr-selected-name').textContent = formData.place;
+      el('wr-selected-place').style.display = formData.place ? 'flex' : 'none';
+      el('wr-next-1').disabled = !formData.place;
+    }
+
+    function checkSubmit() {
+      const handle = el('wr-handle').value.trim();
+      const email = el('wr-email').value.trim();
+      const visited = el('wr-visited-check').checked;
+      el('wr-submit-btn').disabled = !(handle && email && visited);
+    }
+
+    function showSuccess() {
+      formData.handle = el('wr-handle').value.trim();
+      formData.email = el('wr-email').value.trim();
+      formData.note = el('wr-note').value.trim();
+      document.querySelectorAll('.wr-step-panel').forEach(panel => panel.classList.remove('active'));
+      el('wr-step-success').classList.add('active');
+      document.querySelectorAll('.wr-step-dot').forEach(dot => {
+        dot.classList.add('active');
+        dot.classList.add('done');
+      });
+      el('wr-success-terminal').innerHTML = `
+        <div class="wr-terminal-line visible t-dim">&gt; SNYF Intelligence Engine v2.1</div>
+        <div class="wr-terminal-line visible">&gt; Field report indexed for: <span class="t-cyan">${formData.place}</span></div>
+        <div class="wr-terminal-line visible">&gt; Trust Score: <span class="t-cyan">${el('wr-composite-score').textContent}/10</span></div>
+        <div class="wr-terminal-line visible t-green">&gt; Report submitted successfully.</div>
+      `;
+    }
+
+    function resetForm() {
+      setPlace('');
+      el('wr-note').value = '';
+      el('wr-char-count').textContent = '0';
+      el('wr-handle').value = '';
+      el('wr-email').value = '';
+      el('wr-visited-check').checked = false;
+      document.querySelectorAll('.wr-place-chip').forEach(chip => chip.classList.remove('active'));
+      initSliders();
+      checkSubmit();
+      goToStep(1);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initSliders();
+
+      document.querySelectorAll('.wr-place-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('.wr-place-chip').forEach(other => other.classList.remove('active'));
+          chip.classList.add('active');
+          setPlace(chip.dataset.place);
+        });
+      });
+
+      el('wr-place-input').addEventListener('input', event => setPlace(event.target.value));
+      el('wr-clear-place').addEventListener('click', () => {
+        document.querySelectorAll('.wr-place-chip').forEach(chip => chip.classList.remove('active'));
+        setPlace('');
+      });
+
+      el('wr-next-1').addEventListener('click', () => goToStep(2));
+      el('wr-next-2').addEventListener('click', () => goToStep(3));
+      el('wr-next-3').addEventListener('click', () => goToStep(4));
+      document.querySelectorAll('.wr-back-btn').forEach(button => {
+        button.addEventListener('click', () => goToStep(Number(button.dataset.back)));
+      });
+
+      el('wr-note').addEventListener('input', event => {
+        el('wr-char-count').textContent = event.target.value.length;
+      });
+      el('wr-handle').addEventListener('input', checkSubmit);
+      el('wr-email').addEventListener('input', checkSubmit);
+      el('wr-visited-check').addEventListener('change', checkSubmit);
+      el('wr-submit-btn').addEventListener('click', showSuccess);
+      el('wr-new-report').addEventListener('click', resetForm);
+
+      const hamburger = el('hamburger');
+      const navLinks = document.querySelector('.nav-links');
+      hamburger?.addEventListener('click', () => navLinks.classList.toggle('open'));
+    });
+  </script>
+</body>
+</html>

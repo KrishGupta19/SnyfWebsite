@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snyf Commons - Community Reports</title>
+  <meta name="description" content="Browse and submit local field reports on Snyf Commons.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Oswald:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1f1f1c;
+      --muted: #6d6a63;
+      --paper: #f6f5f0;
+      --panel: #ffffff;
+      --line: rgba(31, 31, 28, 0.12);
+      --soft: #ebe8df;
+      --cyan: #6fb7d6;
+      --green: #7bc6a4;
+      --gold: #d4a853;
+      --rose: #d86f7b;
+      --violet: #a59bb7;
+      --shadow: 0 24px 80px rgba(31, 31, 28, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(111, 183, 214, 0.22), transparent 28rem),
+        radial-gradient(circle at 88% 18%, rgba(123, 198, 164, 0.2), transparent 30rem),
+        var(--paper);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      background-image:
+        linear-gradient(rgba(31,31,28,0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(31,31,28,0.045) 1px, transparent 1px);
+      background-size: 58px 58px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.75), transparent 72%);
+      animation: grid-breathe 5s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .ambient {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    .blob {
+      position: absolute;
+      width: 460px;
+      height: 460px;
+      border-radius: 999px;
+      filter: blur(46px);
+      opacity: 0.72;
+      mix-blend-mode: multiply;
+    }
+
+    .blob-one {
+      left: -120px;
+      top: 40px;
+      background: radial-gradient(circle, rgba(111,183,214,0.45), transparent 68%);
+      animation: blob-drift-one 26s ease-in-out infinite;
+    }
+
+    .blob-two {
+      right: -140px;
+      top: 120px;
+      background: radial-gradient(circle, rgba(123,198,164,0.4), transparent 66%);
+      animation: blob-drift-two 30s ease-in-out infinite;
+    }
+
+    .blob-three {
+      left: 42%;
+      bottom: -210px;
+      background: radial-gradient(circle, rgba(165,155,183,0.42), transparent 70%);
+      animation: blob-drift-three 34s ease-in-out infinite;
+    }
+
+    button, input, textarea, select, a {
+      font: inherit;
+    }
+
+    button, a.btn {
+      cursor: pointer;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(246, 245, 240, 0.64);
+      backdrop-filter: blur(22px) saturate(160%);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .nav-inner {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      color: var(--ink);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+    }
+
+    .brand .nav-logo-icon {
+      width: 28px;
+      height: 28px;
+      box-shadow: 0 10px 26px rgba(111,183,214,0.32);
+      border-radius: 50%;
+      animation: brand-pulse 3.2s ease-in-out infinite;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      padding: 9px 12px;
+      border-radius: 999px;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: var(--ink);
+      background: rgba(31, 31, 28, 0.06);
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.62);
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 11px 16px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 800;
+      backdrop-filter: blur(18px) saturate(160%);
+      box-shadow: 0 8px 24px rgba(31,31,28,0.06);
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      border-color: rgba(111, 183, 214, 0.42);
+      box-shadow: 0 14px 36px rgba(31,31,28,0.11);
+    }
+
+    .btn-primary {
+      color: white;
+      background: var(--ink);
+      border-color: var(--ink);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .container {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      position: relative;
+      padding: 72px 0 36px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 28px;
+      align-items: end;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: 26%;
+      bottom: 18px;
+      width: 190px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(111,183,214,0.85), transparent);
+      animation: scan-line 3.4s ease-in-out infinite;
+    }
+
+    .eyebrow {
+      font-family: "JetBrains Mono", monospace;
+      color: var(--cyan);
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      font-family: Oswald, Impact, sans-serif;
+      font-size: clamp(3.8rem, 12vw, 9.4rem);
+      line-height: 0.88;
+      letter-spacing: 0;
+      margin: 0;
+      text-transform: uppercase;
+      text-shadow: 0 16px 45px rgba(31,31,28,0.12);
+      animation: fade-up 0.8s 0.05s ease both;
+    }
+
+    .hero-copy {
+      max-width: 690px;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.6;
+      margin: 24px 0 0;
+      animation: fade-up 0.8s 0.16s ease both;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 28px;
+      animation: fade-up 0.8s 0.26s ease both;
+    }
+
+    .live-card {
+      position: relative;
+      overflow: hidden;
+      background: rgba(31,31,28,0.84);
+      color: white;
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px) saturate(160%);
+      border: 1px solid rgba(255,255,255,0.14);
+      animation: float-card 7s ease-in-out infinite;
+    }
+
+    .live-card::before {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      background: linear-gradient(135deg, rgba(111,183,214,0.28), transparent 38%, rgba(123,198,164,0.22));
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    .live-card > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .live-title {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      color: rgba(255,255,255,0.58);
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .live-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      border-top: 1px solid rgba(255,255,255,0.12);
+      padding: 13px 0;
+      font-size: 13px;
+      color: rgba(255,255,255,0.78);
+    }
+
+    .live-row strong {
+      color: white;
+    }
+
+    .toolbar {
+      margin: 22px 0;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto auto;
+      gap: 12px;
+      align-items: center;
+      animation: fade-up 0.7s 0.34s ease both;
+    }
+
+    .search, .select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.52);
+      border-radius: 12px;
+      padding: 13px 14px;
+      color: var(--ink);
+      outline: none;
+      backdrop-filter: blur(16px) saturate(160%);
+    }
+
+    .search:focus, .select:focus, textarea:focus, input:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(111, 183, 214, 0.16);
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+      gap: 22px;
+      align-items: start;
+      padding-bottom: 80px;
+    }
+
+    .panel {
+      position: relative;
+      overflow: hidden;
+      background: rgba(255,255,255,0.48);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 14px 50px rgba(31,31,28,0.06);
+      backdrop-filter: blur(22px) saturate(180%);
+    }
+
+    .panel::before,
+    .card::before,
+    .form-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.55), transparent 38%, rgba(111,183,214,0.08));
+      pointer-events: none;
+    }
+
+    .panel > *,
+    .card > *,
+    .form-card > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .side {
+      position: sticky;
+      top: 94px;
+    }
+
+    .panel-title {
+      font-family: "JetBrains Mono", monospace;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .filter-list {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .filter-btn {
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      padding: 10px 11px;
+      text-align: left;
+      font-weight: 700;
+      transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+    }
+
+    .filter-btn:hover,
+    .filter-btn.active {
+      background: rgba(255,255,255,0.6);
+      border-color: var(--line);
+      color: var(--ink);
+      transform: translateX(3px);
+    }
+
+    .feed-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .cards {
+      display: grid;
+      gap: 14px;
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      background: rgba(255,255,255,0.58);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 12px 44px rgba(31,31,28,0.06);
+      backdrop-filter: blur(22px) saturate(180%);
+      transform: translateY(14px);
+      opacity: 0;
+      animation: card-enter 0.52s ease forwards;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      background: rgba(255,255,255,0.7);
+      border-color: rgba(111,183,214,0.36);
+      box-shadow: 0 20px 60px rgba(31,31,28,0.12);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .place {
+      font-size: 20px;
+      font-weight: 900;
+      margin-bottom: 5px;
+    }
+
+    .zone {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .score {
+      min-width: 70px;
+      border-radius: 14px;
+      padding: 9px 11px;
+      background: linear-gradient(135deg, var(--ink), #393933);
+      color: white;
+      text-align: center;
+      font-weight: 900;
+      font-size: 22px;
+      box-shadow: 0 12px 34px rgba(31,31,28,0.16);
+    }
+
+    .score small {
+      display: block;
+      font-size: 10px;
+      color: rgba(255,255,255,0.58);
+      font-family: "JetBrains Mono", monospace;
+      margin-top: 2px;
+    }
+
+    .tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .tag {
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--muted);
+      padding: 6px 9px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .tag.green { color: #2f7f5f; background: rgba(123,198,164,0.18); }
+    .tag.gold { color: #8a651d; background: rgba(212,168,83,0.2); }
+    .tag.rose { color: #9a3540; background: rgba(216,111,123,0.18); }
+
+    .note {
+      color: #47443e;
+      line-height: 1.6;
+      margin: 0 0 16px;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .reaction {
+      border: 1px solid var(--line);
+      background: rgba(246,245,240,0.62);
+      border-radius: 999px;
+      padding: 8px 10px;
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 12px;
+      transition: transform 0.14s ease, background 0.14s ease, border-color 0.14s ease;
+    }
+
+    .reaction:hover {
+      transform: translateY(-1px);
+      border-color: rgba(111,183,214,0.42);
+    }
+
+    .reaction.active {
+      color: var(--ink);
+      background: rgba(111,183,214,0.18);
+      border-color: rgba(111,183,214,0.5);
+    }
+
+    .empty {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--muted);
+    }
+
+    .form-page {
+      display: none;
+      padding: 54px 0 80px;
+    }
+
+    .form-page.active {
+      display: block;
+    }
+
+    .form-shell {
+      width: min(760px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .form-card {
+      position: relative;
+      overflow: hidden;
+      background: rgba(255,255,255,0.62);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: clamp(22px, 4vw, 36px);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(24px) saturate(180%);
+    }
+
+    .form-step {
+      display: none;
+    }
+
+    .form-step.active {
+      display: block;
+    }
+
+    .step-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 28px;
+    }
+
+    .step-pill {
+      height: 6px;
+      border-radius: 999px;
+      background: var(--soft);
+    }
+
+    .step-pill.active {
+      background: linear-gradient(90deg, var(--cyan), var(--green));
+      box-shadow: 0 0 18px rgba(111,183,214,0.28);
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 13px 14px;
+      background: rgba(246,245,240,0.7);
+      color: var(--ink);
+      outline: none;
+    }
+
+    .quick-places {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 14px 0 20px;
+    }
+
+    .quick-place {
+      border: 1px solid var(--line);
+      background: rgba(235,232,223,0.7);
+      border-radius: 999px;
+      padding: 9px 12px;
+      color: var(--muted);
+      font-weight: 800;
+      transition: transform 0.14s ease, background 0.14s ease;
+    }
+
+    .quick-place:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.75);
+    }
+
+    .quick-place.active {
+      background: var(--ink);
+      color: white;
+      border-color: var(--ink);
+    }
+
+    .slider-row {
+      display: grid;
+      grid-template-columns: 160px minmax(0, 1fr) 48px;
+      gap: 14px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .slider-row input {
+      width: 100%;
+      accent-color: var(--cyan);
+    }
+
+    .slider-value {
+      font-family: "JetBrains Mono", monospace;
+      color: var(--cyan);
+      font-weight: 900;
+      text-align: right;
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+    }
+
+    .success-box {
+      background: rgba(31,31,28,0.9);
+      color: white;
+      border-radius: 16px;
+      padding: 26px;
+      line-height: 1.8;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13px;
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: inset 0 0 40px rgba(111,183,214,0.08);
+    }
+
+    .intel-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin: 22px 0 6px;
+    }
+
+    .intel-card {
+      min-height: 112px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      background: rgba(255,255,255,0.46);
+      backdrop-filter: blur(20px) saturate(170%);
+      box-shadow: 0 14px 48px rgba(31,31,28,0.07);
+      animation: float-card 7s ease-in-out infinite;
+    }
+
+    .intel-card:nth-child(2) { animation-delay: 1.2s; }
+    .intel-card:nth-child(3) { animation-delay: 2.2s; }
+
+    .intel-value {
+      font-family: Oswald, Impact, sans-serif;
+      font-size: 32px;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .intel-label {
+      font-family: "JetBrains Mono", monospace;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      line-height: 1.5;
+    }
+
+    .pulse-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 0 rgba(123,198,164,0.5);
+      animation: pulse-ring 1.8s ease-out infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes grid-breathe {
+      0%, 100% { opacity: 0.28; }
+      50% { opacity: 0.55; }
+    }
+
+    @keyframes blob-drift-one {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      35% { transform: translate(110px, 70px) scale(1.1); }
+      70% { transform: translate(40px, 180px) scale(0.92); }
+    }
+
+    @keyframes blob-drift-two {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      35% { transform: translate(-120px, 60px) scale(0.96); }
+      72% { transform: translate(-70px, -80px) scale(1.12); }
+    }
+
+    @keyframes blob-drift-three {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      45% { transform: translate(-130px, -90px) scale(1.08); }
+      76% { transform: translate(90px, -120px) scale(0.94); }
+    }
+
+    @keyframes brand-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes card-enter {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes float-card {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-7px); }
+    }
+
+    @keyframes scan-line {
+      0%, 100% { opacity: 0; transform: translateX(-40px); }
+      50% { opacity: 1; transform: translateX(40px); }
+    }
+
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(123,198,164,0.45); }
+      70% { box-shadow: 0 0 0 9px rgba(123,198,164,0); }
+      100% { box-shadow: 0 0 0 0 rgba(123,198,164,0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .hero, .main-grid, .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .intel-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .side {
+        position: static;
+      }
+
+      .nav-inner {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 14px 0;
+      }
+
+      .slider-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient" aria-hidden="true">
+    <div class="blob blob-one"></div>
+    <div class="blob blob-two"></div>
+    <div class="blob blob-three"></div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html">
+        <svg class="nav-logo-icon" width="22" height="22" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="community-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#6FB7D6"/>
+              <stop offset="100%" stop-color="#A59BB7"/>
+            </linearGradient>
+          </defs>
+          <path d="M22 9 C 22 4, 10 4, 10 11 C 10 16, 22 16, 22 21 C 22 28, 10 28, 10 23" stroke="url(#community-logo-grad)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="16" cy="16" r="5" stroke="#7BC6A4" stroke-width="1.2" stroke-dasharray="2 2" opacity="0.75" />
+          <path d="M13.5 13.5 L18.5 18.5 M18.5 13.5 L13.5 18.5" stroke="#7BC6A4" stroke-width="2.2" stroke-linecap="round" />
+        </svg>
+        <span>Snyf</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="community.html" class="active">Commons</a>
+        <button class="btn btn-primary" id="nav-write-btn" type="button">Write Report</button>
+      </div>
+    </div>
+  </nav>
+
+  <section id="browse-page">
+    <header class="container hero">
+      <div>
+        <div class="eyebrow">NCR Field Intelligence</div>
+        <h1>The Commons</h1>
+        <p class="hero-copy">Browse real community field reports, filter by zone, and submit your own report without popups or broken overlays.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" id="hero-write-btn" type="button">Write a Field Report</button>
+          <button class="btn" id="show-all-btn" type="button">Show All Reports</button>
+        </div>
+        <div class="intel-strip">
+          <div class="intel-card">
+            <div class="intel-value">23</div>
+            <div class="intel-label"><span class="pulse-dot"></span>Signals checked today</div>
+          </div>
+          <div class="intel-card">
+            <div class="intel-value">91%</div>
+            <div class="intel-label">Community agreement</div>
+          </div>
+          <div class="intel-card">
+            <div class="intel-value">4m</div>
+            <div class="intel-label">Median freshness</div>
+          </div>
+        </div>
+      </div>
+      <aside class="live-card">
+        <div class="live-title">Live Commons</div>
+        <div class="live-row"><span>Reports indexed</span><strong id="stat-total">0</strong></div>
+        <div class="live-row"><span>Verified reports</span><strong id="stat-verified">0</strong></div>
+        <div class="live-row"><span>Average trust score</span><strong id="stat-average">0.0</strong></div>
+      </aside>
+    </header>
+
+    <section class="container">
+      <div class="toolbar">
+        <input class="search" id="search-input" type="search" placeholder="Search places, zones, notes..." autocomplete="off">
+        <select class="select" id="sort-select" aria-label="Sort reports">
+          <option value="recent">Most recent</option>
+          <option value="score">Highest score</option>
+          <option value="helpful">Most helpful</option>
+        </select>
+        <button class="btn" id="clear-btn" type="button">Clear</button>
+      </div>
+
+      <div class="main-grid">
+        <aside class="panel side">
+          <div class="panel-title">Filter Reports</div>
+          <div class="filter-list" id="status-filters">
+            <button class="filter-btn active" type="button" data-filter="all">All Reports</button>
+            <button class="filter-btn" type="button" data-filter="verified">Verified Only</button>
+            <button class="filter-btn" type="button" data-filter="flagged">Flagged</button>
+          </div>
+
+          <div class="panel-title">Zone</div>
+          <div class="filter-list" id="zone-filters">
+            <button class="filter-btn active" type="button" data-zone="all">All NCR</button>
+            <button class="filter-btn" type="button" data-zone="Cyber Hub">Cyber Hub</button>
+            <button class="filter-btn" type="button" data-zone="Sector 29">Sector 29</button>
+            <button class="filter-btn" type="button" data-zone="DLF Phase 4">DLF Phase 4</button>
+            <button class="filter-btn" type="button" data-zone="Khan Market">Khan Market</button>
+          </div>
+        </aside>
+
+        <main>
+          <div class="feed-head">
+            <strong id="feed-count">Showing reports</strong>
+            <span id="active-summary">All NCR</span>
+          </div>
+          <div class="cards" id="report-list"></div>
+        </main>
+      </div>
+    </section>
+  </section>
+
+  <section class="form-page" id="form-page">
+    <div class="form-shell">
+      <div class="form-card">
+        <div class="form-actions" style="margin-top:0;margin-bottom:24px;">
+          <div>
+            <div class="eyebrow">Submit Report</div>
+            <h2 style="font-size:clamp(2rem,6vw,4rem);line-height:.95;margin:0;font-family:Oswald,Impact,sans-serif;text-transform:uppercase;">Field Report</h2>
+          </div>
+          <button class="btn" id="back-to-community" type="button">Back to Commons</button>
+        </div>
+
+        <div class="step-row" aria-hidden="true">
+          <div class="step-pill active" data-step-pill="1"></div>
+          <div class="step-pill" data-step-pill="2"></div>
+          <div class="step-pill" data-step-pill="3"></div>
+          <div class="step-pill" data-step-pill="4"></div>
+        </div>
+
+        <div class="form-step active" data-step="1">
+          <div class="field">
+            <label for="place-input">Place visited</label>
+            <input id="place-input" type="text" placeholder="Type a cafe or restaurant name" autocomplete="off">
+          </div>
+          <div class="quick-places">
+            <button class="quick-place" type="button" data-place="Blue Tokai, Cyber Hub">Blue Tokai</button>
+            <button class="quick-place" type="button" data-place="Ivy & Bean, Cyber Hub">Ivy & Bean</button>
+            <button class="quick-place" type="button" data-place="Nook Cafe, Sector 29">Nook Cafe</button>
+            <button class="quick-place" type="button" data-place="Perch, Khan Market">Perch</button>
+            <button class="quick-place" type="button" data-place="The Grind, DLF Phase 4">The Grind</button>
+          </div>
+          <div class="form-actions">
+            <span></span>
+            <button class="btn btn-primary" id="step-1-next" type="button" disabled>Continue</button>
+          </div>
+        </div>
+
+        <div class="form-step" data-step="2">
+          <div id="sliders"></div>
+          <div class="live-row" style="background:var(--ink);border-radius:14px;border:0;padding:16px;margin-top:18px;">
+            <span>Composite trust score</span>
+            <strong><span id="composite-score">5.0</span>/10</strong>
+          </div>
+          <div class="form-actions">
+            <button class="btn back-step" type="button" data-back="1">Back</button>
+            <button class="btn btn-primary" id="step-2-next" type="button">Continue</button>
+          </div>
+        </div>
+
+        <div class="form-step" data-step="3">
+          <div class="field">
+            <label for="note-input">One honest observation</label>
+            <textarea id="note-input" maxlength="180" rows="5" placeholder="What should the community know?"></textarea>
+          </div>
+          <div class="feed-head"><span></span><span><span id="char-count">0</span>/180</span></div>
+          <div class="form-actions">
+            <button class="btn back-step" type="button" data-back="2">Back</button>
+            <button class="btn btn-primary" id="step-3-next" type="button">Continue</button>
+          </div>
+        </div>
+
+        <div class="form-step" data-step="4">
+          <div class="field">
+            <label for="handle-input">Name or handle</label>
+            <input id="handle-input" type="text" placeholder="@your_handle" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="email-input">Email for verification</label>
+            <input id="email-input" type="email" placeholder="you@example.com" autocomplete="email">
+          </div>
+          <label style="display:flex;align-items:center;gap:10px;margin-top:12px;">
+            <input id="visited-input" type="checkbox" style="width:18px;height:18px;">
+            <span>I personally visited this place</span>
+          </label>
+          <div class="form-actions">
+            <button class="btn back-step" type="button" data-back="3">Back</button>
+            <button class="btn btn-primary" id="submit-btn" type="button" disabled>Submit Report</button>
+          </div>
+        </div>
+
+        <div class="form-step" data-step="success">
+          <div class="success-box" id="success-box"></div>
+          <div class="form-actions">
+            <button class="btn" id="success-back-btn" type="button">Back to Commons</button>
+            <button class="btn btn-primary" id="new-report-btn" type="button">Write Another</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const reports = [
+      { id: 1, cafe: 'Blue Tokai Coffee Roasters', zone: 'Cyber Hub', score: 8.7, note: 'Strong flat white, quick staff, weekend crowd gets heavy.', verified: true, flagged: false, helpful: 24, time: '2h ago' },
+      { id: 2, cafe: 'Ivy & Bean', zone: 'Cyber Hub', score: 7.5, note: 'Calm room and good seating. Food is fine, coffee is better.', verified: true, flagged: false, helpful: 18, time: '4h ago' },
+      { id: 3, cafe: 'Nook Cafe', zone: 'Sector 29', score: 8.8, note: 'Excellent value. Small space but the bakery counter is worth it.', verified: true, flagged: false, helpful: 38, time: '6h ago' },
+      { id: 4, cafe: 'Perch Wine & Coffee Bar', zone: 'Khan Market', score: 6.9, note: 'Beautiful space. Service was slow on a weekday afternoon.', verified: true, flagged: false, helpful: 15, time: '12h ago' },
+      { id: 5, cafe: 'The Grind', zone: 'DLF Phase 4', score: 8.2, note: 'Reliable work cafe. Fast service and steady quality.', verified: true, flagged: false, helpful: 29, time: '1d ago' },
+      { id: 6, cafe: 'Urban Cafe', zone: 'DLF Phase 4', score: 4.1, note: 'Several details did not match recent community reports.', verified: false, flagged: true, helpful: 4, time: '2d ago' },
+      { id: 7, cafe: 'Fig & Maple', zone: 'Sector 29', score: 8.4, note: 'Great brunch pacing. Pricey, but the experience feels cared for.', verified: true, flagged: false, helpful: 31, time: '3d ago' },
+      { id: 8, cafe: 'Raasta', zone: 'Cyber Hub', score: 5.2, note: 'Fun for groups, inconsistent kitchen timing.', verified: false, flagged: true, helpful: 9, time: '4d ago' },
+    ];
+
+    const dimensions = [
+      { key: 'food', label: 'Food' },
+      { key: 'ambience', label: 'Ambience' },
+      { key: 'service', label: 'Service' },
+      { key: 'value', label: 'Value' },
+      { key: 'wait', label: 'Wait Time' },
+    ];
+
+    const state = {
+      filter: 'all',
+      zone: 'all',
+      sort: 'recent',
+      search: '',
+      form: { place: '', scores: { food: 5, ambience: 5, service: 5, value: 5, wait: 5 } },
+    };
+
+    const $ = selector => document.querySelector(selector);
+    const $$ = selector => Array.from(document.querySelectorAll(selector));
+
+    function scoreClass(report) {
+      if (report.flagged) return 'rose';
+      if (report.score >= 8.5) return 'green';
+      return 'gold';
+    }
+
+    function filteredReports() {
+      const query = state.search.toLowerCase();
+      return reports
+        .filter(report => state.filter === 'all' || (state.filter === 'verified' && report.verified) || (state.filter === 'flagged' && report.flagged))
+        .filter(report => state.zone === 'all' || report.zone === state.zone)
+        .filter(report => !query || report.cafe.toLowerCase().includes(query) || report.zone.toLowerCase().includes(query) || report.note.toLowerCase().includes(query))
+        .sort((a, b) => {
+          if (state.sort === 'score') return b.score - a.score;
+          if (state.sort === 'helpful') return b.helpful - a.helpful;
+          return a.id - b.id;
+        });
+    }
+
+    function renderReports() {
+      const list = $('#report-list');
+      const data = filteredReports();
+      $('#feed-count').textContent = `Showing ${data.length} report${data.length === 1 ? '' : 's'}`;
+      $('#active-summary').textContent = `${state.zone === 'all' ? 'All NCR' : state.zone} / ${state.filter}`;
+      list.innerHTML = data.length ? data.map(report => `
+        <article class="card">
+          <div class="card-top">
+            <div>
+              <div class="place">${report.cafe}</div>
+              <div class="zone">${report.zone} · ${report.time}</div>
+            </div>
+            <div class="score">${report.score.toFixed(1)}<small>/10</small></div>
+          </div>
+          <div class="tags">
+            <span class="tag ${report.verified ? 'green' : 'rose'}">${report.verified ? 'Verified Visit' : 'Needs Verification'}</span>
+            <span class="tag ${scoreClass(report)}">${report.flagged ? 'Flagged' : 'Community Trusted'}</span>
+          </div>
+          <p class="note">${report.note}</p>
+          <div class="card-actions">
+            <button class="reaction" type="button" data-reaction>Helpful <span>${report.helpful}</span></button>
+            <button class="reaction" type="button" data-reaction>Accurate</button>
+            <button class="reaction" type="button" data-reaction>Save</button>
+          </div>
+        </article>
+      `).join('') : '<div class="panel empty">No reports match this view.</div>';
+      $$('.card').forEach((card, index) => {
+        card.style.animationDelay = `${Math.min(index * 0.055, 0.35)}s`;
+      });
+    }
+
+    function renderStats() {
+      const verified = reports.filter(report => report.verified).length;
+      const average = reports.reduce((sum, report) => sum + report.score, 0) / reports.length;
+      $('#stat-total').textContent = reports.length;
+      $('#stat-verified').textContent = verified;
+      $('#stat-average').textContent = average.toFixed(1);
+    }
+
+    function showBrowse() {
+      $('#browse-page').style.display = 'block';
+      $('#form-page').classList.remove('active');
+      history.replaceState(null, '', 'community.html');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showForm() {
+      $('#browse-page').style.display = 'none';
+      $('#form-page').classList.add('active');
+      history.replaceState(null, '', 'community.html#write');
+      goStep(1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function goStep(step) {
+      $$('.form-step').forEach(panel => panel.classList.toggle('active', panel.dataset.step === String(step)));
+      $$('[data-step-pill]').forEach(pill => pill.classList.toggle('active', Number(pill.dataset.stepPill) <= Number(step)));
+    }
+
+    function renderSliders() {
+      $('#sliders').innerHTML = dimensions.map(dim => `
+        <div class="slider-row">
+          <strong>${dim.label}</strong>
+          <input type="range" min="1" max="10" step="0.1" value="${state.form.scores[dim.key]}" data-score="${dim.key}">
+          <span class="slider-value" id="value-${dim.key}">${state.form.scores[dim.key].toFixed(1)}</span>
+        </div>
+      `).join('');
+    }
+
+    function updateComposite() {
+      const s = state.form.scores;
+      const score = ((s.food * 0.3) + (s.ambience * 0.2) + (s.service * 0.2) + (s.value * 0.2) + (s.wait * 0.1)).toFixed(1);
+      $('#composite-score').textContent = score;
+      return score;
+    }
+
+    function validatePlace() {
+      state.form.place = $('#place-input').value.trim();
+      $('#step-1-next').disabled = !state.form.place;
+    }
+
+    function validateSubmit() {
+      $('#submit-btn').disabled = !(($('#handle-input').value.trim()) && ($('#email-input').value.trim()) && $('#visited-input').checked);
+    }
+
+    function resetForm() {
+      state.form = { place: '', scores: { food: 5, ambience: 5, service: 5, value: 5, wait: 5 } };
+      $('#place-input').value = '';
+      $('#note-input').value = '';
+      $('#char-count').textContent = '0';
+      $('#handle-input').value = '';
+      $('#email-input').value = '';
+      $('#visited-input').checked = false;
+      $$('.quick-place').forEach(button => button.classList.remove('active'));
+      renderSliders();
+      updateComposite();
+      validatePlace();
+      validateSubmit();
+      goStep(1);
+    }
+
+    function submitReport() {
+      const score = Number(updateComposite());
+      reports.unshift({
+        id: Date.now(),
+        cafe: state.form.place,
+        zone: state.form.place.includes(',') ? state.form.place.split(',').pop().trim() : 'Community',
+        score,
+        note: $('#note-input').value.trim() || 'No note added.',
+        verified: true,
+        flagged: false,
+        helpful: 0,
+        time: 'just now',
+      });
+      $('#success-box').innerHTML = `
+        &gt; Report submitted<br>
+        &gt; Place: ${state.form.place}<br>
+        &gt; Trust score: ${score.toFixed(1)}/10<br>
+        &gt; Status: indexed in the Commons
+      `;
+      $$('.form-step').forEach(panel => panel.classList.toggle('active', panel.dataset.step === 'success'));
+      $$('[data-step-pill]').forEach(pill => pill.classList.add('active'));
+      renderStats();
+      renderReports();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderStats();
+      renderReports();
+      renderSliders();
+      updateComposite();
+
+      $('#nav-write-btn').addEventListener('click', showForm);
+      $('#hero-write-btn').addEventListener('click', showForm);
+      $('#back-to-community').addEventListener('click', showBrowse);
+      $('#success-back-btn').addEventListener('click', showBrowse);
+      $('#new-report-btn').addEventListener('click', resetForm);
+
+      $('#show-all-btn').addEventListener('click', () => {
+        state.filter = 'all';
+        state.zone = 'all';
+        state.search = '';
+        $('#search-input').value = '';
+        $$('.filter-btn').forEach(button => button.classList.remove('active'));
+        $('[data-filter="all"]').classList.add('active');
+        $('[data-zone="all"]').classList.add('active');
+        renderReports();
+      });
+
+      $('#clear-btn').addEventListener('click', () => {
+        state.search = '';
+        $('#search-input').value = '';
+        renderReports();
+      });
+
+      $('#search-input').addEventListener('input', event => {
+        state.search = event.target.value;
+        renderReports();
+      });
+
+      $('#sort-select').addEventListener('change', event => {
+        state.sort = event.target.value;
+        renderReports();
+      });
+
+      $('#status-filters').addEventListener('click', event => {
+        const button = event.target.closest('[data-filter]');
+        if (!button) return;
+        state.filter = button.dataset.filter;
+        $$('#status-filters .filter-btn').forEach(item => item.classList.toggle('active', item === button));
+        renderReports();
+      });
+
+      $('#zone-filters').addEventListener('click', event => {
+        const button = event.target.closest('[data-zone]');
+        if (!button) return;
+        state.zone = button.dataset.zone;
+        $$('#zone-filters .filter-btn').forEach(item => item.classList.toggle('active', item === button));
+        renderReports();
+      });
+
+      $('#report-list').addEventListener('click', event => {
+        const button = event.target.closest('[data-reaction]');
+        if (!button) return;
+        button.classList.toggle('active');
+      });
+
+      $('#place-input').addEventListener('input', validatePlace);
+      $$('.quick-place').forEach(button => {
+        button.addEventListener('click', () => {
+          $$('.quick-place').forEach(item => item.classList.remove('active'));
+          button.classList.add('active');
+          $('#place-input').value = button.dataset.place;
+          validatePlace();
+        });
+      });
+
+      $('#step-1-next').addEventListener('click', () => goStep(2));
+      $('#step-2-next').addEventListener('click', () => goStep(3));
+      $('#step-3-next').addEventListener('click', () => goStep(4));
+      $$('.back-step').forEach(button => button.addEventListener('click', () => goStep(button.dataset.back)));
+
+      $('#sliders').addEventListener('input', event => {
+        const input = event.target.closest('[data-score]');
+        if (!input) return;
+        state.form.scores[input.dataset.score] = Number(input.value);
+        $(`#value-${input.dataset.score}`).textContent = Number(input.value).toFixed(1);
+        updateComposite();
+      });
+
+      $('#note-input').addEventListener('input', event => {
+        $('#char-count').textContent = event.target.value.length;
+      });
+      $('#handle-input').addEventListener('input', validateSubmit);
+      $('#email-input').addEventListener('input', validateSubmit);
+      $('#visited-input').addEventListener('change', validateSubmit);
+      $('#submit-btn').addEventListener('click', submitReport);
+
+      if (location.hash === '#write') showForm();
+    });
+  </script>
+</body>
+</html>
