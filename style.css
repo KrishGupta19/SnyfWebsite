@@ -3191,7 +3191,7 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     grid-template-areas:
         "hero  hero  ai"
         "prob1 prob2 ai"
-        "map   map   wl"
+        "cycle cycle map"
         "hiw   hiw   wl";
     position: relative;
     z-index: 92;
@@ -3259,13 +3259,14 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
 
 .vm-card:hover::before { opacity: 1; }
 
-.vmc-hero     { grid-area: hero; }
-.vmc-ai       { grid-area: ai;   }
+.vmc-hero     { grid-area: hero;  }
+.vmc-ai       { grid-area: ai;    }
 .vmc-prob-1   { grid-area: prob1; }
 .vmc-prob-2   { grid-area: prob2; }
-.vmc-map      { grid-area: map;  }
-.vmc-hiw      { grid-area: hiw;  }
-.vmc-waitlist { grid-area: wl;   }
+.vmc-map      { grid-area: map;   }
+.vmc-cycle    { grid-area: cycle; }
+.vmc-hiw      { grid-area: hiw;   }
+.vmc-waitlist { grid-area: wl;    }
 
 .vmc-eyebrow {
     font-family: var(--font-mono);
@@ -3871,6 +3872,7 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
             "hero  hero"
             "ai    ai"
             "prob1 prob2"
+            "cycle cycle"
             "map   map"
             "hiw   hiw"
             "wl    wl";
@@ -4005,7 +4007,7 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     .vm-grid {
         grid-template-columns: 1fr;
         grid-template-areas:
-            "hero" "ai" "prob1" "prob2" "map" "hiw" "wl";
+            "hero" "ai" "prob1" "prob2" "cycle" "map" "hiw" "wl";
     }
     .visual-mode { padding: 80px 14px 24px; }
     .vm-grid { gap: 10px; }
@@ -4749,19 +4751,48 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   z-index: 2 !important;
 }
 
-/* ── Broken Loop Diagram ───────────────────────────────────────── */
-.broken-loop-wrap {
-  width: 100%;
-  max-width: 760px;
-  margin: 0 auto 60px;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
+/* ── Broken Cycle Visual Mode Card ─────────────────────────────── */
+.vmc-cycle {
+  grid-area: cycle;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.broken-loop-wrap.visible {
-  opacity: 1;
-  transform: translateY(0);
+.vmc-cycle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.vmc-cycle-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  color: #D97A4A;
+  text-transform: uppercase;
+}
+
+.vmc-cycle-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #D97A4A;
+  box-shadow: 0 0 8px rgba(217,122,74,0.6);
+  animation: vm-pulse 1.8s ease-in-out infinite;
+}
+
+.vmc-cycle-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
 }
 
 #broken-loop-svg {
@@ -4769,35 +4800,37 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   height: auto;
   display: block;
   overflow: visible;
+  max-height: 320px;
 }
 
-.broken-loop-caption {
-  text-align: center;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  color: rgba(30, 30, 27, 0.55);
-  margin-top: 20px;
+.vmc-cycle-footer {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  text-transform: uppercase;
+  flex-shrink: 0;
 }
 
-.caption-dot {
+.vmc-cycle-caption-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--orange);
-  display: inline-block;
-  animation: pulse-dot 2s infinite;
+  background: #D97A4A;
+  box-shadow: 0 0 6px rgba(217,122,74,0.5);
+  animation: vm-pulse 2s infinite;
 }
 
-/* Mobile: shrink viewBox padding */
+.vmc-cycle-caption-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: rgba(180,175,168,0.45);
+  text-transform: uppercase;
+}
+
 @media (max-width: 600px) {
-  .broken-loop-wrap {
-    margin-bottom: 40px;
+  .vmc-cycle {
+    min-height: 200px;
   }
 }
 
@@ -4857,6 +4890,8 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .vmc-map-legend {
@@ -4919,6 +4954,8 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   color: rgba(255,255,255,0.25);
   letter-spacing: 0.06em;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .vmc-map-divider { color: rgba(255,255,255,0.1); }

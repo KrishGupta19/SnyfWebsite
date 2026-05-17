@@ -592,22 +592,6 @@
                 <p>We don't aggregate opinions. We authenticate reality. The current review systems are fundamentally
                     broken.</p>
             </div>
-            
-            <!-- ── Broken Loop Diagram ── -->
-            <div class="broken-loop-wrap" id="broken-loop" aria-hidden="true">
-              <svg id="broken-loop-svg" viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-                <!-- Edges rendered by JS into this group -->
-                <g id="bl-edges"></g>
-                <!-- Nodes rendered by JS into this group -->
-                <g id="bl-nodes"></g>
-                <!-- Traveler dot rendered by JS -->
-                <g id="bl-traveler"></g>
-              </svg>
-              <p class="broken-loop-caption">
-                <span class="caption-dot"></span>
-                The cycle repeats. Every. Single. Time.
-              </p>
-            </div>
 
             <div class="cards-grid">
                 <div class="problem-card" data-aos="fade-up" data-aos-delay="0">
@@ -1449,6 +1433,31 @@
                     <span id="vmc-map-stat-flagged">0 flagged</span>
                     <span class="vmc-map-divider">·</span>
                     <span id="vmc-map-stat-new">0 new today</span>
+                </div>
+            </div>
+
+            <!-- BROKEN DISCOVERY CYCLE -->
+            <div class="vm-card vmc-cycle" data-spotlight>
+                <div class="vm-card-glow"></div>
+                <div class="vmc-cycle-header">
+                    <div class="vmc-eyebrow" style="margin-bottom:0">
+                        <span class="vmc-dot vmc-dot--amber"></span>
+                        THE BROKEN DISCOVERY CYCLE
+                    </div>
+                    <span class="vmc-cycle-status">
+                        <span class="vmc-cycle-pulse"></span>LOOPING
+                    </span>
+                </div>
+                <div class="vmc-cycle-body">
+                    <svg id="broken-loop-svg" viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+                        <g id="bl-edges"></g>
+                        <g id="bl-nodes"></g>
+                        <g id="bl-traveler"></g>
+                    </svg>
+                </div>
+                <div class="vmc-cycle-footer">
+                    <span class="vmc-cycle-caption-dot"></span>
+                    <span class="vmc-cycle-caption-text">The cycle repeats. Every. Single. Time.</span>
                 </div>
             </div>
 
@@ -2444,38 +2453,38 @@
 
         const PALETTE = {
             neutral: {
-                fill:   'rgba(30,30,27,0.04)',
-                stroke: 'rgba(30,30,27,0.25)',
-                text:   'rgba(30,30,27,0.75)',
-                sub:    'rgba(110,106,100,0.7)',
+                fill:   'rgba(246,245,242,0.05)',
+                stroke: 'rgba(180,175,168,0.3)',
+                text:   'rgba(246,245,242,0.7)',
+                sub:    'rgba(180,175,168,0.45)',
                 glow:   'none',
             },
             warn: {
                 fill:   'rgba(217,122,74,0.08)',
-                stroke: 'rgba(217,122,74,0.6)',
-                text:   '#C06838',
-                sub:    'rgba(185,95,45,0.75)',
+                stroke: 'rgba(217,122,74,0.5)',
+                text:   'rgba(246,245,242,0.8)',
+                sub:    'rgba(217,122,74,0.55)',
                 glow:   'rgba(217,122,74,0.12)',
             },
             danger: {
                 fill:   'rgba(217,122,74,0.12)',
-                stroke: 'rgba(200,100,50,0.85)',
-                text:   '#B85C2A',
-                sub:    'rgba(180,90,40,0.85)',
-                glow:   'rgba(217,122,74,0.18)',
+                stroke: 'rgba(217,122,74,0.7)',
+                text:   '#D97A4A',
+                sub:    'rgba(217,122,74,0.6)',
+                glow:   'rgba(217,122,74,0.2)',
             },
             active: {
-                fill:   'rgba(111,183,214,0.18)',
-                stroke: '#4A95B5',
-                text:   '#1E1E1B',
-                sub:    'rgba(50,120,160,0.85)',
-                glow:   'rgba(111,183,214,0.18)',
+                fill:   'rgba(111,183,214,0.14)',
+                stroke: '#6FB7D6',
+                text:   '#F6F5F2',
+                sub:    'rgba(111,183,214,0.65)',
+                glow:   'rgba(111,183,214,0.2)',
             },
             passed: {
-                fill:   'rgba(111,183,214,0.06)',
-                stroke: 'rgba(80,150,190,0.35)',
-                text:   'rgba(30,30,27,0.5)',
-                sub:    'rgba(80,150,190,0.55)',
+                fill:   'rgba(111,183,214,0.04)',
+                stroke: 'rgba(111,183,214,0.2)',
+                text:   'rgba(246,245,242,0.45)',
+                sub:    'rgba(111,183,214,0.3)',
                 glow:   'none',
             },
         };
@@ -2513,7 +2522,7 @@
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', `M ${from.x} ${from.y} Q ${cpx} ${cpy} ${to.x} ${to.y}`);
             path.setAttribute('fill', 'none');
-            path.setAttribute('stroke', 'rgba(30,30,27,0.2)');
+            path.setAttribute('stroke', 'rgba(180,175,168,0.15)');
             path.setAttribute('stroke-width', '1.2');
             path.setAttribute('stroke-dasharray', '4 5');
             path.dataset.edgeIdx = i;
@@ -2532,7 +2541,7 @@
 
             const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
             arrow.setAttribute('points', '-5,-3 5,0 -5,3');
-            arrow.setAttribute('fill', 'rgba(30,30,27,0.35)');
+            arrow.setAttribute('fill', 'rgba(180,175,168,0.2)');
             arrow.setAttribute('transform', `translate(${ax},${ay}) rotate(${angle})`);
             gEdges.appendChild(arrow);
         });
@@ -2592,7 +2601,7 @@
                 ring.setAttribute('cy', node.y);
                 ring.setAttribute('r', R + 6);
                 ring.setAttribute('fill', 'none');
-                ring.setAttribute('stroke', 'rgba(217,122,74,0.65)');
+                ring.setAttribute('stroke', 'rgba(217,122,74,0.4)');
                 ring.setAttribute('stroke-width', '1');
                 ring.id = 'bl-danger-ring';
                 gNodes.insertBefore(ring, glow);
@@ -2610,7 +2619,7 @@
 
         const travCore = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         travCore.setAttribute('r', '2.5');
-        travCore.setAttribute('fill', '#1E1E1B');
+        travCore.setAttribute('fill', '#F6F5F2');
         gTraveler.appendChild(travCore);
 
         const travHalo = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -2672,7 +2681,7 @@
 
         function setTravelerColor(color, coreColor) {
             travDot.setAttribute('fill', color);
-            travCore.setAttribute('fill', coreColor || '#1E1E1B');
+            travCore.setAttribute('fill', coreColor || '#F6F5F2');
             travHalo.setAttribute('fill', color.replace(')', ',0.15)').replace('rgb(', 'rgba('));
         }
 
@@ -2693,8 +2702,8 @@
                 },
                 duration: 0.2,
             });
-            gsap.to(els.label, { attr: { fill: isDanger ? '#B85C2A' : '#1E1E1B' }, duration: 0.2 });
-            gsap.to(els.sub, { attr: { fill: isDanger ? 'rgba(180,90,40,0.9)' : 'rgba(50,120,160,0.85)' }, duration: 0.2 });
+            gsap.to(els.label, { attr: { fill: isDanger ? '#D97A4A' : '#F6F5F2' }, duration: 0.2 });
+            gsap.to(els.sub, { attr: { fill: isDanger ? 'rgba(217,122,74,0.7)' : 'rgba(111,183,214,0.65)' }, duration: 0.2 });
             gsap.to(els.glow, { opacity: 1, duration: 0.3 });
         }
 
@@ -2719,7 +2728,7 @@
             const els = nodeEls[dangerId];
             const dangerNode = NODES.find(n => n.id === dangerId);
 
-            setTravelerColor('#D97A4A', '#1E1E1B');
+            setTravelerColor('#D97A4A', '#F6F5F2');
             gsap.to(travDot, { attr: { r: '7' }, duration: 0.15, yoyo: true, repeat: 5 });
 
             const baseX = dangerNode.x;
@@ -2837,32 +2846,32 @@
                 duration: 0.3,
             });
             gsap.to(path, {
-                attr: { stroke: 'rgba(30,30,27,0.2)', strokeOpacity: 1 },
+                attr: { stroke: 'rgba(180,175,168,0.15)', strokeOpacity: 1 },
                 duration: 0.8,
                 delay: 0.3,
             });
         }
 
-        const wrap = document.getElementById('broken-loop');
+        const wrap = document.getElementById('broken-loop-svg')?.closest('.vmc-cycle');
         if (!wrap) return;
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting && !isRunning) {
-                    isRunning = true;
-                    wrap.classList.add('visible');
-                    pulsesDangerRing();
-                    setTimeout(runLoop, 600);
-                }
-            });
-        }, { threshold: 0.3 });
+        // Start when Visual Mode opens
+        window.addEventListener('snyf:vmopen', () => {
+            if (!isRunning) {
+                isRunning = true;
+                pulsesDangerRing();
+                setTimeout(runLoop, 600);
+            }
+        });
 
-        observer.observe(wrap);
+        window.addEventListener('snyf:vmclose', () => {
+            isRunning = false;
+        });
 
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 isRunning = false;
-            } else if (wrap.classList.contains('visible') && !isRunning) {
+            } else if (document.body.classList.contains('visual-mode-on') && !isRunning) {
                 isRunning = true;
                 runLoop();
             }
@@ -2871,6 +2880,13 @@
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
             wrap.style.display = 'none';
             return;
+        }
+
+        // Auto-start if VM is already open
+        if (document.body.classList.contains('visual-mode-on')) {
+            isRunning = true;
+            pulsesDangerRing();
+            setTimeout(runLoop, 600);
         }
 
     })();
