@@ -133,6 +133,7 @@
             </a>
             <ul class="nav-links">
                 <li><a href="#story">Story</a></li>
+                <li><a href="#try-it-live">Try It</a></li>
                 <li><a href="#problem">Problem</a></li>
                 <li><a href="#solution">Solution</a></li>
                 <li><a href="#features">Features</a></li>
@@ -303,6 +304,176 @@
                     <ul id="map-results-list">
                         <li class="map-placeholder">Search a location to see results.</li>
                     </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== TRY IT LIVE — Real-time Trust Engine Simulation ========== -->
+    <section class="section grid-bg" id="try-it-live">
+        <div class="container">
+            <div class="try-it-container">
+                <div class="section-header" data-aos="fade-up" style="margin-bottom: 32px; text-align: center;">
+                    <span class="section-tag">◈ LIVE DEMO · TRUST INTELLIGENCE</span>
+                    <h2>See Snyf Analyze a Café</h2>
+                    <p>Pick any café below or type your own. Watch the trust engine work in real time.</p>
+                </div>
+
+                <!-- STAGE 1: INPUT STATE -->
+                <div id="try-it-input-state" data-aos="fade-up" data-aos-delay="100">
+                    <div class="try-it-input-wrap">
+                        <input id="try-it-search-input" class="try-it-input" type="text" placeholder="Enter café name or pick below..." autocomplete="off">
+                    </div>
+
+                    <div class="chips-row">
+                        <button class="cafe-chip" data-cafe="Blue Tokai, Gurugram">Blue Tokai, Gurugram</button>
+                        <button class="cafe-chip" data-cafe="Ivy & Bean, Cyber Hub">Ivy & Bean, Cyber Hub</button>
+                        <button class="cafe-chip" data-cafe="Nook Café, Sector 29">Nook Café, Sector 29</button>
+                        <button class="cafe-chip" data-cafe="The Grind, DLF Phase 4">The Grind, DLF Phase 4</button>
+                        <button class="cafe-chip" data-cafe="Perch, Khan Market">Perch, Khan Market</button>
+                        <button class="cafe-chip" data-cafe="Fig & Maple, Sushant Lok">Fig & Maple, Sushant Lok</button>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <button id="try-it-analyze-btn" class="btn btn-primary" style="background: #1E1E1B; color: #F6F5F2; font-weight: 700; padding: 14px 40px; border-radius: 8px; font-size: 15px; border: 1px solid rgba(246,245,242,0.15); cursor: pointer; transition: all 0.2s;">Analyze →</button>
+                    </div>
+                </div>
+
+                <!-- STAGE 2: SCANNING TERMINAL -->
+                <div id="try-it-terminal" class="terminal-block">
+                    <!-- Terminal rows dynamically populated -->
+                </div>
+
+                <!-- STAGE 3: RESULTS STATE -->
+                <div id="try-it-report" class="report-card">
+                    <!-- Top header -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(246,245,242,0.07); padding-bottom: 20px; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 32px; height: 32px; background: rgba(111,183,214,0.12); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #6FB7D6; border: 1px solid rgba(111,183,214,0.3); font-size: 16px;">
+                                ◈
+                            </div>
+                            <div>
+                                <h4 style="color: #F6F5F2; font-family: var(--font-display); font-size: 14px; font-weight: 800; text-transform: uppercase; margin: 0; letter-spacing: 0.05em;">SNYF · Intelligence Report</h4>
+                                <span id="report-cafe-name" style="color: rgba(246,245,242,0.5); font-size: 11px; font-family: var(--font-mono);"></span>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; text-align: right;">
+                            <span class="pulse-dot" style="width: 8px; height: 8px; background: #6FB7D6; border-radius: 50%; display: inline-block;"></span>
+                            <span style="color: #6FB7D6; font-size: 10px; font-weight: 700; font-family: var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; margin-right: 4px;">LIVE</span>
+                            <span id="report-timestamp" style="color: rgba(246,245,242,0.35); font-size: 10px; font-family: var(--font-mono);">Updated just now</span>
+                        </div>
+                    </div>
+
+                    <!-- Prominent overall score -->
+                    <div class="score-display">
+                        <div style="font-family: var(--font-display); font-weight: 900; line-height: 1;">
+                            <span id="report-score-value" style="font-size: clamp(3rem, 10vw, 5rem); color: #F6F5F2;">0.0</span>
+                            <span style="color: rgba(246,245,242,0.3); font-size: 1.5rem;">/10</span>
+                        </div>
+                        <div style="color: rgba(246,245,242,0.4); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; margin: 8px 0 12px; font-weight: 600; font-family: var(--font-mono);">Overall Trust Score</div>
+                        <span id="report-verdict-badge" style="background: rgba(111,183,214,0.12); border: 1px solid rgba(111,183,214,0.3); color: #6FB7D6; font-size: 10px; letter-spacing: 0.12em; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; font-family: var(--font-mono); font-weight: 700;">HIGH CONFIDENCE</span>
+                    </div>
+
+                    <!-- Metrics Grid -->
+                    <div style="margin-bottom: 24px;">
+                        <!-- Food Quality -->
+                        <div class="metric-row" data-metric="foodQuality">
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: var(--font-mono);">
+                                <span style="color: rgba(246,245,242,0.5); text-transform: uppercase;">Food Quality</span>
+                                <strong class="metric-val" style="color: #F6F5F2;">0.0</strong>
+                            </div>
+                            <div class="metric-bar-track">
+                                <div class="metric-bar-fill" style="background: #6FB7D6;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Ambience -->
+                        <div class="metric-row" data-metric="ambience">
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: var(--font-mono);">
+                                <span style="color: rgba(246,245,242,0.5); text-transform: uppercase;">Ambience</span>
+                                <strong class="metric-val" style="color: #F6F5F2;">0.0</strong>
+                            </div>
+                            <div class="metric-bar-track">
+                                <div class="metric-bar-fill" style="background: #6FB7D6;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Service Quality -->
+                        <div class="metric-row" data-metric="serviceQuality">
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: var(--font-mono);">
+                                <span style="color: rgba(246,245,242,0.5); text-transform: uppercase;">Service Quality</span>
+                                <strong class="metric-val" style="color: #F6F5F2;">0.0</strong>
+                            </div>
+                            <div class="metric-bar-track">
+                                <div class="metric-bar-fill" style="background: #6FB7D6;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Value for Money -->
+                        <div class="metric-row" data-metric="valueForMoney">
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: var(--font-mono);">
+                                <span style="color: rgba(246,245,242,0.5); text-transform: uppercase;">Value for Money</span>
+                                <strong class="metric-val" style="color: #F6F5F2;">0.0</strong>
+                            </div>
+                            <div class="metric-bar-track">
+                                <div class="metric-bar-fill" style="background: #6FB7D6;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Waiting Time -->
+                        <div class="metric-row" data-metric="waitingTime">
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-family: var(--font-mono);">
+                                <span style="color: rgba(246,245,242,0.5); text-transform: uppercase;">Waiting Time</span>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="flagged-badge" style="display: none; background: rgba(217,122,74,0.12); border: 1px solid rgba(217,122,74,0.3); color: #D97A4A; font-size: 9px; padding: 2px 8px; border-radius: 4px; font-weight: 700; letter-spacing: 0.05em;">FLAGGED</span>
+                                    <strong class="metric-val" style="color: #F6F5F2;">0.0</strong>
+                                </div>
+                            </div>
+                            <div class="metric-bar-track">
+                                <div class="metric-bar-fill" style="background: rgba(246,245,242,0.25);"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Anomaly Alert Box -->
+                    <div id="try-it-anomaly-box" style="display: none; background: rgba(217,122,74,0.06); border: 1px solid rgba(217,122,74,0.2); border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; display: flex; gap: 12px; align-items: flex-start;">
+                        <span style="color: #D97A4A; font-size: 16px; line-height: 1;">⚠</span>
+                        <div>
+                            <h5 style="color: #D97A4A; font-size: 12px; font-weight: 700; margin: 0 0 4px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em;">Anomaly Detected</h5>
+                            <p id="anomaly-text" style="color: rgba(246,245,242,0.6); font-size: 12px; margin: 0; line-height: 1.5;"></p>
+                        </div>
+                    </div>
+
+                    <!-- AI Synthesis Box -->
+                    <div style="background: rgba(246,245,242,0.03); border: 1px solid rgba(246,245,242,0.07); border-radius: 10px; padding: 16px; margin-bottom: 28px; display: flex; gap: 12px; align-items: flex-start;">
+                        <div style="background: rgba(111,183,214,0.08); color: #6FB7D6; border: 1px solid rgba(111,183,214,0.2); border-radius: 4px; padding: 2px 6px; font-size: 9px; font-weight: 900; font-family: var(--font-mono); letter-spacing: 0.05em; line-height: 1.4;">AI</div>
+                        <div>
+                            <h5 style="color: rgba(246,245,242,0.4); font-size: 10px; font-weight: 700; margin: 0 0 6px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em;">Intelligence Synthesis</h5>
+                            <p id="synthesis-text" style="color: rgba(246,245,242,0.7); font-size: 13px; margin: 0; line-height: 1.6;"></p>
+                        </div>
+                    </div>
+
+                    <!-- Divider -->
+                    <div style="border-top: 1px solid rgba(246,245,242,0.07); margin-bottom: 24px;"></div>
+
+                    <!-- Report Footer Info -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 12px;">
+                        <span id="report-sources-count" style="color: rgba(246,245,242,0.4); font-size: 11px; font-family: var(--font-mono);">Based on 147 verified reviews</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="background: rgba(123,198,164,0.1); border: 1px solid rgba(123,198,164,0.3); color: #7BC6A4; font-size: 9px; font-family: var(--font-mono); font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.05em;">✓ VERIFIED</span>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <span class="pulse-green-dot" style="width: 6px; height: 6px; background: #7BC6A4; border-radius: 50%; display: inline-block;"></span>
+                                <span style="color: rgba(246,245,242,0.5); font-size: 10px; font-family: var(--font-mono);">100% verified</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons Row -->
+                    <div class="report-actions" style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;">
+                        <button id="try-it-reset-btn" class="btn btn-ghost" style="padding: 12px 20px; font-size: 13px; font-weight: 600; border-radius: 6px; font-family: var(--font-mono); cursor: pointer; transition: all 0.2s;">Try Another Café</button>
+                        <button id="try-it-waitlist-btn" class="btn btn-primary" style="background: #1E1E1B; color: #F6F5F2; border: 1px solid rgba(246,245,242,0.15); padding: 12px 20px; font-size: 13px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s;">Join Waitlist to See Real Data →</button>
+                        <button id="try-it-share-btn" class="btn btn-ghost" style="padding: 12px 20px; font-size: 13px; font-weight: 600; border-radius: 6px; font-family: var(--font-mono); cursor: pointer; position: relative; transition: all 0.2s;">Share This Report</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1282,6 +1453,316 @@
                 observer.observe(heroCards);
             }
         });
+    </script>
+
+    <!-- ========== TRY IT LIVE SIMULATION SCRIPT ========== -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Seeded Random Generator for café deterministic metrics
+        function seededRandom(seed) {
+            let s = 0;
+            for (let i = 0; i < seed.length; i++) s += seed.charCodeAt(i);
+            return function() {
+                s = (s * 9301 + 49297) % 233280;
+                return s / 233280;
+            };
+        }
+
+        function getCaféScores(cafeName) {
+            const rand = seededRandom(cafeName.toLowerCase().trim());
+            const base = () => 4.0 + rand() * 5.5; // range 4.0–9.5
+            return {
+                foodQuality:    parseFloat(base().toFixed(1)),
+                ambience:       parseFloat(base().toFixed(1)),
+                serviceQuality: parseFloat(base().toFixed(1)),
+                valueForMoney:  parseFloat(base().toFixed(1)),
+                waitingTime:    parseFloat(base().toFixed(1)),
+                reviewCount:    Math.floor(80 + rand() * 320),
+                overall:        0
+            };
+        }
+
+        // State Machine management
+        let tryItState = 'input';
+        let selectedCafé = '';
+        let scanTimeoutIds = []; // Track timeouts to prevent overlapping if reset early
+
+        function tryItInit() {
+            tryItState = 'input';
+            
+            // Show input state, hide other stages
+            document.getElementById('try-it-input-state').style.display = 'block';
+            document.getElementById('try-it-terminal').style.display = 'none';
+            document.getElementById('try-it-report').style.display = 'none';
+            
+            // Reset chip active selections
+            document.querySelectorAll('.cafe-chip').forEach(c => c.classList.remove('selected'));
+            selectedCafé = '';
+        }
+
+        function tryItScan(cafeName) {
+            if (!cafeName) {
+                // Shake the input container if value is empty
+                const inputWrap = document.querySelector('.try-it-input-wrap');
+                inputWrap.classList.add('try-it-shake');
+                setTimeout(() => inputWrap.classList.remove('try-it-shake'), 400);
+                return;
+            }
+
+            tryItState = 'scanning';
+            
+            // Clear active scanner timeouts
+            scanTimeoutIds.forEach(id => clearTimeout(id));
+            scanTimeoutIds = [];
+
+            // Toggle visibility states
+            document.getElementById('try-it-input-state').style.display = 'none';
+            const term = document.getElementById('try-it-terminal');
+            term.style.display = 'block';
+            term.style.opacity = '1';
+            term.innerHTML = '';
+
+            const scores = getCaféScores(cafeName);
+            const rawOverall = (scores.foodQuality * 0.3) +
+                               (scores.ambience * 0.2) +
+                               (scores.serviceQuality * 0.2) +
+                               (scores.valueForMoney * 0.2) +
+                               (scores.waitingTime * 0.1);
+            scores.overall = parseFloat(rawOverall.toFixed(1));
+
+            // Theatrical scan lines sequence
+            const steps = [
+                { text: '> SNYF Intelligence Engine v2.1', delay: 100, class: 't-dim' },
+                { text: `> Initializing trust scan for: <span class="t-cyan">${cafeName}</span>...`, delay: 400, class: '' },
+                { text: '', delay: 600, class: '' },
+                
+                { text: '[████████░░░░░░░░░░░░] 40%   Fetching review corpus...', delay: 800, class: 't-white' },
+                { text: `> Sources indexed: ${scores.reviewCount} verified · ${Math.floor(scores.reviewCount * 0.12)} flagged · ${Math.floor(scores.reviewCount * 1.4)} total`, delay: 1200, class: 't-dim' },
+                { text: '', delay: 1400, class: '' },
+                
+                { text: '[████████████░░░░░░░░] 62%   Running anomaly detection...', delay: 1600, class: 't-white' },
+                { text: '⚠ Suspicious spike detected: +340% 5★ reviews (48h window)', delay: 2000, class: 't-orange' },
+                { text: '> Pattern flagged for manual review', delay: 2300, class: 't-dim' },
+                { text: '', delay: 2500, class: '' },
+                
+                { text: '[████████████████░░░░] 81%   Computing dimensional scores...', delay: 2700, class: 't-white' },
+                { text: '> Weighting reviewer credibility matrix...', delay: 2900, class: 't-dim' },
+                { text: '> Cross-referencing geo-temporal signals...', delay: 3100, class: 't-dim' },
+                { text: '', delay: 3300, class: '' },
+                
+                { text: '[████████████████████] 100%  Analysis complete.', delay: 3500, class: 't-green' },
+                { text: '> Trust Report ready. Confidence: 94%', delay: 3800, class: 't-green' }
+            ];
+
+            steps.forEach((step, idx) => {
+                const tid = setTimeout(() => {
+                    const line = document.createElement('span');
+                    line.className = 'terminal-line ' + step.class;
+                    line.innerHTML = step.text;
+                    
+                    // Track and clean console cursor
+                    const oldCursor = term.querySelector('.term-cursor');
+                    if (oldCursor) oldCursor.remove();
+                    
+                    term.appendChild(line);
+                    
+                    if (idx < steps.length - 1) {
+                        const cursor = document.createElement('span');
+                        cursor.className = 'term-cursor';
+                        cursor.style.animation = 'blink 1.2s step-end infinite';
+                        cursor.textContent = '_';
+                        line.appendChild(cursor);
+                    }
+                    
+                    setTimeout(() => {
+                        line.classList.add('visible');
+                        term.scrollTop = term.scrollHeight;
+                    }, 50);
+
+                    if (idx === steps.length - 1) {
+                        const resId = setTimeout(() => {
+                            gsap.to(term, {
+                                opacity: 0,
+                                duration: 0.3,
+                                onComplete: () => {
+                                    term.style.display = 'none';
+                                    term.style.opacity = '1';
+                                    tryItResults(cafeName, scores);
+                                }
+                            });
+                        }, 800);
+                        scanTimeoutIds.push(resId);
+                    }
+                }, step.delay);
+                scanTimeoutIds.push(tid);
+            });
+        }
+
+        function tryItResults(cafeName, scores) {
+            tryItState = 'results';
+            
+            document.getElementById('report-cafe-name').textContent = cafeName.toUpperCase();
+            document.getElementById('report-score-value').textContent = scores.overall.toFixed(1);
+            document.getElementById('report-sources-count').textContent = `Based on ${scores.reviewCount} verified reviews`;
+            
+            const verdict = document.getElementById('report-verdict-badge');
+            const scoreVal = document.getElementById('report-score-value');
+            
+            if (scores.overall >= 7.5) {
+                verdict.textContent = 'HIGH CONFIDENCE';
+                verdict.style.background = 'rgba(123, 198, 164, 0.12)';
+                verdict.style.borderColor = 'rgba(123, 198, 164, 0.3)';
+                verdict.style.color = '#7BC6A4';
+                scoreVal.style.color = '#7BC6A4';
+            } else if (scores.overall >= 6.0) {
+                verdict.textContent = 'MODERATE CONFIDENCE';
+                verdict.style.background = 'rgba(111,183,214,0.12)';
+                verdict.style.borderColor = 'rgba(111,183,214,0.3)';
+                verdict.style.color = '#6FB7D6';
+                scoreVal.style.color = '#6FB7D6';
+            } else {
+                verdict.textContent = 'WARNING: LOW TRUST';
+                verdict.style.background = 'rgba(217,122,74,0.12)';
+                verdict.style.borderColor = 'rgba(217,122,74,0.3)';
+                verdict.style.color = '#D97A4A';
+                scoreVal.style.color = '#D97A4A';
+            }
+
+            const metrics = ['foodQuality', 'ambience', 'serviceQuality', 'valueForMoney', 'waitingTime'];
+            metrics.forEach(m => {
+                const row = document.querySelector(`.metric-row[data-metric="${m}"]`);
+                if (row) {
+                    row.querySelector('.metric-val').textContent = scores[m].toFixed(1);
+                }
+            });
+
+            const waitRow = document.querySelector('.metric-row[data-metric="waitingTime"]');
+            const waitFill = waitRow.querySelector('.metric-bar-fill');
+            const waitBadge = waitRow.querySelector('.flagged-badge');
+            const anomalyBox = document.getElementById('try-it-anomaly-box');
+            
+            if (scores.waitingTime < 5.0) {
+                waitFill.style.background = '#D97A4A';
+                waitBadge.style.display = 'inline-block';
+                document.getElementById('anomaly-text').textContent = `Waiting time scores have declined 47% over the last 72 hours. Pattern suggests operational stress during peak hours.`;
+                anomalyBox.style.display = 'flex';
+            } else {
+                waitFill.style.background = 'rgba(246, 245, 242, 0.25)';
+                waitBadge.style.display = 'none';
+                anomalyBox.style.display = 'none';
+            }
+
+            const synthesisText = document.getElementById('synthesis-text');
+            if (scores.overall >= 7.5) {
+                synthesisText.textContent = `${cafeName} demonstrates consistent quality across verified dimensions. Authentic experience with strong community trust signals.`;
+            } else if (scores.overall >= 6.0) {
+                let lowestMetric = 'foodQuality';
+                let lowestVal = scores.foodQuality;
+                metrics.forEach(m => {
+                    if (scores[m] < lowestVal) {
+                        lowestVal = scores[m];
+                        lowestMetric = m;
+                    }
+                });
+                const formattedMetric = lowestMetric.replace(/([A-Z])/g, ' $1').toLowerCase();
+                synthesisText.textContent = `${cafeName} shows solid fundamentals with room for improvement in ${formattedMetric}. Generally reliable for the target experience.`;
+            } else {
+                synthesisText.textContent = `${cafeName} shows concerning patterns in multiple dimensions. Exercise caution — recent data suggests declining quality.`;
+            }
+
+            const reportCard = document.getElementById('try-it-report');
+            reportCard.style.display = 'block';
+            
+            gsap.fromTo(reportCard, 
+                { translateY: 30, opacity: 0 },
+                { translateY: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }
+            );
+
+            metrics.forEach((m, idx) => {
+                const row = document.querySelector(`.metric-row[data-metric="${m}"]`);
+                if (row) {
+                    const fill = row.querySelector('.metric-bar-fill');
+                    const targetPct = (scores[m] / 10) * 100;
+                    gsap.fromTo(fill, 
+                        { width: '0%' },
+                        { width: targetPct + '%', duration: 1.2, ease: 'power2.out', delay: 0.1 * idx }
+                    );
+                }
+            });
+
+            // Set up sharing dynamic action
+            const shareBtn = document.getElementById('try-it-share-btn');
+            const shareHandler = () => {
+                const tweet = `Just checked ${cafeName} on @SnyfonApp — Trust Score: ${scores.overall}/10. This is what verified local discovery looks like. snyf.in #TrustTheExperience`;
+                navigator.clipboard.writeText(tweet).then(() => {
+                    const originalText = shareBtn.textContent;
+                    shareBtn.textContent = 'Copied!';
+                    shareBtn.style.color = '#7BC6A4';
+                    setTimeout(() => {
+                        shareBtn.textContent = originalText;
+                        shareBtn.style.color = '';
+                    }, 2000);
+                });
+            };
+            shareBtn.onclick = shareHandler;
+        }
+
+        function tryItReset() {
+            tryItState = 'input';
+            document.getElementById('try-it-search-input').value = '';
+            tryItInit();
+        }
+
+        // Bind event listeners
+        const searchInput = document.getElementById('try-it-search-input');
+        const analyzeBtn = document.getElementById('try-it-analyze-btn');
+
+        // Chips selection handler
+        document.querySelectorAll('.cafe-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.cafe-chip').forEach(c => c.classList.remove('selected'));
+                chip.classList.add('selected');
+                selectedCafé = chip.getAttribute('data-cafe');
+                searchInput.value = selectedCafé;
+            });
+        });
+
+        // Handle direct custom typing
+        searchInput.addEventListener('input', () => {
+            document.querySelectorAll('.cafe-chip').forEach(c => {
+                if (c.getAttribute('data-cafe').toLowerCase() !== searchInput.value.toLowerCase()) {
+                    c.classList.remove('selected');
+                } else {
+                    c.classList.add('selected');
+                }
+            });
+        });
+
+        // Form triggering events
+        analyzeBtn.addEventListener('click', () => {
+            tryItScan(searchInput.value.trim());
+        });
+
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                tryItScan(searchInput.value.trim());
+            }
+        });
+
+        // Reset button
+        document.getElementById('try-it-reset-btn').addEventListener('click', tryItReset);
+
+        // Waitlist scroll button
+        document.getElementById('try-it-waitlist-btn').addEventListener('click', () => {
+            const wl = document.getElementById('waitlist');
+            if (wl) {
+                wl.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+
+        // Start in Input State
+        tryItInit();
+    });
     </script>
 </body>
 </html>
