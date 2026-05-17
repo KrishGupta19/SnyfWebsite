@@ -118,17 +118,6 @@
     <nav class="navbar" id="navbar">
         <div class="nav-inner">
             <a href="#hero" class="logo" id="nav-logo">
-                <svg class="nav-logo-icon" width="22" height="22" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="nav-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="#6FB7D6"/>
-                            <stop offset="100%" stop-color="#A59BB7"/>
-                        </linearGradient>
-                    </defs>
-                    <path d="M22 9 C 22 4, 10 4, 10 11 C 10 16, 22 16, 22 21 C 22 28, 10 28, 10 23" stroke="url(#nav-logo-grad)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
-                    <circle cx="16" cy="16" r="5" stroke="#7BC6A4" stroke-width="1.2" stroke-dasharray="2 2" opacity="0.75" />
-                    <path d="M13.5 13.5 L18.5 18.5 M18.5 13.5 L13.5 18.5" stroke="#7BC6A4" stroke-width="2.2" stroke-linecap="round" />
-                </svg>
                 <span>Snyf</span>
             </a>
             <ul class="nav-links">
@@ -138,7 +127,7 @@
                 <li><a href="#solution">Solution</a></li>
                 <li><a href="#features">Features</a></li>
                 <li><a href="community.html">Commons</a></li>
-                <li><a href="#discover">Discover</a></li>
+                <!-- <li><a href="#discover">Discover</a></li> -->
                 <li><a href="#about">About</a></li>
                 <li><a href="#waitlist" class="nav-cta">Join Waitlist</a></li>
             </ul>
@@ -155,8 +144,8 @@
     <section class="hero" id="hero">
         <canvas id="trust-network-canvas" aria-hidden="true"></canvas>
         <div class="hero-content">
-            <h1><span class="glitch-text" data-text="Never Fall for a Fake">Never Fall for a Fake</span><br><span
-                    class="gradient-text" id="typing-word">5-Star Review Again.</span>
+            <h1><span class="prismatic-refraction" data-text="Never Fall for Fake">Never Fall for Fake</span><br><span
+                    class="gradient-text" id="typing-word" style="white-space: nowrap;">5-Star Review Again.</span>
             </h1>
             <p class="hero-sub">Stop wasting money on overhyped tourist traps. Snyf uses AI to instantly eliminate bot
                 networks and paid shills, surfacing the verified truth about local places.</p>
@@ -286,7 +275,7 @@
     </div>
 
     <!-- ========== MAP / DISCOVER — Moved UP to prove value immediately ========== -->
-    <section class="section map-section" id="discover">
+    <section class="section map-section" id="discover" style="display: none !important;">
         <div class="container">
             <div class="section-header" data-aos="fade-up">
                 <span class="section-tag">Live Demo</span>
@@ -876,17 +865,6 @@
             <div class="footer-top">
                 <div class="footer-brand">
                     <a href="#hero" class="logo">
-                        <svg class="nav-logo-icon" width="22" height="22" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <defs>
-                                <linearGradient id="footer-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="#6FB7D6"/>
-                                    <stop offset="100%" stop-color="#A59BB7"/>
-                                </linearGradient>
-                            </defs>
-                            <path d="M22 9 C 22 4, 10 4, 10 11 C 10 16, 22 16, 22 21 C 22 28, 10 28, 10 23" stroke="url(#footer-logo-grad)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
-                            <circle cx="16" cy="16" r="5" stroke="#7BC6A4" stroke-width="1.2" stroke-dasharray="2 2" opacity="0.75" />
-                            <path d="M13.5 13.5 L18.5 18.5 M18.5 13.5 L13.5 18.5" stroke="#7BC6A4" stroke-width="2.2" stroke-linecap="round" />
-                        </svg>
                         <span>Snyf</span>
                     </a>
                     <p>The institutional standard for verified local intelligence.</p>
@@ -2004,19 +1982,6 @@
     <!-- ========== TRUST NETWORK CANVAS ANIMATION ========== -->
     <script id="trust-network-js">
     (() => {
-        const COLORS = {
-            verified:   '#6FB7D6',  // cyan — trusted reviewer
-            trusted:    '#7BC6A4',  // mint — high trust score
-            suspicious: '#D97A4A',  // orange — anomaly flagged
-            fake:       'rgba(110,106,100,0.4)',  // muted grey — fake node
-            neutral:    'rgba(180,175,168,0.5)', // warm grey — unverified
-            edge:       'rgba(111,183,214,0.15)', // default connection line
-            edgeActive: 'rgba(111,183,214,0.55)', // active pulse line
-            edgeFake:   'rgba(217,122,74,0.2)',  // suspicious connection
-            pulse:      '#6FB7D6',  // traveling pulse dot
-            pulseFake:  '#D97A4A',  // traveling fake pulse
-        };
-
         const canvas = document.getElementById('trust-network-canvas');
         if (!canvas) return;
         
@@ -2025,233 +1990,132 @@
 
         const ctx = canvas.getContext('2d');
         const isMobile = window.innerWidth <= 768;
-        const NODE_COUNT = isMobile ? 35 : 70;
-        const FAKE_RATIO = 0.25; // 25% start as fake/suspicious
-        const CONNECTION_DIST = isMobile ? 100 : 140;
-
+        const NODE_COUNT = isMobile ? 45 : 120;
+        
         let nodes = [];
-        let pulses = []; // traveling pulse objects
+        let bridges = [];
         let animFrame;
-        let networkTime = 0;
         let isRunning = false;
-
+        
+        // Color palette for Snyf constellation
+        const COLOR_CORE = '111,183,214'; // Cyan
+        const COLOR_ACCENT = '123,198,164'; // Mint
+        
         function createNode(i) {
-            const isFake = i < Math.floor(NODE_COUNT * FAKE_RATIO);
-            const isSuspicious = !isFake && i < Math.floor(NODE_COUNT * (FAKE_RATIO + 0.1));
-            
-            const type = isFake ? 'fake' 
-              : isSuspicious ? 'suspicious'
-              : Math.random() > 0.5 ? 'verified' 
-              : Math.random() > 0.4 ? 'trusted' 
-              : 'neutral';
-
-            const x = Math.random() * canvas.width;
-            const y = Math.random() * canvas.height;
-            
             return {
                 id: i,
-                x, y,
-                baseX: x, baseY: y,
-                vx: (Math.random() - 0.5) * 0.3,
-                vy: (Math.random() - 0.5) * 0.3,
-                radius: type === 'verified' ? 5 + Math.random() * 2
-                       : type === 'trusted' ? 4 + Math.random() * 2
-                       : type === 'fake' ? 2.5 + Math.random()
-                       : 3 + Math.random() * 2,
-                type,
-                trustScore: type === 'verified' ? 0.7 + Math.random() * 0.3
-                          : type === 'trusted' ? 0.6 + Math.random() * 0.3
-                          : type === 'suspicious' ? 0.2 + Math.random() * 0.3
-                          : type === 'fake' ? Math.random() * 0.2
-                          : 0.3 + Math.random() * 0.4,
-                pulsePhase: Math.random() * Math.PI * 2,
-                pulseSpeed: 0.8 + Math.random() * 1.2,
-                glowIntensity: 0,
-                eliminating: false,
-                eliminateProgress: 0,
-                connections: [],
-                label: type === 'verified' ? 'Verified Reviewer'
-                     : type === 'trusted' ? 'Trust Anchor'
-                     : type === 'suspicious' ? 'Flagged Account'
-                     : type === 'fake' ? 'Bot Detected'
-                     : 'New Reviewer',
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 0.08, // Extremely slow drift
+                vy: (Math.random() - 0.5) * 0.08,
+                baseRadius: Math.random() > 0.85 ? 1.5 : 0.8,
+                glowTimer: 0,
+                glowColor: Math.random() > 0.7 ? COLOR_ACCENT : COLOR_CORE,
             };
         }
-
-        function buildConnections() {
-            for (let i = 0; i < nodes.length; i++) {
-                nodes[i].connections = [];
-                for (let j = 0; j < nodes.length; j++) {
-                    if (i === j) continue;
-                    const dx = nodes[i].x - nodes[j].x;
-                    const dy = nodes[i].y - nodes[j].y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < CONNECTION_DIST) {
-                        nodes[i].connections.push(j);
-                    }
-                }
-            }
-        }
-
-        function spawnPulse() {
+        
+        function spawnBridge() {
             if (!isRunning) return;
-            const sources = nodes.filter(n => 
-                (n.type === 'verified' || n.type === 'trusted') 
-                && !n.eliminating 
-                && n.connections.length > 0
-            );
-            if (!sources.length) return;
+            // Find a random anchor node that isn't already glowing
+            const availableNodes = nodes.filter(n => n.glowTimer <= 0);
+            if (availableNodes.length === 0) return;
             
-            const from = sources[Math.floor(Math.random() * sources.length)];
-            if (!from.connections.length) return;
+            const anchor = availableNodes[Math.floor(Math.random() * availableNodes.length)];
             
-            const toIdx = from.connections[Math.floor(Math.random() * from.connections.length)];
-            const to = nodes[toIdx];
-            const isMalicious = to.type === 'fake' || to.type === 'suspicious';
+            // Find 1-3 closest neighbors within a specific radius
+            const neighbors = nodes
+                .filter(n => n.id !== anchor.id && n.glowTimer <= 0)
+                .map(n => ({ n, dist: Math.hypot(n.x - anchor.x, n.y - anchor.y) }))
+                .filter(o => o.dist > 30 && o.dist < 220) // min and max bridge length
+                .sort((a, b) => a.dist - b.dist)
+                .slice(0, Math.floor(Math.random() * 3) + 1)
+                .map(o => o.n);
+                
+            if (neighbors.length === 0) return;
             
-            pulses.push({
-                fromIdx: from.id,
-                toIdx,
-                progress: 0,
-                speed: 0.005 + Math.random() * 0.008,
-                color: isMalicious ? COLORS.pulseFake : COLORS.pulse,
-                radius: 2 + Math.random(),
-                alpha: 0.7 + Math.random() * 0.3,
+            bridges.push({
+                anchor: anchor,
+                targets: neighbors,
+                life: 0, 
+                maxLife: 150 + Math.random() * 100, // hold time on screen (in frames)
             });
         }
 
-        function scheduleEliminations() {
-            const targets = nodes
-                .filter(n => (n.type === 'fake' || n.type === 'suspicious') && !n.eliminating)
-                .sort(() => Math.random() - 0.5);
-
-            targets.forEach((node, i) => {
-                setTimeout(() => {
-                    node.eliminating = true;
-                    const verified = nodes.find(n => n.type === 'verified' && !n.eliminating);
-                    if (verified) {
-                        pulses.push({
-                            fromIdx: verified.id,
-                            toIdx: node.id,
-                            progress: 0,
-                            speed: 0.02,
-                            color: '#D97A4A',
-                            radius: 3,
-                            alpha: 1.0,
-                        });
-                    }
-                }, i * 3000 + 2000);
-            });
-        }
-
-        function drawEdge(nodeA, nodeB) {
-            if (nodeA.eliminating && nodeA.eliminateProgress > 0.5) return;
-            if (nodeB.eliminating && nodeB.eliminateProgress > 0.5) return;
-            
-            const isSuspect = nodeA.type === 'fake' || nodeA.type === 'suspicious'
-                           || nodeB.type === 'fake' || nodeB.type === 'suspicious';
-            
-            const dx = nodeB.x - nodeA.x;
-            const dy = nodeB.y - nodeA.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            
-            const alpha = (1 - dist / CONNECTION_DIST) * (isSuspect ? 0.12 : 0.18);
-            
+        function drawNode(node) {
+            // Faint base rendering
             ctx.beginPath();
-            ctx.moveTo(nodeA.x, nodeA.y);
-            ctx.lineTo(nodeB.x, nodeB.y);
-            ctx.strokeStyle = isSuspect ? `rgba(217,122,74,${alpha})` : `rgba(111,183,214,${alpha})`;
-            ctx.lineWidth = isSuspect ? 0.5 : 0.7;
-            ctx.stroke();
-        }
-
-        function drawNode(node, t) {
-            if (node.eliminating && node.eliminateProgress >= 1) return;
-            
-            const baseAlpha = node.eliminating ? 1 - node.eliminateProgress : 1;
-            const breathe = 1 + 0.15 * Math.sin(t * node.pulseSpeed + node.pulsePhase);
-            const r = node.radius * breathe * (node.eliminating ? (1 - node.eliminateProgress * 0.5) : 1);
-            
-            if ((node.type === 'verified' || node.type === 'trusted') && !node.eliminating) {
-                const glowR = r * (2.5 + Math.sin(t * node.pulseSpeed * 0.7 + node.pulsePhase) * 0.5);
-                const glowColor = node.type === 'trusted' ? '123,198,164' : '111,183,214';
-                const grad = ctx.createRadialGradient(node.x, node.y, r * 0.5, node.x, node.y, glowR);
-                grad.addColorStop(0, `rgba(${glowColor},${0.25 * baseAlpha})`);
-                grad.addColorStop(1, `rgba(${glowColor},0)`);
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, glowR, 0, Math.PI * 2);
-                ctx.fillStyle = grad;
-                ctx.fill();
-            }
-            
-            if (node.eliminating && node.eliminateProgress < 0.6) {
-                const burstR = r * (1 + node.eliminateProgress * 4);
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, burstR, 0, Math.PI * 2);
-                ctx.strokeStyle = `rgba(217,122,74,${(1 - node.eliminateProgress / 0.6) * 0.7})`;
-                ctx.lineWidth = 1.5;
-                ctx.stroke();
-            }
-            
-            const color = COLORS[node.type] || COLORS.neutral;
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
-            
-            if (node.type === 'verified' || node.type === 'trusted') {
-                const coreColor = node.type === 'trusted' ? '123,198,164' : '111,183,214';
-                const coreGrad = ctx.createRadialGradient(node.x - r * 0.3, node.y - r * 0.3, 0, node.x, node.y, r);
-                coreGrad.addColorStop(0, `rgba(${coreColor},${baseAlpha})`);
-                coreGrad.addColorStop(1, `rgba(${coreColor},${0.6 * baseAlpha})`);
-                ctx.fillStyle = coreGrad;
-            } else {
-                ctx.fillStyle = node.type === 'suspicious' 
-                  ? `rgba(217,122,74,${0.7 * baseAlpha})`
-                  : node.type === 'fake'
-                  ? `rgba(110,106,100,${0.35 * baseAlpha})`
-                  : `rgba(180,175,168,${0.5 * baseAlpha})`;
-            }
+            ctx.arc(node.x, node.y, node.baseRadius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(180,180,180,0.2)`;
             ctx.fill();
             
-            if (node.type === 'verified' || node.type === 'trusted') {
+            // Glow if active
+            if (node.glowTimer > 0) {
+                // intensity curve using sine wave: 1 -> 0 maps to sin(PI) -> sin(0)
+                const intensity = Math.sin(node.glowTimer * Math.PI); 
+                
+                const r = node.baseRadius + intensity * 6;
+                const grad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, r);
+                grad.addColorStop(0, `rgba(${node.glowColor},${intensity * 0.85})`);
+                grad.addColorStop(1, `rgba(${node.glowColor},0)`);
+                
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
-                const ringColor = node.type === 'trusted' ? '123,198,164' : '111,183,214';
-                ctx.strokeStyle = `rgba(${ringColor},${0.8 * baseAlpha})`;
-                ctx.lineWidth = 0.8;
-                ctx.stroke();
+                ctx.fillStyle = grad;
+                ctx.fill();
+                
+                // Solid core when glowing
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.baseRadius + intensity * 1.5, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255,255,255,${intensity})`;
+                ctx.fill();
+                
+                node.glowTimer -= 0.015; // Fade speed
             }
         }
-
-        function drawPulse(pulse) {
-            const from = nodes[pulse.fromIdx];
-            const to = nodes[pulse.toIdx];
-            if (!from || !to) return;
-            if (from.eliminating && from.eliminateProgress > 0.8) return;
-            
-            const x = from.x + (to.x - from.x) * pulse.progress;
-            const y = from.y + (to.y - from.y) * pulse.progress;
-            
-            const trailLength = 0.08;
-            const trailProgress = Math.max(0, pulse.progress - trailLength);
-            const tx = from.x + (to.x - from.x) * trailProgress;
-            const ty = from.y + (to.y - from.y) * trailProgress;
-            
-            const grad = ctx.createLinearGradient(tx, ty, x, y);
-            grad.addColorStop(0, `${pulse.color}00`);
-            grad.addColorStop(1, `${pulse.color}${Math.floor(pulse.alpha * 255).toString(16).padStart(2, '0')}`);
-            ctx.beginPath();
-            ctx.moveTo(tx, ty);
-            ctx.lineTo(x, y);
-            ctx.strokeStyle = grad;
-            ctx.lineWidth = pulse.radius * 0.8;
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.arc(x, y, pulse.radius, 0, Math.PI * 2);
-            ctx.fillStyle = pulse.color;
-            ctx.globalAlpha = pulse.alpha;
-            ctx.fill();
-            ctx.globalAlpha = 1;
+        
+        function drawBridges() {
+            for (let i = bridges.length - 1; i >= 0; i--) {
+                const b = bridges[i];
+                b.life++;
+                const progress = b.life / b.maxLife; // 0 to 1
+                
+                if (progress >= 1) {
+                    bridges.splice(i, 1);
+                    continue;
+                }
+                
+                // Opacity curve: fade in fast, hold, fade out slowly
+                let alpha = 0;
+                if (progress < 0.1) alpha = progress / 0.1;
+                else if (progress < 0.8) alpha = 1;
+                else alpha = 1 - (progress - 0.8) / 0.2;
+                
+                // Animate line drawing
+                const drawProgress = Math.min(1, progress / 0.2); // Fully drawn quickly
+                
+                // Flare anchor node as bridge starts
+                if (progress < 0.05 && b.anchor.glowTimer <= 0) {
+                    b.anchor.glowTimer = 1; 
+                }
+                
+                ctx.lineWidth = 1.2;
+                ctx.strokeStyle = `rgba(${COLOR_CORE},${alpha * 0.5})`;
+                
+                b.targets.forEach(t => {
+                    // Flare target node when line reaches it
+                    if (drawProgress > 0.9 && t.glowTimer <= 0) {
+                        t.glowTimer = 1;
+                    }
+                    
+                    const curX = b.anchor.x + (t.x - b.anchor.x) * drawProgress;
+                    const curY = b.anchor.y + (t.y - b.anchor.y) * drawProgress;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(b.anchor.x, b.anchor.y);
+                    ctx.lineTo(curX, curY);
+                    ctx.stroke();
+                });
+            }
         }
 
         function animateNetwork() {
@@ -2269,58 +2133,24 @@
             }
 
             animFrame = requestAnimationFrame(animateNetwork);
-            networkTime += 0.016;
-            const t = networkTime;
             
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            const PAD = 40;
+            // Subtle node drift
             for (const node of nodes) {
-                if (node.eliminating) {
-                  node.eliminateProgress = Math.min(1, node.eliminateProgress + 0.02);
-                  continue;
-                }
                 node.x += node.vx;
                 node.y += node.vy;
                 
-                if (node.x < PAD) { node.vx += 0.02; }
-                if (node.x > canvas.width - PAD) { node.vx -= 0.02; }
-                if (node.y < PAD) { node.vy += 0.02; }
-                if (node.y > canvas.height - PAD) { node.vy -= 0.02; }
+                // Wrap around edges seamlessly
+                if (node.x < -10) node.x = canvas.width + 10;
+                if (node.x > canvas.width + 10) node.x = -10;
+                if (node.y < -10) node.y = canvas.height + 10;
+                if (node.y > canvas.height + 10) node.y = -10;
                 
-                node.vx *= 0.998;
-                node.vy *= 0.998;
-                
-                if (Math.random() < 0.004) node.vx += (Math.random() - 0.5) * 0.1;
-                if (Math.random() < 0.004) node.vy += (Math.random() - 0.5) * 0.1;
-                
-                const speed = Math.sqrt(node.vx * node.vx + node.vy * node.vy);
-                if (speed > 0.5) { node.vx *= 0.5 / speed; node.vy *= 0.5 / speed; }
+                drawNode(node);
             }
             
-            if (Math.floor(t * 60) % 180 === 0) buildConnections();
-            
-            const drawn = new Set();
-            for (const node of nodes) {
-                for (const connIdx of node.connections) {
-                    const key = [Math.min(node.id, connIdx), Math.max(node.id, connIdx)].join('-');
-                    if (drawn.has(key)) continue;
-                    drawn.add(key);
-                    drawEdge(node, nodes[connIdx]);
-                }
-            }
-            
-            pulses = pulses.filter(p => p.progress < 1);
-            for (const pulse of pulses) {
-                pulse.progress += pulse.speed;
-                drawPulse(pulse);
-            }
-            
-            for (const node of nodes) {
-                drawNode(node, t);
-            }
-            
-            nodes = nodes.filter(n => !(n.eliminating && n.eliminateProgress >= 1));
+            drawBridges();
         }
 
         function resizeTrustNetwork() {
@@ -2340,16 +2170,14 @@
             resizeTrustNetwork();
             
             nodes = Array.from({ length: NODE_COUNT }, (_, i) => createNode(i));
-            buildConnections();
             
             setTimeout(() => {
                 canvas.classList.add('visible');
             }, 300);
             
             animateNetwork();
-            scheduleEliminations();
             
-            setInterval(spawnPulse, isMobile ? 600 : 350);
+            setInterval(spawnBridge, isMobile ? 1200 : 800);
 
             window.addEventListener('resize', () => {
                 cancelAnimationFrame(animFrame);
@@ -2376,7 +2204,6 @@
             observer.observe(document.body, { attributes: true });
         }
 
-        // Fallback — if body class method doesn't catch it, init after 4s
         setTimeout(() => {
             if (!canvas.classList.contains('visible')) {
                 initTrustNetwork();
