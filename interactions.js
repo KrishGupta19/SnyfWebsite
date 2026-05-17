@@ -842,5 +842,315 @@ sections.forEach(s => navObs.observe(s));
         });
     });
 
+    // ── 6. Visual Mode Interactive Trust Engine Simulator ────────────────
+    (fn => fn())(() => {
+        const cardSelectorBtn = document.getElementById('vm-cafe-selector-btn');
+        const cafeDropdown    = document.getElementById('vm-cafe-dropdown');
+        const customInput     = document.getElementById('vm-custom-cafe-input');
+        const customGoBtn     = document.getElementById('vm-custom-cafe-go');
+        const scanOverlay     = document.getElementById('vm-scanning-overlay');
+        const scoreTicker     = document.getElementById('vm-report-score-value');
+        const verdictBadge    = document.getElementById('vm-report-verdict');
+        const summaryText     = document.getElementById('vm-report-summary');
+        const sourceText      = document.getElementById('vm-report-sources');
+        const metricsContainer= document.getElementById('vm-metrics-container');
+
+        if (!cardSelectorBtn || !cafeDropdown) return;
+
+        // Seeded Random Generator for café deterministic metrics
+        function seededRandom(seed) {
+            let s = 0;
+            for (let i = 0; i < seed.length; i++) s += seed.charCodeAt(i);
+            return function() {
+                s = (s * 9301 + 49297) % 233280;
+                return s / 233280;
+            };
+        }
+
+        function getCaféScores(cafeName) {
+            const rand = seededRandom(cafeName.toLowerCase().trim());
+            const base = () => 4.0 + rand() * 5.5; // range 4.0–9.5
+            return {
+                foodQuality:    parseFloat(base().toFixed(1)),
+                ambience:       parseFloat(base().toFixed(1)),
+                serviceQuality: parseFloat(base().toFixed(1)),
+                valueForMoney:  parseFloat(base().toFixed(1)),
+                waitingTime:    parseFloat(base().toFixed(1)),
+                reviewCount:    Math.floor(80 + rand() * 320),
+                overall:        0
+            };
+        }
+
+        let isScanning = false;
+
+        // Toggle dropdown
+        cardSelectorBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            cardSelectorBtn.classList.toggle('active');
+            cafeDropdown.classList.toggle('active');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+            cardSelectorBtn.classList.remove('active');
+            cafeDropdown.classList.remove('active');
+        });
+
+        // Prevent closing dropdown when typing in custom input
+        customInput?.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Dropdown selections
+        cafeDropdown.querySelectorAll('.vm-dropdown-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const name = item.dataset.cafe;
+                const icon = item.dataset.icon;
+                
+                // Highlight item
+                cafeDropdown.querySelectorAll('.vm-dropdown-item').forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+
+                // Update label
+                const nameLabel = document.getElementById('vm-selected-cafe-name');
+                const iconLabel = cardSelectorBtn.querySelector('.vm-select-icon');
+                if (nameLabel) nameLabel.textContent = name;
+                if (iconLabel) iconLabel.textContent = icon;
+
+                // Run visual simulator scan!
+                triggerVisualScan(name);
+            });
+        });
+
+        // Custom inputs
+        customGoBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const val = customInput.value.trim();
+            if (val) {
+                // Update dropdown state
+                const nameLabel = document.getElementById('vm-selected-cafe-name');
+                const iconLabel = cardSelectorBtn.querySelector('.vm-select-icon');
+                if (nameLabel) nameLabel.textContent = val;
+                if (iconLabel) iconLabel.textContent = '◈';
+                cardSelectorBtn.classList.remove('active');
+                cafeDropdown.classList.remove('active');
+                triggerVisualScan(val);
+            }
+        });
+
+        customInput?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.stopPropagation();
+                const val = customInput.value.trim();
+                if (val) {
+                    const nameLabel = document.getElementById('vm-selected-cafe-name');
+                    const iconLabel = cardSelectorBtn.querySelector('.vm-select-icon');
+                    if (nameLabel) nameLabel.textContent = val;
+                    if (iconLabel) iconLabel.textContent = '◈';
+                    cardSelectorBtn.classList.remove('active');
+                    cafeDropdown.classList.remove('active');
+                    triggerVisualScan(val);
+                }
+            }
+        });
+
+        // Visual simulation engine
+        function triggerVisualScan(cafeName) {
+            if (isScanning) return;
+            isScanning = true;
+
+            // Activate scanning elements
+            scanOverlay.classList.add('active');
+            
+            // Turn status indicator to busy state
+            const liveDot = document.getElementById('vm-live-dot');
+            const pulseInd = document.getElementById('vm-pulse-indicator');
+            const statusLabel = document.getElementById('vm-engine-status');
+            const liveLabel = document.getElementById('vm-live-text');
+
+            if (liveDot) liveDot.className = 'vmc-dot vmc-dot--amber';
+            if (pulseInd) pulseInd.style.background = 'var(--vm-amber)';
+            if (statusLabel) statusLabel.textContent = 'VERIFYING CREDIBILITY MATRIX...';
+            if (liveLabel) liveLabel.textContent = 'SCANNING';
+
+            // Start metric bars dynamic oscillating sweep
+            const fills = metricsContainer.querySelectorAll('.vmc-metric-fill');
+            fills.forEach(fill => {
+                fill.classList.add('scanning-wave');
+            });
+
+            // Start rapid score randomizer ticker
+            let tickerInterval = setInterval(() => {
+                scoreTicker.textContent = (4.0 + Math.random() * 5.5).toFixed(1);
+            }, 60);
+
+            // Simulation finishes after 1.8 seconds of beautiful visual feedback
+            setTimeout(() => {
+                clearInterval(tickerInterval);
+
+                // Disable scanning overlays
+                scanOverlay.classList.remove('active');
+                isScanning = false;
+
+                // Reset status indicator back to Green Live
+                if (liveDot) liveDot.className = 'vmc-dot vmc-dot--green';
+                if (pulseInd) pulseInd.style.background = 'var(--vm-green)';
+                if (statusLabel) statusLabel.textContent = 'LIVE VERIFICATION ENGINE';
+                if (liveLabel) liveLabel.textContent = 'LIVE';
+
+                // Calculate metrics deterministically
+                const scores = getCaféScores(cafeName);
+                const rawOverall = (scores.foodQuality * 0.3) +
+                                   (scores.ambience * 0.2) +
+                                   (scores.serviceQuality * 0.2) +
+                                   (scores.valueForMoney * 0.2) +
+                                   (scores.waitingTime * 0.1);
+                scores.overall = parseFloat(rawOverall.toFixed(1));
+
+                // Color configuration matching the overall confidence
+                let themeColor = 'rgba(111, 183, 214, 0.8)';
+                
+                if (scores.overall >= 7.5) {
+                    verdictBadge.textContent = 'HIGH CONFIDENCE';
+                    verdictBadge.style.background = 'rgba(100, 200, 120, 0.08)';
+                    verdictBadge.style.borderColor = 'rgba(100, 200, 120, 0.2)';
+                    verdictBadge.style.color = 'var(--vm-green)';
+                    scoreTicker.style.color = 'var(--vm-green)';
+                    themeColor = 'rgba(100, 200, 120, 0.8)';
+                } else if (scores.overall >= 6.0) {
+                    verdictBadge.textContent = 'MODERATE CONFIDENCE';
+                    verdictBadge.style.background = 'rgba(111, 183, 214, 0.08)';
+                    verdictBadge.style.borderColor = 'rgba(111, 183, 214, 0.2)';
+                    verdictBadge.style.color = '#6FB7D6';
+                    scoreTicker.style.color = '#6FB7D6';
+                    themeColor = 'rgba(111, 183, 214, 0.8)';
+                } else {
+                    verdictBadge.textContent = 'WARNING: LOW TRUST';
+                    verdictBadge.style.background = 'rgba(217, 122, 74, 0.08)';
+                    verdictBadge.style.borderColor = 'rgba(217, 122, 74, 0.2)';
+                    verdictBadge.style.color = '#D97A4A';
+                    scoreTicker.style.color = '#D97A4A';
+                    themeColor = 'rgba(217, 122, 74, 0.8)';
+                }
+
+                // Smoothly count up score ticker to precise final value
+                let startScore = 0.0;
+                let tickerStep = () => {
+                    if (startScore < scores.overall) {
+                        startScore += 0.3;
+                        if (startScore > scores.overall) startScore = scores.overall;
+                        scoreTicker.textContent = startScore.toFixed(1);
+                        requestAnimationFrame(tickerStep);
+                    }
+                };
+                tickerStep();
+
+                // Animate bars to precise value and set matching color variable
+                const metricsList = ['foodQuality', 'ambience', 'serviceQuality', 'valueForMoney', 'waitingTime'];
+                metricsList.forEach(m => {
+                    const row = metricsContainer.querySelector(`.vmc-metric[data-metric="${m}"]`);
+                    if (row) {
+                        const fill = row.querySelector('.vmc-metric-fill');
+                        const scoreDisp = row.querySelector('.vmc-metric-score');
+
+                        fill.classList.remove('scanning-wave');
+                        fill.style.width = '0%';
+                        fill.dataset.fill = Math.round(scores[m] * 10);
+                        
+                        // Set colors based on individual category scores
+                        let itemColor = 'rgba(100, 200, 120, 0.8)';
+                        let itemTextClass = 'vmc-score--good';
+                        
+                        if (scores[m] < 5.0) {
+                            itemColor = 'rgba(217, 122, 74, 0.8)';
+                            itemTextClass = 'vmc-score--warn';
+                        } else if (scores[m] < 7.5) {
+                            itemColor = 'rgba(220, 160, 60, 0.8)';
+                            itemTextClass = 'vmc-score--warn';
+                        }
+
+                        // Apply classes
+                        scoreDisp.className = 'vmc-metric-score ' + itemTextClass;
+                        scoreDisp.textContent = scores[m].toFixed(1);
+
+                        // Trigger visual sliding animation
+                        setTimeout(() => {
+                            fill.style.setProperty('--fill-color', itemColor);
+                            fill.style.width = (scores[m] * 10) + '%';
+                        }, 50);
+                    }
+                });
+
+                // Set Flagged Warning Badge on Waiting Time metric
+                const waitingRow = metricsContainer.querySelector(`.vmc-metric[data-metric="waitingTime"]`);
+                if (waitingRow) {
+                    const flagBadge = waitingRow.querySelector('.vm-flagged-tag');
+                    if (scores.waitingTime < 5.0) {
+                        if (flagBadge) flagBadge.style.display = 'inline-block';
+                    } else {
+                        if (flagBadge) flagBadge.style.display = 'none';
+                    }
+                }
+
+                // Dynamic Synthesis assessments
+                let reviewSynthesis = '';
+                if (scores.overall >= 7.5) {
+                    reviewSynthesis = `"${cafeName} demonstrates consistent quality across verified dimensions. Authentic experience with strong community trust signals."`;
+                } else if (scores.overall >= 6.0) {
+                    let lowestMetric = 'foodQuality';
+                    let lowestVal = scores.foodQuality;
+                    metricsList.forEach(m => {
+                        if (scores[m] < lowestVal) {
+                            lowestVal = scores[m];
+                            lowestMetric = m;
+                        }
+                    });
+                    const formattedMetric = lowestMetric.replace(/([A-Z])/g, ' $1').toLowerCase();
+                    reviewSynthesis = `"${cafeName} shows solid fundamentals with room for improvement in ${formattedMetric}. Generally reliable for the target experience."`;
+                } else {
+                    reviewSynthesis = `"${cafeName} shows concerning patterns in multiple dimensions. Exercise caution — recent data suggests declining quality."`;
+                }
+
+                // Visual typewriting effect for the synthesis summary text box
+                summaryText.textContent = '';
+                let charIndex = 0;
+                function typeSynthesis() {
+                    if (charIndex < reviewSynthesis.length) {
+                        summaryText.textContent += reviewSynthesis.charAt(charIndex);
+                        charIndex++;
+                        setTimeout(typeSynthesis, 15);
+                    }
+                }
+                typeSynthesis();
+
+                // Update dynamic review counts in footer
+                sourceText.innerHTML = `Based on <strong>${scores.reviewCount}</strong> authenticated reviews`;
+
+            }, 1800);
+        }
+
+        // Interactive "THE PROCESS" steps tabs switcher
+        const stepTabs = document.querySelectorAll('#vmc-steps-tabs .vmc-step');
+        const vizPanels = document.querySelectorAll('.vmc-viz-panel');
+        
+        stepTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const stepNum = tab.getAttribute('data-step');
+                if (!stepNum) return;
+
+                // Deactivate all steps and panels
+                stepTabs.forEach(t => t.classList.remove('active'));
+                vizPanels.forEach(p => p.classList.remove('active'));
+
+                // Activate selected step and panel
+                tab.classList.add('active');
+                const targetPanel = document.getElementById(`vm-panel-${stepNum}`);
+                if (targetPanel) {
+                    targetPanel.classList.add('active');
+                }
+            });
+        });
+    });
+
 })();
 

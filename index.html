@@ -1247,23 +1247,71 @@
             </div>
 
             <!-- AI VERIFICATION — HERO TILE -->
-            <div class="vm-card vmc-ai" data-spotlight>
+            <div class="vm-card vmc-ai" data-spotlight id="vm-try-it-card">
                 <div class="vm-card-glow"></div>
-                <div class="vmc-eyebrow">
-                    <span class="vmc-dot vmc-dot--green"></span>
-                    LIVE VERIFICATION ENGINE
-                </div>
-                <div class="vmc-ai-header">
-                    <div class="vmc-ai-dots">
-                        <span></span><span></span><span></span>
+                
+                <!-- Eyebrow & Live badge -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div class="vmc-eyebrow" style="margin-bottom: 0;">
+                        <span class="vmc-dot vmc-dot--green" id="vm-live-dot"></span>
+                        <span id="vm-engine-status">LIVE VERIFICATION ENGINE</span>
                     </div>
-                    <span class="vmc-ai-title">Snyf · Report #4821</span>
                     <span class="vmc-ai-live">
-                        <span class="vmc-live-pulse"></span>Live
+                        <span class="vmc-live-pulse" id="vm-pulse-indicator"></span><span id="vm-live-text">Live</span>
                     </span>
                 </div>
-                <div class="vmc-ai-metrics">
-                    <div class="vmc-metric">
+
+                <!-- Custom High-Tech Visual Selector -->
+                <div class="vm-selector-wrap" style="position: relative; margin-bottom: 16px; z-index: 100;">
+                    <button id="vm-cafe-selector-btn" class="vm-select-btn">
+                        <span class="vm-select-icon">☕</span>
+                        <span id="vm-selected-cafe-name">Blue Tokai, Gurugram</span>
+                        <span class="vm-select-arrow">▼</span>
+                    </button>
+                    <div id="vm-cafe-dropdown" class="vm-dropdown-list">
+                        <div class="vm-dropdown-item selected" data-cafe="Blue Tokai, Gurugram" data-icon="☕">
+                            <span class="item-icon">☕</span> Blue Tokai, Gurugram
+                        </div>
+                        <div class="vm-dropdown-item" data-cafe="Ivy & Bean, Cyber Hub" data-icon="🌿">
+                            <span class="item-icon">🌿</span> Ivy & Bean, Cyber Hub
+                        </div>
+                        <div class="vm-dropdown-item" data-cafe="Nook Café, Sector 29" data-icon="🥐">
+                            <span class="item-icon">🥐</span> Nook Café, Sector 29
+                        </div>
+                        <div class="vm-dropdown-item" data-cafe="Perch, Khan Market" data-icon="🍸">
+                            <span class="item-icon">🍸</span> Perch, Khan Market
+                        </div>
+                        <div class="vm-dropdown-item" data-cafe="Snyfy Brews" data-icon="◈">
+                            <span class="item-icon">◈</span> Snyfy Brews (Custom)
+                        </div>
+                        <div class="vm-dropdown-item-custom" style="padding: 10px 14px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; gap: 8px;">
+                            <input type="text" id="vm-custom-cafe-input" placeholder="Type custom café..." autocomplete="off" style="flex: 1; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px 10px; font-size: 11px; color: #fff; outline: none; font-family: inherit;">
+                            <button id="vm-custom-cafe-go" style="background: rgba(111,183,214,0.15); border: 1px solid rgba(111,183,214,0.3); color: #6FB7D6; border-radius: 6px; padding: 0 10px; font-size: 11px; font-weight: 700; cursor: pointer;">Go</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- High-Tech Radar Scanning Overlay -->
+                <div id="vm-scanning-overlay" class="vm-scan-overlay">
+                    <div class="vm-scan-grid"></div>
+                    <div class="vm-scan-line"></div>
+                    <div class="vm-scan-text">COMPUTING CREDIBILITY MATRIX...</div>
+                </div>
+
+                <!-- Overall visual score display -->
+                <div class="vm-score-hero" style="text-align: center; padding: 12px 0 20px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 16px; position: relative;">
+                    <div style="font-family: var(--font-display); font-weight: 900; line-height: 1; display: inline-flex; align-items: baseline; gap: 4px;">
+                        <span id="vm-report-score-value" style="font-size: 3.5rem; color: #fff; transition: color 0.3s;">9.2</span>
+                        <span style="color: rgba(255,255,255,0.2); font-size: 1.2rem;">/10</span>
+                    </div>
+                    <div style="font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--vm-dim); margin-top: 6px; font-family: var(--font-mono);">Consensus Trust Rating</div>
+                    <span id="vm-report-verdict" style="margin-top: 10px; display: inline-block; background: rgba(100,200,120,0.08); border: 1px solid rgba(100,200,120,0.2); color: var(--vm-green); font-size: 8px; letter-spacing: 0.1em; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; font-family: var(--font-mono); font-weight: 700; transition: all 0.3s;">HIGH CONFIDENCE</span>
+                </div>
+
+                <!-- Metrics Container -->
+                <div class="vmc-ai-metrics" id="vm-metrics-container">
+                    <!-- Food Quality -->
+                    <div class="vmc-metric" data-metric="foodQuality">
                         <div class="vmc-metric-top">
                             <span class="vmc-metric-label">Food Quality</span>
                             <span class="vmc-metric-score vmc-score--good">9.2</span>
@@ -1272,7 +1320,9 @@
                             <div class="vmc-metric-fill" data-fill="92" style="--fill-color: rgba(100,200,120,0.8)"></div>
                         </div>
                     </div>
-                    <div class="vmc-metric">
+
+                    <!-- Ambience -->
+                    <div class="vmc-metric" data-metric="ambience">
                         <div class="vmc-metric-top">
                             <span class="vmc-metric-label">Ambience</span>
                             <span class="vmc-metric-score vmc-score--good">8.7</span>
@@ -1281,16 +1331,20 @@
                             <div class="vmc-metric-fill" data-fill="87" style="--fill-color: rgba(100,200,120,0.8)"></div>
                         </div>
                     </div>
-                    <div class="vmc-metric">
+
+                    <!-- Service Quality -->
+                    <div class="vmc-metric" data-metric="serviceQuality">
                         <div class="vmc-metric-top">
-                            <span class="vmc-metric-label">Waiting Time</span>
-                            <span class="vmc-metric-score vmc-score--warn">5.4</span>
+                            <span class="vmc-metric-label">Service Quality</span>
+                            <span class="vmc-metric-score vmc-score--good">8.5</span>
                         </div>
                         <div class="vmc-metric-bar">
-                            <div class="vmc-metric-fill" data-fill="54" style="--fill-color: rgba(220,160,60,0.8)"></div>
+                            <div class="vmc-metric-fill" data-fill="85" style="--fill-color: rgba(100,200,120,0.8)"></div>
                         </div>
                     </div>
-                    <div class="vmc-metric">
+
+                    <!-- Value for Money -->
+                    <div class="vmc-metric" data-metric="valueForMoney">
                         <div class="vmc-metric-top">
                             <span class="vmc-metric-label">Value for Money</span>
                             <span class="vmc-metric-score vmc-score--good">8.1</span>
@@ -1299,11 +1353,29 @@
                             <div class="vmc-metric-fill" data-fill="81" style="--fill-color: rgba(100,200,120,0.8)"></div>
                         </div>
                     </div>
+
+                    <!-- Waiting Time -->
+                    <div class="vmc-metric" data-metric="waitingTime">
+                        <div class="vmc-metric-top" style="position: relative;">
+                            <span class="vmc-metric-label">Waiting Time</span>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span class="vm-flagged-tag" style="display: none; background: rgba(217,122,74,0.12); border: 1px solid rgba(217,122,74,0.3); color: #D97A4A; font-size: 8px; font-weight: 700; padding: 1px 5px; border-radius: 3px; font-family: var(--font-mono); letter-spacing: 0.05em;">FLAGGED</span>
+                                <span class="vmc-metric-score vmc-score--warn">5.4</span>
+                            </div>
+                        </div>
+                        <div class="vmc-metric-bar">
+                            <div class="vmc-metric-fill" data-fill="54" style="--fill-color: rgba(220,160,60,0.8)"></div>
+                        </div>
+                    </div>
                 </div>
-                <p class="vmc-ai-summary">"Authentic visitor consensus confirmed. Food and ambience exceed district average. Wait-time anomaly flagged."</p>
+
+                <!-- Summary Synthesis -->
+                <p class="vmc-ai-summary" id="vm-report-summary">"Authentic visitor consensus confirmed. Food and ambience exceed district average. Wait-time anomaly flagged."</p>
+                
+                <!-- Footer with dynamic source review counters -->
                 <div class="vmc-ai-footer">
-                    <span>Based on <strong>312 authenticated reviews</strong></span>
-                    <span class="vmc-verified-badge">✔ Verified</span>
+                    <span id="vm-report-sources">Based on <strong>312 authenticated reviews</strong></span>
+                    <span class="vmc-verified-badge" id="vm-report-verified">✔ Verified</span>
                 </div>
             </div>
 
@@ -1336,8 +1408,10 @@
                     <span class="vmc-dot"></span>
                     THE PROCESS
                 </div>
-                <div class="vmc-steps">
-                    <div class="vmc-step">
+                
+                <!-- Steps header tabs -->
+                <div class="vmc-steps" id="vmc-steps-tabs">
+                    <div class="vmc-step active" data-step="1">
                         <div class="vmc-step-n">01</div>
                         <div class="vmc-step-text">
                             <strong>Beyond 5 Stars</strong>
@@ -1345,7 +1419,7 @@
                         </div>
                     </div>
                     <div class="vmc-step-arrow">→</div>
-                    <div class="vmc-step">
+                    <div class="vmc-step" data-step="2">
                         <div class="vmc-step-n">02</div>
                         <div class="vmc-step-text">
                             <strong>Visit Verified</strong>
@@ -1353,7 +1427,7 @@
                         </div>
                     </div>
                     <div class="vmc-step-arrow">→</div>
-                    <div class="vmc-step">
+                    <div class="vmc-step" data-step="3">
                         <div class="vmc-step-n">03</div>
                         <div class="vmc-step-text">
                             <strong>AI Synthesizes</strong>
@@ -1361,11 +1435,111 @@
                         </div>
                     </div>
                     <div class="vmc-step-arrow">→</div>
-                    <div class="vmc-step">
+                    <div class="vmc-step" data-step="4">
                         <div class="vmc-step-n">04</div>
                         <div class="vmc-step-text">
                             <strong>Truth Indexed</strong>
                             <span>Score published</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW PROCESS VISUALIZATION ZONE -->
+                <div class="vmc-process-viz-wrap">
+                    <!-- Visualization Panel 1: Radar dimensional chart -->
+                    <div class="vmc-viz-panel active" id="vm-panel-1">
+                        <div class="vmc-viz-graphic">
+                            <svg class="radar-svg" viewBox="0 0 200 200">
+                                <circle cx="100" cy="100" r="80" class="radar-circle-bg"></circle>
+                                <circle cx="100" cy="100" r="55" class="radar-circle-bg"></circle>
+                                <circle cx="100" cy="100" r="30" class="radar-circle-bg"></circle>
+                                <!-- Axes lines -->
+                                <line x1="100" y1="20" x2="100" y2="180" class="radar-axis"></line>
+                                <line x1="20" y1="100" x2="180" y2="100" class="radar-axis"></line>
+                                <line x1="43" y1="43" x2="157" y2="157" class="radar-axis"></line>
+                                <line x1="43" y1="157" x2="157" y2="43" class="radar-axis"></line>
+                                <!-- Animated Radar Web -->
+                                <polygon points="100,35 150,70 140,140 70,130 50,80" class="radar-polygon-glowing"></polygon>
+                                <polygon points="100,50 135,80 125,125 80,120 65,85" class="radar-polygon-inner"></polygon>
+                                <!-- Nodal markers -->
+                                <circle cx="100" cy="35" r="3" class="radar-node node-food"></circle>
+                                <circle cx="150" cy="70" r="3" class="radar-node node-ambience"></circle>
+                                <circle cx="140" cy="140" r="3" class="radar-node node-service"></circle>
+                                <circle cx="70" cy="130" r="3" class="radar-node node-value"></circle>
+                                <circle cx="50" cy="80" r="3" class="radar-node node-wait"></circle>
+                            </svg>
+                        </div>
+                        <div class="vmc-viz-description">
+                            <h4>Multidimensional Trust Matrix</h4>
+                            <p>Snyf splits ratings into 5 core vectors (Food, Ambient, Service, Value, Wait-time) to build an authenticated, multi-layered score profile.</p>
+                        </div>
+                    </div>
+
+                    <!-- Visualization Panel 2: Visit ledger device chain -->
+                    <div class="vmc-viz-panel" id="vm-panel-2">
+                        <div class="vmc-viz-graphic">
+                            <div class="ledger-chain">
+                                <div class="chain-node block-device">
+                                    <span class="chain-icon">📱</span>
+                                    <span class="chain-lbl">Device GPS</span>
+                                </div>
+                                <div class="chain-arrow chain-arrow-active"></div>
+                                <div class="chain-node block-verify">
+                                    <span class="chain-icon">🛡</span>
+                                    <span class="chain-lbl">Attestation</span>
+                                </div>
+                                <div class="chain-arrow"></div>
+                                <div class="chain-node block-cafe">
+                                    <span class="chain-icon">☕</span>
+                                    <span class="chain-lbl">Verified Visit</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="vmc-viz-description">
+                            <h4>Geospatial Telemetry Proof</h4>
+                            <p>Before any review is indexed, non-spoofable spatial coordinates are matched with temporal check-in markers to confirm the user was physically inside the establishment.</p>
+                        </div>
+                    </div>
+
+                    <!-- Visualization Panel 3: Emotional voice noise-cancelling waves -->
+                    <div class="vmc-viz-panel" id="vm-panel-3">
+                        <div class="vmc-viz-graphic">
+                            <div class="wave-analyzer-container">
+                                <div class="analyzer-label">EMOTIONAL HYPERBOLE (INPUT)</div>
+                                <div class="wave-raw">
+                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                                </div>
+                                <div class="filter-gate-box">AI DENOISING GATE</div>
+                                <div class="wave-filtered">
+                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                                </div>
+                                <div class="analyzer-label-bottom">VERIFIED TRUST SIGNALS (OUTPUT)</div>
+                            </div>
+                        </div>
+                        <div class="vmc-viz-description">
+                            <h4>Sentiment De-Noising Gate</h4>
+                            <p>Natural Language Processing strips away adjectives, subjective bias, emotion spikes, and paid promotional phrases, keeping only factual consensus indicators.</p>
+                        </div>
+                    </div>
+
+                    <!-- Visualization Panel 4: Blockchain Block hash indexing -->
+                    <div class="vmc-viz-panel" id="vm-panel-4">
+                        <div class="vmc-viz-graphic">
+                            <div class="ledger-index-block">
+                                <div class="block-cube">
+                                    <div class="cube-face cube-front">SNYF INDEXED</div>
+                                    <div class="cube-face cube-back">SECURE</div>
+                                    <div class="cube-face cube-right">HASH</div>
+                                    <div class="cube-face cube-left">PROOF</div>
+                                    <div class="cube-face cube-top">TRUST</div>
+                                    <div class="cube-face cube-bottom">INDEX</div>
+                                </div>
+                                <div class="index-hash-ticker">HASH: 4b29c927f8d6ea0120b</div>
+                            </div>
+                        </div>
+                        <div class="vmc-viz-description">
+                            <h4>Immutable Ledger Index</h4>
+                            <p>Compiled consensus records are signed cryptographically and indexed into an immutable public trust ledger, guaranteeing reviews cannot be deleted, bought, or altered.</p>
                         </div>
                     </div>
                 </div>
