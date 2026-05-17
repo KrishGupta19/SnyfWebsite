@@ -4721,3 +4721,27 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     height: 120px;
   }
 }
+
+/* ── Trust Network Canvas ────────────────────────────────────────── */
+#trust-network-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+#trust-network-canvas.visible {
+  opacity: 1;
+}
+/* Hero section needs position relative for canvas to sit inside it */
+.hero {
+  position: relative;
+  overflow: hidden;
+}
+.hero-content {
+  position: relative;
+  z-index: 2 !important;
+}
