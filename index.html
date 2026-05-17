@@ -152,6 +152,76 @@
         </div>
     </section>
 
+    <!-- ========== HERO INTEL CARDS ========== -->
+    <div class="hero-cards-wrap">
+        <p class="hero-proof">Trusted by early adopters · Privacy-first design · No fake reviews</p>
+        <div class="hero-cards">
+            <!-- Card 1: Live Radar -->
+            <div class="hero-intel-card card-1">
+                <div class="card-header">
+                    <span class="card-title">Live Verification</span>
+                    <span class="pulse-cyan"></span>
+                </div>
+                <div class="card-body-metrics">
+                    <div class="compact-metric-row">
+                        <div class="metric-info-compact">
+                            <span class="metric-label-compact">Food Quality</span>
+                            <span class="metric-value-compact font-cyan">8.4</span>
+                        </div>
+                        <div class="metric-bar-compact">
+                            <div class="metric-fill-compact hero-card-fill-1 font-cyan" style="width:0%"></div>
+                        </div>
+                    </div>
+                    <div class="compact-metric-row">
+                        <div class="metric-info-compact">
+                            <span class="metric-label-compact">Ambience</span>
+                            <span class="metric-value-compact text-muted">7.2</span>
+                        </div>
+                        <div class="metric-bar-compact">
+                            <div class="metric-fill-compact hero-card-fill-2 text-muted" style="width:0%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer-compact">
+                    <span class="sources-count-compact">147 sources</span>
+                    <span class="verified-pill-compact">✓ VERIFIED</span>
+                </div>
+            </div>
+
+            <!-- Card 2: Anomaly Alert -->
+            <div class="hero-intel-card card-2">
+                <div class="card-header">
+                    <span class="card-title-orange">Anomaly Detected</span>
+                    <span class="pulse-orange"></span>
+                </div>
+                <div class="anomaly-body-compact">
+                    Coordinated rating spike detected. 47 reviews flagged.
+                </div>
+                <div class="card-footer-compact">
+                    <span class="confidence-label-compact">Confidence: 94%</span>
+                </div>
+            </div>
+
+            <!-- Card 3: Trust Score -->
+            <div class="hero-intel-card card-3">
+                <div class="trust-flex-compact">
+                    <div class="circle-gauge-wrap-compact">
+                        <svg viewBox="0 0 36 36" class="mini-gauge-compact">
+                            <circle cx="18" cy="18" r="14" class="gauge-bg-compact" stroke-width="3"></circle>
+                            <circle cx="18" cy="18" r="14" class="gauge-fill-compact" stroke-width="3" stroke-dasharray="88" stroke-dashoffset="88"></circle>
+                        </svg>
+                        <div class="gauge-text-compact">8.1</div>
+                    </div>
+                    <div class="trust-meta-compact">
+                        <span class="meta-label-compact">TRUST INDEX</span>
+                        <span class="meta-status-compact font-cyan">High Confidence</span>
+                        <span class="sources-count-compact">147 verified sources</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ========== PROOF — Beat 2: The Proof in Numbers ========== -->
     <section class="proof-section grid-bg" id="proof">
         <div class="container">
@@ -1119,81 +1189,6 @@
                     `);
                 }
                 
-                // 3. Social proof line below CTAs
-                const heroActions = heroContent.querySelector('.hero-actions');
-                if (heroActions) {
-                    heroActions.insertAdjacentHTML('afterend', `
-                        <div class="hero-proof">
-                            Trusted by early adopters · Privacy-first design · No fake reviews
-                        </div>
-                        <div class="hero-cards">
-                            <!-- Card 1 -->
-                            <div class="hero-intel-card card-1">
-                                <div class="card-header">
-                                    <span class="card-title">Live Verification</span>
-                                    <span class="live-dot-pulse"></span>
-                                </div>
-                                <div class="card-metrics">
-                                    <div class="metric-row">
-                                        <div class="metric-info">
-                                            <span class="metric-label">Food Quality</span>
-                                            <span class="metric-value font-cyan">8.4</span>
-                                        </div>
-                                        <div class="metric-bar-bg">
-                                            <div class="metric-bar-fill hero-card-fill-1 font-cyan" style="width: 0%"></div>
-                                        </div>
-                                    </div>
-                                    <div class="metric-row">
-                                        <div class="metric-info">
-                                            <span class="metric-label">Ambience</span>
-                                            <span class="metric-value text-muted">7.2</span>
-                                        </div>
-                                        <div class="metric-bar-bg">
-                                            <div class="metric-bar-fill hero-card-fill-2 text-muted" style="width: 0%"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card-footer">
-                                    <span class="sources-count">147 sources</span>
-                                    <span class="verified-pill">✓ VERIFIED</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Card 2 -->
-                            <div class="hero-intel-card card-2">
-                                <div class="card-header">
-                                    <span class="card-title-orange">Anomaly Detected</span>
-                                    <span class="orange-pulse-ring"></span>
-                                </div>
-                                <div class="card-body-text">
-                                    Coordinated rating spike detected. 47 reviews flagged as inorganic activity.
-                                </div>
-                                <div class="card-footer">
-                                    <span class="confidence-label">Confidence: 94%</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Card 3 -->
-                            <div class="hero-intel-card card-3">
-                                <div class="card-circle-wrap">
-                                    <svg viewBox="0 0 56 56">
-                                        <circle cx="28" cy="28" r="22" class="hero-card-circle-bg" stroke-width="4"></circle>
-                                        <circle cx="28" cy="28" r="22" class="hero-card-circle-prog" stroke-width="4" stroke-dasharray="138" stroke-dashoffset="138"></circle>
-                                    </svg>
-                                    <div class="card-circle-text">
-                                        <span class="circle-score">8.1</span>
-                                        <span class="circle-max">/10</span>
-                                    </div>
-                                </div>
-                                <div class="card-right-info">
-                                    <div class="trust-score-title">Trust Score</div>
-                                    <div class="trust-score-status">High Confidence</div>
-                                    <div class="trust-score-sources">147 verified sources</div>
-                                </div>
-                            </div>
-                        </div>
-                    `);
-                }
             }
             
             // Snippets rotation animation
@@ -1216,10 +1211,10 @@
                         gsap.to('.hero-card-fill-1', { width: '84%', duration: 1.2, ease: 'power2.out' });
                         gsap.to('.hero-card-fill-2', { width: '72%', duration: 1.2, ease: 'power2.out', delay: 0.2 });
                         
-                        // Animate Card 3 SVG circle
-                        gsap.fromTo('.hero-card-circle-prog', 
-                            { strokeDashoffset: 138 },
-                            { strokeDashoffset: 138 * (1 - 0.81), duration: 1.5, ease: 'power2.out', delay: 0.4 }
+                        // Animate mini gauge SVG circle
+                        gsap.fromTo('.gauge-fill-compact', 
+                            { strokeDashoffset: 88 },
+                            { strokeDashoffset: 88 * (1 - 0.81), duration: 1.5, ease: 'power2.out', delay: 0.4 }
                         );
                         
                         observer.unobserve(entry.target);
