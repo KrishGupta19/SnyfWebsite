@@ -1,7 +1,14 @@
-// ============================================================
-//  Snyf — Interactions & Animations
-//  Institutional Light Mode
-// ============================================================
+// Force page to start from the top when refreshed
+if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+}
+window.scrollTo(0, 0);
+window.addEventListener('beforeunload', () => {
+    window.scrollTo(0, 0);
+});
+window.addEventListener('load', () => {
+    window.scrollTo(0, 0);
+});
 
 // ── 0. Preloader Logic ───────────────────────────────────────
 (function () {
@@ -297,6 +304,7 @@
     }
 
     function finishPreloader() {
+        window.scrollTo(0, 0);
         setTimeout(() => {
             preloader.style.display = 'none';
             if (typeof AOS !== 'undefined') {
@@ -311,6 +319,7 @@
     }
 
     function fallbackExit() {
+        window.scrollTo(0, 0);
         body.classList.remove('loading');
         preloader.style.transition = 'opacity 0.6s ease';
         preloader.style.opacity = '0';
@@ -377,42 +386,80 @@
 const isFinePonter = window.matchMedia('(pointer: fine)').matches;
 const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// ── 1. Custom Cursor ─────────────────────────────────────────
-// Cursor ring color is controlled by CSS: border-color #1A1A1A
-if (isFinePonter && !prefersReduced) {
-    document.body.classList.add('has-cursor');
+// ── 1. Custom Cybernetic Cursor Tracking ───────────────────────────
+(function () {
+    const isFinePointer = window.matchMedia('(pointer: fine)').matches;
+    if (!isFinePointer) return;
 
+    const dot = document.getElementById('cursor-dot');
     const ring = document.getElementById('cursor-ring');
-    const dot = document.getElementById('cursor-dot-el');
+    if (!dot || !ring) return;
 
-    let mx = -200, my = -200, rx = -200, ry = -200;
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    
+    let ringX = mouseX;
+    let ringY = mouseY;
+    let dotX = mouseX;
+    let dotY = mouseY;
 
-    document.addEventListener('mousemove', e => {
-        mx = e.clientX; my = e.clientY;
-        dot.style.transform = `translate(${mx - 3}px, ${my - 3}px)`;
-    }, { passive: true, capture: true });
+    window.addEventListener('mousemove', e => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    }, { passive: true });
 
-    (function animateRing() {
-        rx += (mx - rx) * 0.1;
-        ry += (my - ry) * 0.1;
-        ring.style.transform = `translate(${rx - 20}px, ${ry - 20}px)`;
-        requestAnimationFrame(animateRing);
-    })();
-
-    // Expand ring on interactive elements
-    const interactives = 'a, button, .feature-card, .problem-card, .value-card, .ai-card, input, label';
-    document.querySelectorAll(interactives).forEach(el => {
-        el.addEventListener('mouseenter', () => ring.classList.add('expanded'));
-        el.addEventListener('mouseleave', () => ring.classList.remove('expanded'));
+    // Hide on mouseleave window, show on mouseenter
+    document.addEventListener('mouseleave', () => {
+        dot.style.opacity = '0';
+        ring.style.opacity = '0';
+    });
+    document.addEventListener('mouseenter', () => {
+        dot.style.opacity = '1';
+        ring.style.opacity = '1';
     });
 
-    // Hide when leaving window
-    document.addEventListener('mouseleave', () => { ring.style.opacity = '0'; dot.style.opacity = '0'; });
-    document.addEventListener('mouseenter', () => { ring.style.opacity = ''; dot.style.opacity = ''; });
-}
+    // High performance spring interpolation animation frame loop
+    function updateCursor() {
+        // Instant dot lock for zero lag feel
+        dotX += (mouseX - dotX);
+        dotY += (mouseY - dotY);
+        dot.style.transform = `translate3d(${dotX}px, ${dotY}px, 0)`;
+
+        // Spring damped delay loop for elegant organic trailing ring
+        ringX += (mouseX - ringX) * 0.15;
+        ringY += (mouseY - ringY) * 0.15;
+        ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0)`;
+
+        requestAnimationFrame(updateCursor);
+    }
+    requestAnimationFrame(updateCursor);
+
+    // Interactive element hover detection
+    const hoverTargets = 'a, button, input, select, textarea, [role="button"], .feature-card, .visual-mode-toggle, .logo, .pl-char';
+    
+    function addHoverClass() {
+        document.body.classList.add('cursor-hovering');
+    }
+    function removeHoverClass() {
+        document.body.classList.remove('cursor-hovering');
+    }
+
+    // Dynamic event delegate listeners for performance
+    document.addEventListener('mouseover', e => {
+        if (e.target && e.target.closest(hoverTargets)) {
+            addHoverClass();
+        }
+    }, { passive: true });
+
+    document.addEventListener('mouseout', e => {
+        if (e.target && !e.target.closest(hoverTargets)) {
+            removeHoverClass();
+        }
+    }, { passive: true });
+})();
 
 // ── 2. Card Mouse-Tracking Spotlight ─────────────────────────
-document.querySelectorAll('.feature-card, .problem-card, .value-card').forEach(card => {
+document.querySelectorAll('.feature-card, .problem-card, .value-card, .story-content, .ai-card, .hero-intel-card').forEach(card => {
     card.addEventListener('mousemove', e => {
         const r = card.getBoundingClientRect();
         card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
@@ -745,6 +792,15 @@ sections.forEach(s => navObs.observe(s));
     requestAnimationFrame(() => {
         positionPill(isVisual ? 'visual' : 'read');
         if (isVisual) enterVisual();
+    });
+
+    // Tab Visibility Title Toggle (Creative tab away hint)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            document.title = 'Hey! You are missing something... 👀';
+        } else {
+            document.title = 'Snyf';
+        }
     });
 
 })();
