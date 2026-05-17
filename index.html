@@ -23,9 +23,28 @@
         rel="stylesheet">
     <!-- AOS CSS -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- Injected Paper Grain Style -->
+    <style>
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            mix-blend-mode: multiply;
+        }
+    </style>
 </head>
 
 <body class="loading">
+    <!-- Ambient Blobs -->
+    <div class="ambient-blob blob-1"></div>
+    <div class="ambient-blob blob-2"></div>
+    <div class="ambient-blob blob-3"></div>
+    <div class="ambient-blob blob-4"></div>
 
     <!-- ========== PRELOADER ========== -->
     <div id="preloader" class="preloader">
@@ -1078,6 +1097,141 @@
         </div>
     </div>
     <div class="hud-wipe" id="hud-wipe" aria-hidden="true"></div>
+    
+    <!-- ========== INJECTED HERO ELEMENTS & ANIMATIONS ========== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const heroContent = document.querySelector('.hero-content');
+            if (heroContent) {
+                const h1 = heroContent.querySelector('h1');
+                if (h1) {
+                    // Rotating snippet strip below h1
+                    h1.insertAdjacentHTML('afterend', `
+                        <div class="hero-snippets">
+                            <div class="snippets-inner">
+                                <div class="snippet-item">◈ Verified by 312 real visitors.</div>
+                                <div class="snippet-item">◈ Tourist pricing patterns identified.</div>
+                                <div class="snippet-item">◈ Service inconsistency detected.</div>
+                                <div class="snippet-item">◈ Recent wait times increasing 47%.</div>
+                                <div class="snippet-item">◈ Authentic ambience confirmed.</div>
+                            </div>
+                        </div>
+                    `);
+                }
+                
+                // 3. Social proof line below CTAs
+                const heroActions = heroContent.querySelector('.hero-actions');
+                if (heroActions) {
+                    heroActions.insertAdjacentHTML('afterend', `
+                        <div class="hero-proof">
+                            Trusted by early adopters · Privacy-first design · No fake reviews
+                        </div>
+                        <div class="hero-cards">
+                            <!-- Card 1 -->
+                            <div class="hero-intel-card card-1">
+                                <div class="card-header">
+                                    <span class="card-title">Live Verification</span>
+                                    <span class="live-dot-pulse"></span>
+                                </div>
+                                <div class="card-metrics">
+                                    <div class="metric-row">
+                                        <div class="metric-info">
+                                            <span class="metric-label">Food Quality</span>
+                                            <span class="metric-value font-cyan">8.4</span>
+                                        </div>
+                                        <div class="metric-bar-bg">
+                                            <div class="metric-bar-fill hero-card-fill-1 font-cyan" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="metric-row">
+                                        <div class="metric-info">
+                                            <span class="metric-label">Ambience</span>
+                                            <span class="metric-value text-muted">7.2</span>
+                                        </div>
+                                        <div class="metric-bar-bg">
+                                            <div class="metric-bar-fill hero-card-fill-2 text-muted" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <span class="sources-count">147 sources</span>
+                                    <span class="verified-pill">✓ VERIFIED</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Card 2 -->
+                            <div class="hero-intel-card card-2">
+                                <div class="card-header">
+                                    <span class="card-title-orange">Anomaly Detected</span>
+                                    <span class="orange-pulse-ring"></span>
+                                </div>
+                                <div class="card-body-text">
+                                    Coordinated rating spike detected. 47 reviews flagged as inorganic activity.
+                                </div>
+                                <div class="card-footer">
+                                    <span class="confidence-label">Confidence: 94%</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Card 3 -->
+                            <div class="hero-intel-card card-3">
+                                <div class="card-circle-wrap">
+                                    <svg viewBox="0 0 56 56">
+                                        <circle cx="28" cy="28" r="22" class="hero-card-circle-bg" stroke-width="4"></circle>
+                                        <circle cx="28" cy="28" r="22" class="hero-card-circle-prog" stroke-width="4" stroke-dasharray="138" stroke-dashoffset="138"></circle>
+                                    </svg>
+                                    <div class="card-circle-text">
+                                        <span class="circle-score">8.1</span>
+                                        <span class="circle-max">/10</span>
+                                    </div>
+                                </div>
+                                <div class="card-right-info">
+                                    <div class="trust-score-title">Trust Score</div>
+                                    <div class="trust-score-status">High Confidence</div>
+                                    <div class="trust-score-sources">147 verified sources</div>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                }
+            }
+            
+            // Snippets rotation animation
+            const snippetEl = document.querySelector('.hero-snippets .snippets-inner');
+            if (snippetEl) {
+                let currentSnippet = 0;
+                const totalSnippets = 5;
+                setInterval(() => {
+                    currentSnippet = (currentSnippet + 1) % totalSnippets;
+                    snippetEl.style.transform = `translateY(-${currentSnippet * 28}px)`;
+                }, 3200);
+            }
+        });
+        
+        window.addEventListener('load', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        // Animate Card 1 progress bars
+                        gsap.to('.hero-card-fill-1', { width: '84%', duration: 1.2, ease: 'power2.out' });
+                        gsap.to('.hero-card-fill-2', { width: '72%', duration: 1.2, ease: 'power2.out', delay: 0.2 });
+                        
+                        // Animate Card 3 SVG circle
+                        gsap.fromTo('.hero-card-circle-prog', 
+                            { strokeDashoffset: 138 },
+                            { strokeDashoffset: 138 * (1 - 0.81), duration: 1.5, ease: 'power2.out', delay: 0.4 }
+                        );
+                        
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            const heroCards = document.querySelector('.hero-cards');
+            if (heroCards) {
+                observer.observe(heroCards);
+            }
+        });
+    </script>
 </body>
-
 </html>
