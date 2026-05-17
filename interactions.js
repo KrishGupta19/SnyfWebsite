@@ -803,5 +803,44 @@ sections.forEach(s => navObs.observe(s));
         }
     });
 
+    // ── 5. Creative Brand Logo Typing Effect & Interactivity ─────────────
+    document.querySelectorAll('.logo').forEach(logo => {
+        const textSpan = logo.querySelector('span');
+        if (!textSpan) return;
+
+        const originalText = 'Snyf';
+        let isTyping = false;
+        let typingTimer = null;
+
+        function typeText() {
+            if (isTyping) return;
+            isTyping = true;
+            
+            let currentLength = 0;
+            textSpan.textContent = '';
+            
+            logo.classList.add('logo-typing');
+
+            function step() {
+                if (currentLength <= originalText.length) {
+                    textSpan.textContent = originalText.substring(0, currentLength);
+                    currentLength++;
+                    typingTimer = setTimeout(step, 80); // Hyper-premium cybernetic type delay
+                } else {
+                    isTyping = false;
+                    logo.classList.remove('logo-typing');
+                }
+            }
+            step();
+        }
+
+        // Trigger typing effect on hover
+        logo.addEventListener('mouseenter', () => {
+            clearTimeout(typingTimer);
+            isTyping = false;
+            typeText();
+        });
+    });
+
 })();
 

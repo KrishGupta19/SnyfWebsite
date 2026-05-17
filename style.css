@@ -768,10 +768,18 @@ body.visual-mode-on .nav-inner {
     transform: scale(1.18) rotate(10deg);
 }
 
-.logo::after {
+.logo span::after {
     content: '_';
     color: var(--text);
+    margin-left: 2px;
     animation: blink 1.2s step-end infinite;
+    display: inline-block;
+}
+
+/* Active typing cursor state */
+.logo.logo-typing span::after {
+    animation: none !important;
+    opacity: 1 !important;
 }
 
 .nav-links {
@@ -3118,7 +3126,7 @@ body.visual-mode-on .logo {
     color: var(--white) !important;
 }
 
-body.visual-mode-on .logo::after {
+body.visual-mode-on .logo span::after {
     color: var(--white) !important;
 }
 
