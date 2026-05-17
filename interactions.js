@@ -5,7 +5,7 @@
 
 // ── 0. Preloader Logic ───────────────────────────────────────
 (function () {
-    const preloader = document.getElementById('preloader');
+    const preloader    = document.getElementById('preloader');
     if (!preloader) return;
 
     const chars        = preloader.querySelectorAll('.pl-char');
@@ -14,14 +14,38 @@
     const tagline      = document.getElementById('pl-tagline');
     const progressWrap = document.getElementById('pl-progress-wrap');
     const fill         = document.getElementById('preloader-fill');
-    const fillGlow     = preloader.querySelector('.pl-fill-glow');
     const statusEl     = document.getElementById('preloader-status');
     const pctEl        = document.getElementById('pl-pct');
     const terminal     = document.getElementById('pl-terminal');
+    const logoEl       = document.getElementById('preloader-logo');
     const body         = document.body;
+    const gsap         = window.gsap;
 
-    // ── Scramble config ──────────────────────────────────────────
-    const POOL          = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*!?';
+    // ── Inject helper layers into preloader ──────────
+    // Background layer (so we can fade it independently)
+    const bgLayer = document.createElement('div');
+    bgLayer.className = 'pl-bg-layer';
+    preloader.insertBefore(bgLayer, preloader.firstChild);
+
+    // Auth flash overlay
+    const authFlash = document.createElement('div');
+    authFlash.className = 'pl-auth-flash';
+    authFlash.id = 'pl-auth-flash';
+    preloader.appendChild(authFlash);
+
+    // Three radar rings inside logo-wrap
+    const logoWrap = preloader.querySelector('.pl-logo-wrap');
+    if (logoWrap) {
+        [1, 2, 3].forEach(n => {
+            const ring = document.createElement('div');
+            ring.className = `pl-radar-ring${n > 1 ? ' pl-radar-ring-' + n : ''}`;
+            ring.id = `pl-ring-${n}`;
+            logoWrap.appendChild(ring);
+        });
+    }
+
+    // ── Scramble config ──────────────────────────────
+    const POOL         = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*!?';
     const SCRAMBLE_ITER = 11;
     const ITER_MS       = 42;
     const STAGGER_MS    = 260;
@@ -43,10 +67,34 @@
         }, ITER_MS);
     }
 
-    // ── Progress & log state ─────────────────────────────────────
-    let progress  = 0;
-    let loaded    = false;
-    let logIdx    = 0;
+    // Quick scramble used for final pre-flight effect
+    function quickScramble(onDone) {
+        const targets = ['S','N','Y','F'];
+        let done = 0;
+        chars.forEach((el, i) => {
+            el.classList.remove('decoded');
+            el.classList.add('scrambling');
+            let iter = 0;
+            const id = setInterval(() => {
+                iter++;
+                if (iter >= 5) {
+                    clearInterval(id);
+                    el.textContent = targets[i];
+                    el.classList.remove('scrambling');
+                    el.classList.add('decoded');
+                    done++;
+                    if (done === chars.length && onDone) onDone();
+                } else {
+                    el.textContent = POOL[Math.floor(Math.random() * POOL.length)];
+                }
+            }, 38);
+        });
+    }
+
+    // ── Progress & log state ─────────────────────────
+    let progress = 0;
+    let loaded   = false;
+    let logIdx   = 0;
 
     window.addEventListener('load', () => { loaded = true; });
 
@@ -73,8 +121,8 @@
 
     function getStatus(pct) {
         let s = STATUS_MAP[0][1];
-        for (const [threshold, label] of STATUS_MAP) {
-            if (pct >= threshold) s = label;
+        for (const [t, label] of STATUS_MAP) {
+            if (pct >= t) s = label;
         }
         return s;
     }
@@ -85,10 +133,8 @@
         line.className = 'pl-log-line';
         line.textContent = LOG_LINES[logIdx++];
         terminal.appendChild(line);
-        // Force reflow for animation
         void line.offsetWidth;
         line.classList.add('active-line');
-        // Keep max 3 lines
         while (terminal.children.length > 3) {
             terminal.removeChild(terminal.firstChild);
         }
@@ -104,83 +150,177 @@
         pctEl.textContent = rounded + '%';
         statusEl.textContent = getStatus(rounded);
 
-        // Occasional log line
         if (Math.random() < 0.28 && logIdx < LOG_LINES.length) appendLog();
 
         if (progress >= 100 && loaded) {
             fill.style.width = '100%';
             pctEl.textContent = '100%';
-            pctEl.style.color = 'rgba(255,255,255,0.85)';
             statusEl.textContent = '✓ AUTHENTICATED';
             statusEl.classList.add('authenticated');
-            setTimeout(exitPreloader, 520);
+            pctEl.style.color = 'rgba(255,255,255,0.9)';
+            triggerAuthMoment();
         } else {
             setTimeout(tickProgress, 55 + Math.random() * 110);
         }
     }
 
-    // ── EXIT ─────────────────────────────────────────────────────
-    function exitPreloader() {
-        const gsap    = window.gsap;
-        const navLogo = document.getElementById('nav-logo');
-        const logoEl  = document.getElementById('preloader-logo');
+    // ── AUTHENTICATED moment ─────────────────────────
+    function triggerAuthMoment() {
+        // 1. Fire radar rings
+        ['pl-ring-1','pl-ring-2','pl-ring-3'].forEach(id => {
+            const ring = document.getElementById(id);
+            if (ring) ring.classList.add('fire');
+        });
 
+        // 2. White screen flash
+        authFlash.style.transition = 'opacity 0.07s ease';
+        authFlash.style.opacity = '0.18';
+        setTimeout(() => {
+            authFlash.style.transition = 'opacity 0.3s ease';
+            authFlash.style.opacity = '0';
+        }, 120);
+
+        // 3. After flash settles, fly
+        setTimeout(beginExit, 600);
+    }
+
+    // ── BEGIN EXIT ───────────────────────────────────
+    function beginExit() {
+        // Step 1: fade out terminal + progress + tagline
+        const fadeEls = [progressWrap, terminal, tagline,
+                         preloader.querySelector('.pl-eyebrow')].filter(Boolean);
+
+        if (gsap) {
+            gsap.to(fadeEls, {
+                opacity: 0,
+                y: -10,
+                duration: 0.28,
+                stagger: 0.04,
+                ease: 'power2.in',
+                onComplete: doFinalScramble
+            });
+        } else {
+            fadeEls.forEach(el => { el.style.opacity = '0'; });
+            setTimeout(doFinalScramble, 300);
+        }
+    }
+
+    // Step 2: final micro-scramble on letters
+    function doFinalScramble() {
+        setTimeout(() => {
+            quickScramble(flyToNav);
+        }, 80);
+    }
+
+    // ── FLY TO NAV ───────────────────────────────────
+    function flyToNav() {
+        const navLogo = document.getElementById('nav-logo');
         if (!gsap || !navLogo || !logoEl) {
-            preloader.style.transition = 'opacity 0.6s ease';
-            preloader.style.opacity = '0';
-            setTimeout(() => {
-                preloader.style.display = 'none';
-                body.classList.remove('loading');
-                if (typeof AOS !== 'undefined') AOS.init({ once: true, offset: 60, duration: 800, easing: 'ease-out-cubic' });
-            }, 650);
+            fallbackExit();
             return;
         }
 
-        const targetRect  = navLogo.getBoundingClientRect();
-        const currentRect = logoEl.getBoundingClientRect();
-        const navFontSize = parseFloat(window.getComputedStyle(navLogo).fontSize);
-        const logoFontSize = parseFloat(window.getComputedStyle(logoEl).fontSize);
-        const targetScale = navFontSize / logoFontSize;
+        // Make body visible so we can measure navLogo position correctly
+        body.classList.remove('loading');
 
-        const exitTl = gsap.timeline({
-            onComplete: () => {
-                preloader.style.display = 'none';
-                body.classList.remove('loading');
-                if (typeof AOS !== 'undefined') {
-                    AOS.init({ once: true, offset: 60, duration: 800, easing: 'ease-out-cubic' });
-                }
-            }
-        });
+        // Measure after layout is live
+        requestAnimationFrame(() => {
+            const targetRect  = navLogo.getBoundingClientRect();
+            const currentRect = logoEl.getBoundingClientRect();
 
-        exitTl
-            .to([progressWrap, terminal], {
-                opacity: 0, y: -10, duration: 0.25, stagger: 0.05, ease: 'power2.in'
-            })
-            .to([tagline, preloader.querySelector('.pl-eyebrow')], {
-                opacity: 0, duration: 0.2, ease: 'power2.in'
-            }, '-=0.2')
-            .to(logoEl, {
-                x: targetRect.left - currentRect.left + (targetRect.width - currentRect.width * targetScale) / 2,
-                y: targetRect.top  - currentRect.top  + (targetRect.height - currentRect.height * targetScale) / 2,
-                scale: targetScale,
-                duration: 0.95,
+            const navFS   = parseFloat(window.getComputedStyle(navLogo).fontSize);
+            const logoFS  = parseFloat(window.getComputedStyle(logoEl).fontSize);
+            const scale   = navFS / logoFS;
+
+            const dx = targetRect.left - currentRect.left
+                     + (targetRect.width  - currentRect.width  * scale) / 2;
+            const dy = targetRect.top  - currentRect.top
+                     + (targetRect.height - currentRect.height * scale) / 2;
+
+            // Hide nav logo while ours is flying in
+            navLogo.style.opacity = '0';
+
+            // Simultaneously fade the dark background out
+            // so the logo appears to cross from dark → light world
+            gsap.to(bgLayer, {
+                opacity: 0,
+                duration: 0.6,
+                ease: 'power2.inOut',
+                delay: 0.15
+            });
+
+            // Fade grid + scanlines + corners
+            const decorEls = preloader.querySelectorAll(
+                '.pl-grid, .pl-scanlines, .pl-corner, .pl-logo-underline, .pl-scan-beam'
+            );
+            gsap.to(decorEls, {
+                opacity: 0,
+                duration: 0.4,
+                ease: 'power2.in'
+            });
+
+            // FLY the logo
+            gsap.to(logoEl, {
+                x: dx,
+                y: dy,
+                scale: scale,
+                duration: 1.0,
                 ease: 'power4.inOut',
-                onStart: () => {
-                    body.classList.remove('loading');
-                    navLogo.style.opacity = '0';
+                onUpdate: function () {
+                    // At 55% of the flight, shift color to dark
+                    if (this.progress() > 0.55 && logoEl.style.color !== 'rgb(26, 26, 26)') {
+                        gsap.to(logoEl, {
+                            color: '#1A1A1A',
+                            duration: 0.25,
+                            ease: 'none'
+                        });
+                    }
                 },
                 onComplete: () => {
+                    // Snap real nav logo back, hide ours
                     navLogo.style.opacity = '1';
+                    navLogo.classList.add('nav-logo-ping');
+                    setTimeout(() => navLogo.classList.remove('nav-logo-ping'), 700);
                     gsap.to(logoEl, { opacity: 0, duration: 0.08 });
+                    finishPreloader();
                 }
-            }, '-=0.1')
-            .to(preloader, {
-                opacity: 0, duration: 0.7, ease: 'power2.inOut'
-            }, '-=0.75');
+            });
+
+            // Fade the whole preloader overlay out toward the end of the flight
+            gsap.to(preloader, {
+                opacity: 0,
+                duration: 0.55,
+                ease: 'power2.inOut',
+                delay: 0.55
+            });
+        });
     }
 
-    // ── SEQUENCE START ────────────────────────────────────────────
-    // T+0.5s: begin scrambling letters one by one
+    function finishPreloader() {
+        setTimeout(() => {
+            preloader.style.display = 'none';
+            if (typeof AOS !== 'undefined') {
+                AOS.init({
+                    once: true,
+                    offset: 60,
+                    duration: 800,
+                    easing: 'ease-out-cubic',
+                });
+            }
+        }, 200);
+    }
+
+    function fallbackExit() {
+        body.classList.remove('loading');
+        preloader.style.transition = 'opacity 0.6s ease';
+        preloader.style.opacity = '0';
+        setTimeout(() => {
+            preloader.style.display = 'none';
+            if (typeof AOS !== 'undefined') AOS.init({ once: true });
+        }, 650);
+    }
+
+    // ── SEQUENCE START ───────────────────────────────
     setTimeout(() => {
         chars.forEach((el, i) => {
             const isLast = i === chars.length - 1;
@@ -191,22 +331,38 @@
     }, 500);
 
     function onAllDecoded() {
-        // Beam sweep
+        // Fire radar rings on decode
+        setTimeout(() => {
+            ['pl-ring-1','pl-ring-2','pl-ring-3'].forEach(id => {
+                const ring = document.getElementById(id);
+                if (ring) ring.classList.add('fire');
+            });
+        }, 60);
+
+        // Scan beam sweep
         setTimeout(() => {
             scanBeam.classList.add('active');
-        }, 80);
+        }, 100);
 
-        // Underline draws
+        // Underline
         setTimeout(() => {
             underline.classList.add('drawn');
         }, 320);
 
-        // Tagline fades in
+        // Tagline
         setTimeout(() => {
             tagline.classList.add('visible');
         }, 520);
 
-        // Progress section + terminal appear, tick starts
+        // Reset rings so they can fire again at auth moment
+        setTimeout(() => {
+            ['pl-ring-1','pl-ring-2','pl-ring-3'].forEach(id => {
+                const ring = document.getElementById(id);
+                if (ring) ring.classList.remove('fire');
+            });
+        }, 1400);
+
+        // Progress + terminal appear
         setTimeout(() => {
             progressWrap.classList.add('visible');
             terminal.classList.add('visible');

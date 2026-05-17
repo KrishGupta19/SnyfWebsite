@@ -3257,9 +3257,9 @@ body.visual-mode-on #cursor-dot-el {
 /* Main logo — individual scramble chars */
 .preloader-logo {
     font-family: var(--font-display);
-    font-size: clamp(4rem, 12vw, 6.5rem);
+    font-size: clamp(5.5rem, 15vw, 8.5rem) !important;
     font-weight: 700;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.2em !important;
     text-transform: uppercase;
     display: flex;
     align-items: center;
@@ -3361,7 +3361,7 @@ body.visual-mode-on #cursor-dot-el {
 
 .preloader-bar {
     width: 100%;
-    height: 1.5px;
+    height: 3px !important;
     background: rgba(255,255,255,0.1);
     position: relative;
     overflow: visible;
@@ -3447,7 +3447,7 @@ body.visual-mode-on #cursor-dot-el {
 }
 
 .pl-log-line.active-line {
-    color: rgba(255,255,255,0.4);
+    color: rgba(255, 255, 255, 0.55) !important;
 }
 
 @keyframes pl-log-enter {
@@ -4174,11 +4174,83 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     .vm-grid { gap: 10px; }
 }
 
-/* ── Nav logo ping ────────────────────────────────────── */
+/* ── Radar ring that expands after decode ─────────── */
+.pl-radar-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.pl-radar-ring.fire {
+    animation: pl-radar-expand 1.2s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+}
+
+.pl-radar-ring-2 {
+    animation-delay: 0.18s !important;
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.pl-radar-ring-3 {
+    animation-delay: 0.36s !important;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+@keyframes pl-radar-expand {
+    0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 0.8; }
+    100% { transform: translate(-50%, -50%) scale(6);   opacity: 0; }
+}
+
+/* ── Auth flash overlay ───────────────────────────── */
+.pl-auth-flash {
+    position: absolute;
+    inset: 0;
+    background: #ffffff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 20;
+    border-radius: 0;
+}
+
+/* ── Preloader background layer (separate from .preloader) ── */
+.pl-bg-layer {
+    position: absolute;
+    inset: 0;
+    background: #080808;
+    z-index: 0;
+    transition: opacity 0.55s ease;
+}
+
+/* ── Logo glitch keyframe for final scramble ──────── */
+@keyframes pl-final-glitch {
+    0%   { transform: translate(0);      clip-path: none; }
+    15%  { transform: translate(-3px, 1px); }
+    30%  { transform: translate(3px, -1px); filter: blur(0.5px); }
+    45%  { transform: translate(-2px, 2px); }
+    60%  { transform: translate(2px, -2px); }
+    75%  { transform: translate(-1px, 1px); }
+    100% { transform: translate(0);      filter: none; }
+}
+
+.preloader-logo.final-glitch {
+    animation: pl-final-glitch 0.35s steps(1) forwards;
+}
+
+/* ── Nav logo landing ping ────────────────────────── */
 @keyframes nav-logo-ping {
-    0%   { text-shadow: none; }
-    40%  { text-shadow: 0 0 16px rgba(26,26,26,0.4); }
+    0%   { text-shadow: 0 0 0px rgba(26,26,26,0); }
+    30%  { text-shadow: 0 0 14px rgba(26,26,26,0.35); }
     100% { text-shadow: none; }
 }
-.nav-logo-ping { animation: nav-logo-ping 0.7s ease forwards; }
+
+.nav-logo-ping {
+    animation: nav-logo-ping 0.6s ease forwards;
+}
 
