@@ -514,22 +514,54 @@ document.querySelectorAll('.feature-card, .problem-card, .value-card, .story-con
     });
 });
 
-// ── 3. AI Card 3D Tilt ────────────────────────────────────────
-if (isFinePonter && !prefersReduced) {
-    const visual = document.querySelector('.solution-visual');
-    const card = document.querySelector('.ai-card');
-    if (visual && card) {
-        visual.addEventListener('mousemove', e => {
-            const r = visual.getBoundingClientRect();
-            const x = (e.clientX - r.left) / r.width - 0.5;
-            const y = (e.clientY - r.top) / r.height - 0.5;
-            card.style.transform = `perspective(900px) rotateY(${x * 14}deg) rotateX(${-y * 9}deg) translateZ(16px)`;
+// ── 2b. Hero Card Golden Edge Light Leak ──────────────────────
+(function () {
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+
+    document.querySelectorAll('.hero-card-float-wrapper, .ai-card-float-wrapper').forEach(wrapper => {
+        const THRESHOLD = 90; // px from edge to start glow
+        const MAX_OPACITY = 0.82;
+        const RADIUS = 130; // px radial gradient size
+
+        wrapper.addEventListener('mousemove', e => {
+            const rect = wrapper.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const w = rect.width;
+            const h = rect.height;
+
+            const dLeft   = x;
+            const dRight  = w - x;
+            const dTop    = y;
+            const dBottom = h - y;
+            const minDist = Math.min(dLeft, dRight, dTop, dBottom);
+
+            if (minDist < THRESHOLD) {
+                const t = 1 - minDist / THRESHOLD;
+                const opacity = t * MAX_OPACITY;
+
+                // Position gradient at the nearest edge point
+                let gx, gy;
+                if (minDist === dLeft)        { gx = -8; gy = y; }
+                else if (minDist === dRight)  { gx = w + 8; gy = y; }
+                else if (minDist === dTop)    { gx = x; gy = -8; }
+                else                          { gx = x; gy = h + 8; }
+
+                wrapper.style.setProperty('--gold-x', `${gx}px`);
+                wrapper.style.setProperty('--gold-y', `${gy}px`);
+                wrapper.style.setProperty('--gold-opacity', opacity.toFixed(3));
+                wrapper.style.setProperty('--gold-r', `${RADIUS + t * 40}px`);
+            } else {
+                wrapper.style.setProperty('--gold-opacity', '0');
+            }
         }, { passive: true });
-        visual.addEventListener('mouseleave', () => {
-            card.style.transform = 'perspective(900px) rotateY(0) rotateX(0) translateZ(0)';
+
+        wrapper.addEventListener('mouseleave', () => {
+            wrapper.style.setProperty('--gold-opacity', '0');
         });
-    }
-}
+    });
+})();
+
 
 // ── 4. Animated Number Counters ───────────────────────────────
 function runCounter(el) {

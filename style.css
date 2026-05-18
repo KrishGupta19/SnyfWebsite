@@ -141,7 +141,7 @@ label,
 
 .section-header h2 {
     font-family: var(--font-display);
-    font-size: clamp(2rem, 4vw, 3rem);
+    font-size: clamp(2.5rem, 5vw, 3.8rem);
     font-weight: 900;
     line-height: 1.1;
     color: var(--text-hi);
@@ -152,25 +152,25 @@ label,
 
 .section-header p {
     color: var(--text-muted);
-    font-size: 1.05rem;
-    max-width: 520px;
+    font-size: 1.1rem;
+    max-width: 580px;
     margin: 0 auto;
     line-height: 1.7;
 }
 
 /* ---- Section tag ---- */
 .section-tag {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.25em;
     text-transform: uppercase;
     color: var(--muted);
     border: 1px solid var(--border);
-    padding: 6px 12px;
+    padding: 8px 16px;
     display: inline-block;
     font-family: var(--font-mono);
     background: transparent;
-    border-radius: 4px;
+    border-radius: 6px;
 }
 
 .section-tag::before {
@@ -1132,11 +1132,12 @@ body.visual-mode-on .nav-inner {
 }
 
 .hero-proof {
-    font-size: 11px;
-    color: rgba(110, 106, 100, 0.6);
+    font-size: clamp(0.78rem, 1.4vw, 0.95rem);
+    color: rgba(110, 106, 100, 0.75);
     margin-top: 24px;
     text-align: center;
     font-weight: 500;
+    letter-spacing: 0.03em;
 }
 
 .hero-cards-wrap {
@@ -1164,10 +1165,10 @@ body.visual-mode-on .nav-inner {
 
 .hero-intel-card {
     flex: 1;
-    background: rgba(0, 0, 0, 0.42);
+    background: rgba(4, 4, 4, 0.88);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 22px;
     padding: 28px;
     color: var(--white);
@@ -1178,8 +1179,8 @@ body.visual-mode-on .nav-inner {
     box-sizing: border-box;
     transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, background 0.3s ease, box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow:
-        0 20px 50px rgba(0,0,0,0.4),
-        0 0 0 1px rgba(255,255,255,0.02) inset;
+        0 20px 60px rgba(0,0,0,0.7),
+        0 0 0 1px rgba(255,255,255,0.03) inset;
     text-align: left;
     position: relative;
     overflow: hidden;
@@ -1207,11 +1208,11 @@ body.visual-mode-on .nav-inner {
 }
 
 .hero-intel-card:hover {
-    background: rgba(0, 0, 0, 0.58);
-    border-color: rgba(111, 183, 214, 0.4);
+    background: rgba(4, 4, 4, 0.94);
+    border-color: rgba(111, 183, 214, 0.35);
     /* transform handled by GSAP */
     box-shadow: 
-        0 24px 60px rgba(111, 183, 214, 0.15),
+        0 28px 70px rgba(0,0,0,0.8),
         0 0 0 1px rgba(111, 183, 214, 0.08) inset;
 }
 
@@ -1219,6 +1220,25 @@ body.visual-mode-on .nav-inner {
     flex: 1;
     display: flex;
     perspective: 1000px;
+    position: relative;
+}
+
+/* Golden edge light leak — appears when cursor nears card edges */
+.hero-card-float-wrapper::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 30px;
+    background: radial-gradient(
+        var(--gold-r, 100px) circle at var(--gold-x, 50%) var(--gold-y, 50%),
+        rgba(212, 175, 55, var(--gold-opacity, 0)) 0%,
+        rgba(180, 130, 20, calc(var(--gold-opacity, 0) * 0.4)) 35%,
+        transparent 75%
+    );
+    pointer-events: none;
+    z-index: -1;
+    will-change: opacity;
+    transition: opacity 0.25s ease;
 }
 
 .hero-card-float-wrapper.float-1 {
@@ -1248,9 +1268,9 @@ body.visual-mode-on .nav-inner {
 }
 
 .hero-intel-card.card-2:hover {
-    border-color: rgba(245, 158, 11, 0.45);
+    border-color: rgba(245, 158, 11, 0.4);
     box-shadow: 
-        0 24px 60px rgba(245, 158, 11, 0.12),
+        0 28px 70px rgba(0,0,0,0.8),
         0 0 0 1px rgba(245, 158, 11, 0.08) inset;
 }
 
@@ -2240,18 +2260,42 @@ body.visual-mode-on .nav-inner {
     align-items: center;
 }
 
+/* AI Card Wrapper for Golden Edge Leak */
+.ai-card-float-wrapper {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    transform-style: preserve-3d;
+    will-change: transform;
+    border-radius: 24px;
+}
+
+.ai-card-float-wrapper::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    z-index: -1;
+    background: radial-gradient(
+        var(--gold-r, 130px) circle at var(--gold-x, 50%) var(--gold-y, 50%),
+        rgba(217, 122, 74, var(--gold-opacity, 0)), 
+        transparent 100%
+    );
+    opacity: 1;
+    border-radius: 24px;
+    pointer-events: none;
+    transition: background 0.15s ease-out;
+}
+
 /* Terminal AI Card */
 .ai-card {
-    background: rgba(30, 30, 27, 0.45);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    background: rgba(4, 4, 4, 0.88);
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 12px 60px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 12px 60px rgba(0, 0, 0, 0.5);
     position: relative;
     transition: transform 0.18s ease, border-color 0.25s, box-shadow 0.25s;
-    transform-style: preserve-3d;
     will-change: transform;
 }
 
