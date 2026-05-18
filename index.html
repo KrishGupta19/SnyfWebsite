@@ -129,7 +129,7 @@
                 <li><a href="#problem">Problem</a></li>
                 <li><a href="#solution">Solution</a></li>
                 <li><a href="#features">Features</a></li>
-                <li><a href="community.html">Commons</a></li>
+                <li><a href="community.html" class="nav-commons">Commons</a></li>
                 <!-- <li><a href="#discover">Discover</a></li> -->
                 <li><a href="#about">About</a></li>
                 <li><a href="#waitlist" class="nav-cta">Join Waitlist</a></li>
@@ -2968,11 +2968,11 @@
       const RUPEE_PER_LOOP = 800;
 
       const BC_COLORS = {
-        neutral:  { fill: 'rgba(246,245,242,0.04)', stroke: 'rgba(255,255,255,0.22)', text: 'rgba(255,255,255,0.85)', sub: 'rgba(255,255,255,0.55)', glow: 'none' },
-        warn:     { fill: 'rgba(217,122,74,0.06)',  stroke: 'rgba(217,122,74,0.4)',   text: '#D97A4A',               sub: 'rgba(217,122,74,0.7)',   glow: 'rgba(217,122,74,0.12)' },
-        danger:   { fill: 'rgba(217,122,74,0.1)',   stroke: '#D97A4A',               text: '#D97A4A',                sub: 'rgba(217,122,74,0.75)',  glow: 'rgba(217,122,74,0.22)' },
-        active:   { fill: 'rgba(0,242,255,0.12)',   stroke: '#00F2FF',               text: '#FFFFFF',                sub: 'rgba(0,242,255,0.75)',   glow: 'rgba(0,242,255,0.25)' },
-        snyf:     { fill: 'rgba(0,242,255,0.18)',   stroke: '#00F2FF',               text: '#00F2FF',                sub: 'rgba(0,242,255,0.7)',    glow: 'rgba(0,242,255,0.3)' }
+        neutral:  { fill: 'rgba(246,245,242,0.04)', stroke: 'rgba(255,255,255,0.22)', text: 'rgba(255,255,255,0.95)', sub: 'rgba(255,255,255,0.7)', glow: 'none' },
+        warn:     { fill: 'rgba(255,140,80,0.08)',  stroke: 'rgba(255,140,80,0.6)',   text: '#FF8C50',               sub: 'rgba(255,160,110,0.9)',  glow: 'rgba(255,140,80,0.18)' },
+        danger:   { fill: 'rgba(255,100,80,0.12)',  stroke: '#FF6450',               text: '#FF6450',                sub: 'rgba(255,120,100,0.95)', glow: 'rgba(255,100,80,0.28)' },
+        active:   { fill: 'rgba(0,242,255,0.15)',   stroke: '#00F2FF',               text: '#FFFFFF',                sub: '#00F2FF',   glow: 'rgba(0,242,255,0.3)' },
+        snyf:     { fill: 'rgba(0,242,255,0.22)',   stroke: '#00F2FF',               text: '#00F2FF',                sub: '#B2FAFF',    glow: 'rgba(0,242,255,0.45)' }
       };
 
       const NODE_R = 34;
@@ -3113,10 +3113,19 @@
           group.appendChild(emoji);
 
           // Outside text elements (split to avoid circles overlays)
+          const labelSize = isMobile ? '23' : '16';
+          const subSize = isMobile ? '18' : '13.5';
+          const lineSpacing = isMobile ? 22 : 14;
+          const offsetBelowLabel = isMobile ? 28 : 19;
+          const offsetBelowSub = isMobile ? 52 : 34;
+          const offsetSide = isMobile ? 24 : 18;
+          const offsetSideLabelY = isMobile ? -8 : -7;
+          const offsetSideSubY = isMobile ? 14 : 8;
+
           const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
           label.setAttribute('fill', p.text);
           label.setAttribute('font-family', 'var(--font-mono), monospace');
-          label.setAttribute('font-size', '16');
+          label.setAttribute('font-size', labelSize);
           label.setAttribute('font-weight', '700');
           label.setAttribute('letter-spacing', '0.08em');
           label.textContent = node.label;
@@ -3124,7 +3133,7 @@
           const sub = document.createElementNS('http://www.w3.org/2000/svg', 'text');
           sub.setAttribute('fill', p.sub);
           sub.setAttribute('font-family', "'Inter', sans-serif");
-          sub.setAttribute('font-size', '13.5');
+          sub.setAttribute('font-size', subSize);
           sub.setAttribute('font-weight', '400');
 
           // Split sublabel to wrap nicely
@@ -3150,35 +3159,35 @@
 
           if (node.textPos === 'below') {
             textAnchor = 'middle';
-            labelY = node.y + R + 19;
-            subY = node.y + R + 34;
+            labelY = node.y + R + offsetBelowLabel;
+            subY = node.y + R + offsetBelowSub;
           } else if (node.textPos === 'above') {
             textAnchor = 'middle';
-            labelY = node.y - R - 30;
-            subY = node.y - R - 15;
+            labelY = node.y - R - (offsetBelowSub + 10);
+            subY = node.y - R - offsetBelowLabel;
             if (lines.length > 1) {
-              labelY -= 14;
-              subY -= 14;
+              labelY -= lineSpacing;
+              subY -= lineSpacing;
             }
           } else if (node.textPos === 'left') {
             textAnchor = 'end';
-            labelX = node.x - R - 18;
-            subX = node.x - R - 18;
-            labelY = node.y - 7;
-            subY = node.y + 8;
+            labelX = node.x - R - offsetSide;
+            subX = node.x - R - offsetSide;
+            labelY = node.y + offsetSideLabelY;
+            subY = node.y + offsetSideSubY;
             if (lines.length > 1) {
-              labelY -= 7;
-              subY -= 7;
+              labelY -= lineSpacing / 2;
+              subY -= lineSpacing / 2;
             }
           } else if (node.textPos === 'right') {
             textAnchor = 'start';
-            labelX = node.x + R + 18;
-            subX = node.x + R + 18;
-            labelY = node.y - 7;
-            subY = node.y + 8;
+            labelX = node.x + R + offsetSide;
+            subX = node.x + R + offsetSide;
+            labelY = node.y + offsetSideLabelY;
+            subY = node.y + offsetSideSubY;
             if (lines.length > 1) {
-              labelY -= 7;
-              subY -= 7;
+              labelY -= lineSpacing / 2;
+              subY -= lineSpacing / 2;
             }
           }
 

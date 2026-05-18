@@ -12,6 +12,10 @@
   <link rel="stylesheet" href="community.css">
 </head>
 <body>
+  <!-- Custom Cybernetic Cursor -->
+  <div id="cursor-dot" class="custom-cursor"></div>
+  <div id="cursor-ring" class="custom-cursor"></div>
+
   <nav class="navbar scrolled" id="navbar">
     <div class="nav-inner">
       <a href="index.html" class="logo" id="nav-logo">
@@ -25,7 +29,7 @@
         <li><a href="index.html#problem">Problem</a></li>
         <li><a href="index.html#solution">Solution</a></li>
         <li><a href="index.html#features">Features</a></li>
-        <li><a href="community.html" class="nav-cta">Commons</a></li>
+        <li><a href="community.html" class="nav-commons">Commons</a></li>
       </ul>
       <a href="community.html" class="btn btn-primary" style="font-size:13px;padding:8px 18px;">Back to Commons</a>
       <button class="hamburger" id="hamburger" aria-label="Open menu">&#9776;</button>
@@ -285,6 +289,65 @@
       el('wr-visited-check').addEventListener('change', checkSubmit);
       el('wr-submit-btn').addEventListener('click', showSuccess);
       el('wr-new-report').addEventListener('click', resetForm);
+
+      // ── Custom Cybernetic Cursor Tracking ───────────────────────────
+      (function () {
+        const isFinePointer = window.matchMedia('(pointer: fine)').matches;
+        if (!isFinePointer) return;
+
+        const dot = document.getElementById('cursor-dot');
+        const ring = document.getElementById('cursor-ring');
+        if (!dot || !ring) return;
+
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        
+        let ringX = mouseX;
+        let ringY = mouseY;
+        let dotX = mouseX;
+        let dotY = mouseY;
+
+        window.addEventListener('mousemove', e => {
+          mouseX = e.clientX;
+          mouseY = e.clientY;
+        }, { passive: true });
+
+        document.addEventListener('mouseleave', () => {
+          dot.style.opacity = '0';
+          ring.style.opacity = '0';
+        });
+        document.addEventListener('mouseenter', () => {
+          dot.style.opacity = '1';
+          ring.style.opacity = '1';
+        });
+
+        function updateCursor() {
+          dotX += (mouseX - dotX);
+          dotY += (mouseY - dotY);
+          dot.style.transform = `translate3d(${dotX}px, ${dotY}px, 0)`;
+
+          ringX += (mouseX - ringX) * 0.15;
+          ringY += (mouseY - ringY) * 0.15;
+          ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0)`;
+
+          requestAnimationFrame(updateCursor);
+        }
+        requestAnimationFrame(updateCursor);
+
+        const hoverTargets = 'a, button, input, select, textarea, [role="button"], .wr-place-chip';
+        
+        document.addEventListener('mouseover', e => {
+          if (e.target && e.target.closest(hoverTargets)) {
+            document.body.classList.add('cursor-hovering');
+          }
+        }, { passive: true });
+
+        document.addEventListener('mouseout', e => {
+          if (e.target && !e.target.closest(hoverTargets)) {
+            document.body.classList.remove('cursor-hovering');
+          }
+        }, { passive: true });
+      })();
 
       const hamburger = el('hamburger');
       const navLinks = document.querySelector('.nav-links');
