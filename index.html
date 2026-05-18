@@ -330,13 +330,14 @@
                     </div>
                 </div>
 
-                <!-- STAGE 2: SCANNING TERMINAL -->
-                <div id="try-it-terminal" class="terminal-block">
-                    <!-- Terminal rows dynamically populated -->
-                </div>
-
                 <!-- STAGE 3: RESULTS STATE -->
-                <div id="try-it-report" class="report-card">
+                <div id="try-it-report" class="report-card" style="position: relative; overflow: hidden;">
+                    <!-- High-Tech Radar Scanning Overlay -->
+                    <div id="try-it-scanning-overlay" class="vm-scan-overlay">
+                        <div class="vm-scan-grid"></div>
+                        <div class="vm-scan-line"></div>
+                        <div class="vm-scan-text">COMPUTING CREDIBILITY MATRIX...</div>
+                    </div>
                     <!-- Top header -->
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(246,245,242,0.07); padding-bottom: 20px; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
                         <div style="display: flex; align-items: center; gap: 12px;">
@@ -1382,44 +1383,96 @@
                 <div class="vmc-prob-tag">THREAT · CRITICAL</div>
             </div>
 
-            <!-- CITY TRUST HEATMAP -->
-            <div class="vm-card vmc-map" data-spotlight>
+            <!-- ── REVIEW AUTHENTICITY BREAKDOWN ── -->
+            <div class="vm-card vmc-truth" data-spotlight>
                 <div class="vm-card-glow"></div>
-                <div class="vmc-map-header">
-                    <div class="vmc-eyebrow" style="margin-bottom:0">
-                        <span class="vmc-dot vmc-dot--green"></span>
-                        NCR TRUST NETWORK · LIVE
+                <div class="vct-header">
+                    <div>
+                        <div class="vmc-eyebrow">
+                            <span class="vmc-dot vmc-dot--amber"></span>
+                            REVIEW AUTHENTICITY BREAKDOWN
+                        </div>
+                        <p class="vct-subhead">
+                            Side-by-side verification: Manipulated rating vs Snyf Trust-Weighted result.
+                        </p>
                     </div>
-                    <span class="vmc-map-legend">
-                        <span class="legend-dot legend-verified"></span>Verified
-                        <span class="legend-dot legend-flagged"></span>Flagged
-                        <span class="legend-dot legend-new"></span>New
+                    <div class="vct-café-selector">
+                        <span class="vct-cafe-label">SELECT CAFÉ:</span>
+                        <button class="vct-arrow vct-arrow--prev" id="vct-prev-btn" aria-label="Previous Cafe">←</button>
+                        <button class="vct-arrow vct-arrow--next" id="vct-next-btn" aria-label="Next Cafe">→</button>
+                    </div>
+                </div>
+
+                <div class="vct-comparison">
+                    <!-- BEFORE SNYF (Left Side) -->
+                    <div class="vct-side vct-side--before">
+                        <div class="vct-side-header">
+                            <span class="vct-side-label vct-label--bad">Unverified Ratings</span>
+                            <div class="vct-rating-display">
+                                <span class="vct-big-rating" id="vct-before-rating">4.8</span>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span class="vct-stars" id="vct-before-stars">★★★★★</span>
+                                    <span class="vct-review-count" id="vct-before-count">1,240 reviews</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Star Breakdown Bars -->
+                        <div class="vct-bars" id="vct-before-bars">
+                            <!-- JS will inject these bars dynamically -->
+                        </div>
+
+                        <!-- Verdict Row -->
+                        <div class="vct-verdict vct-verdict--bad">
+                            <span class="vct-verdict-icon">⚠️</span>
+                            <span id="vct-before-verdict">MANIPULATED · THREAT LEVEL CRITICAL</span>
+                        </div>
+                    </div>
+
+                    <!-- CENTER DIVIDER -->
+                    <div class="vct-divider">
+                        <div class="vct-divider-line"></div>
+                        <div class="vct-divider-arrow">→</div>
+                        <span class="vct-divider-badge">SNYF</span>
+                        <div class="vct-divider-line"></div>
+                    </div>
+
+                    <!-- AFTER SNYF (Right Side) -->
+                    <div class="vct-side vct-side--after">
+                        <div class="vct-side-header">
+                            <span class="vct-side-label vct-label--good">Snyf Trust-Weighted</span>
+                            <div class="vct-rating-display">
+                                <span class="vct-big-rating vct-rating--good" id="vct-after-rating">3.9</span>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span class="vct-stars vct-stars--good" id="vct-after-stars">★★★★★</span>
+                                    <span class="vct-review-count" id="vct-after-count">820 authentic</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Star Breakdown Bars -->
+                        <div class="vct-bars" id="vct-after-bars">
+                            <!-- JS will inject these bars dynamically -->
+                        </div>
+
+                        <!-- Verdict Row -->
+                        <div class="vct-verdict vct-verdict--good">
+                            <span class="vct-verdict-icon">✓</span>
+                            <span id="vct-after-verdict">ORGANIC · TRUST CONSENSUS</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- INSIGHT BAR -->
+                <div class="vct-insight-bar">
+                    <div class="vct-insight-left">
+                        <span class="vct-insight-dot"></span>
+                        <span class="vct-insight-label">TRUST ENGINE INSIGHT</span>
+                    </div>
+                    <span class="vct-insight-text" id="vct-insight-text">
+                        Spike of 420 reviews detected from a single IP cluster in DLF Phase 4, inflating the average from 3.9 to 4.8.
                     </span>
-                </div>
-                <div class="vmc-map-new-body">
-                    <div class="vmc-map-visual">
-                        <canvas id="vmc-city-canvas" aria-label="NCR city trust heatmap"></canvas>
-                        <div class="vmc-map-overlay-labels">
-                            <span class="map-zone-label zone-cyber" style="left:18%;top:20%">Cyber Hub</span>
-                            <span class="map-zone-label zone-sec29" style="left:52%;top:15%">Sector 29</span>
-                            <span class="map-zone-label zone-dlf4" style="left:72%;top:38%">DLF Phase 4</span>
-                            <span class="map-zone-label zone-khan" style="left:28%;top:65%">Khan Market</span>
-                            <span class="map-zone-label zone-sushant" style="left:62%;top:72%">Sushant Lok</span>
-                        </div>
-                    </div>
-                    <div class="vmc-map-console">
-                        <div class="console-title">LIVE VERIFICATION ENGINE</div>
-                        <div class="console-logs" id="console-logs">
-                            <!-- Dynamic scrolling logs are appended here -->
-                        </div>
-                    </div>
-                </div>
-                <div class="vmc-map-footer">
-                    <span id="vmc-map-stat-verified">0 verified</span>
-                    <span class="vmc-map-divider">·</span>
-                    <span id="vmc-map-stat-flagged">0 flagged</span>
-                    <span class="vmc-map-divider">·</span>
-                    <span id="vmc-map-stat-new">0 new today</span>
+                    <span class="vct-insight-conf" id="vct-insight-conf">CONFIDENCE: 99.4%</span>
                 </div>
             </div>
 
@@ -1844,9 +1897,13 @@
             
             // Show input state, hide other stages
             document.getElementById('try-it-input-state').style.display = 'block';
-            document.getElementById('try-it-terminal').style.display = 'none';
             document.getElementById('try-it-report').style.display = 'none';
             
+            const scanOverlay = document.getElementById('try-it-scanning-overlay');
+            if (scanOverlay) {
+                scanOverlay.classList.remove('active');
+            }
+
             // Reset chip active selections
             document.querySelectorAll('.cafe-chip').forEach(c => c.classList.remove('selected'));
             selectedCafé = '';
@@ -1867,13 +1924,7 @@
             scanTimeoutIds.forEach(id => clearTimeout(id));
             scanTimeoutIds = [];
 
-            // Toggle visibility states
-            document.getElementById('try-it-input-state').style.display = 'none';
-            const term = document.getElementById('try-it-terminal');
-            term.style.display = 'block';
-            term.style.opacity = '1';
-            term.innerHTML = '';
-
+            // Get cafe scores data
             const scores = getCaféScores(cafeName);
             const rawOverall = (scores.foodQuality * 0.3) +
                                (scores.ambience * 0.2) +
@@ -1882,72 +1933,45 @@
                                (scores.waitingTime * 0.1);
             scores.overall = parseFloat(rawOverall.toFixed(1));
 
-            // Theatrical scan lines sequence
-            const steps = [
-                { text: '> SNYF Intelligence Engine v2.1', delay: 100, class: 't-dim' },
-                { text: `> Initializing trust scan for: <span class="t-cyan">${cafeName}</span>...`, delay: 400, class: '' },
-                { text: '', delay: 600, class: '' },
-                
-                { text: '[████████░░░░░░░░░░░░] 40%   Fetching review corpus...', delay: 800, class: 't-white' },
-                { text: `> Sources indexed: ${scores.reviewCount} verified · ${Math.floor(scores.reviewCount * 0.12)} flagged · ${Math.floor(scores.reviewCount * 1.4)} total`, delay: 1200, class: 't-dim' },
-                { text: '', delay: 1400, class: '' },
-                
-                { text: '[████████████░░░░░░░░] 62%   Running anomaly detection...', delay: 1600, class: 't-white' },
-                { text: '⚠ Suspicious spike detected: +340% 5★ reviews (48h window)', delay: 2000, class: 't-orange' },
-                { text: '> Pattern flagged for manual review', delay: 2300, class: 't-dim' },
-                { text: '', delay: 2500, class: '' },
-                
-                { text: '[████████████████░░░░] 81%   Computing dimensional scores...', delay: 2700, class: 't-white' },
-                { text: '> Weighting reviewer credibility matrix...', delay: 2900, class: 't-dim' },
-                { text: '> Cross-referencing geo-temporal signals...', delay: 3100, class: 't-dim' },
-                { text: '', delay: 3300, class: '' },
-                
-                { text: '[████████████████████] 100%  Analysis complete.', delay: 3500, class: 't-green' },
-                { text: '> Trust Report ready. Confidence: 94%', delay: 3800, class: 't-green' }
-            ];
+            // Hide Stage 1 (Input)
+            document.getElementById('try-it-input-state').style.display = 'none';
 
-            steps.forEach((step, idx) => {
-                const tid = setTimeout(() => {
-                    const line = document.createElement('span');
-                    line.className = 'terminal-line ' + step.class;
-                    line.innerHTML = step.text;
-                    
-                    // Track and clean console cursor
-                    const oldCursor = term.querySelector('.term-cursor');
-                    if (oldCursor) oldCursor.remove();
-                    
-                    term.appendChild(line);
-                    
-                    if (idx < steps.length - 1) {
-                        const cursor = document.createElement('span');
-                        cursor.className = 'term-cursor';
-                        cursor.style.animation = 'blink 1.2s step-end infinite';
-                        cursor.textContent = '_';
-                        line.appendChild(cursor);
-                    }
-                    
-                    setTimeout(() => {
-                        line.classList.add('visible');
-                        term.scrollTop = term.scrollHeight;
-                    }, 50);
+            // Show Stage 3 (Results) but cover it with Stage 2 (High-Tech Scan Overlay)
+            const reportCard = document.getElementById('try-it-report');
+            reportCard.style.display = 'block';
+            reportCard.style.opacity = '1';
 
-                    if (idx === steps.length - 1) {
-                        const resId = setTimeout(() => {
-                            gsap.to(term, {
-                                opacity: 0,
-                                duration: 0.3,
-                                onComplete: () => {
-                                    term.style.display = 'none';
-                                    term.style.opacity = '1';
-                                    tryItResults(cafeName, scores);
-                                }
-                            });
-                        }, 800);
-                        scanTimeoutIds.push(resId);
-                    }
-                }, step.delay);
-                scanTimeoutIds.push(tid);
+            // Reset scores display to intermediate/blank values before animation
+            document.getElementById('report-cafe-name').textContent = cafeName.toUpperCase();
+            document.getElementById('report-score-value').textContent = "0.0";
+            
+            // Activate high-tech scan overlay
+            const scanOverlay = document.getElementById('try-it-scanning-overlay');
+            if (scanOverlay) {
+                scanOverlay.classList.add('active');
+            }
+
+            // Animate metric bars to 0% initially
+            const metrics = ['foodQuality', 'ambience', 'serviceQuality', 'valueForMoney', 'waitingTime'];
+            metrics.forEach(m => {
+                const row = document.querySelector(`.metric-row[data-metric="${m}"]`);
+                if (row) {
+                    const fill = row.querySelector('.metric-bar-fill');
+                    if (fill) fill.style.width = '0%';
+                }
             });
+
+            // Run a 3.0s simulated scan phase matching the Visual Mode experience
+            const tid = setTimeout(() => {
+                // Deactivate scan overlay
+                if (scanOverlay) {
+                    scanOverlay.classList.remove('active');
+                }
+                
+                // Display final scores and trigger premium fill animations
+                tryItResults(cafeName, scores);
+            }, 3000);
+            scanTimeoutIds.push(tid);
         }
 
         function tryItResults(cafeName, scores) {
@@ -2719,286 +2743,228 @@
     })();
     </script>
 
-    <!-- ========== CITY TRUST HEATMAP SYSTEM ========== -->
-    <script id="city-heatmap-js">
-    (function initCityHeatmap() {
-        const canvas = document.getElementById('vmc-city-canvas');
-        const logBox = document.getElementById('console-logs');
-        if (!canvas) return;
-
-        const ctx = canvas.getContext('2d');
-        let animFrame;
-        let nodes = [];
-        let time = 0;
-        let isVisible = false;
-        let eventInterval = null;
-
-        const NODE_TYPES = {
-            verified: { color: '111,183,214', r: 3.5,  glowR: 10, count: 22 },
-            flagged:  { color: '217,122,74',  r: 2.5,  glowR: 8,  count: 6  },
-            newNode:  { color: '123,198,164', r: 3,    glowR: 9,  count: 8  },
-            inactive: { color: '110,106,100', r: 1.8,  glowR: 5,  count: 12  },
-        };
-
-        const ZONES = [
-            { name: 'Cyber Hub', x: 0.20, y: 0.28, weight: 3 },
-            { name: 'Sector 29', x: 0.54, y: 0.20, weight: 2 },
-            { name: 'DLF Phase 4', x: 0.74, y: 0.42, weight: 2 },
-            { name: 'Khan Market', x: 0.30, y: 0.68, weight: 2 },
-            { name: 'Sushant Lok', x: 0.65, y: 0.74, weight: 1 },
+    <!-- ========== REVIEW AUTHENTICITY BREAKDOWN (VCT) SYSTEM ========== -->
+    <script id="vct-js">
+    (function initVCT() {
+        const VCT_CAFES = [
+            {
+                name: "Blue Tokai, Gurugram",
+                before: {
+                    rating: "4.8",
+                    stars: 5,
+                    count: "1,240 reviews",
+                    bars: [82, 12, 3, 2, 1], // 5, 4, 3, 2, 1
+                    verdict: "MANIPULATED · THREAT LEVEL CRITICAL"
+                },
+                after: {
+                    rating: "3.9",
+                    stars: 4,
+                    count: "820 authentic",
+                    bars: [25, 30, 20, 15, 10],
+                    verdict: "ORGANIC · TRUST CONSENSUS"
+                },
+                insight: "Spike of 420 reviews detected from a single IP cluster in DLF Phase 4, inflating the average from 3.9 to 4.8.",
+                confidence: "99.4%"
+            },
+            {
+                name: "Third Wave Coffee",
+                before: {
+                    rating: "4.7",
+                    stars: 5,
+                    count: "890 reviews",
+                    bars: [78, 14, 4, 2, 2],
+                    verdict: "MANIPULATED · THREAT LEVEL HIGH"
+                },
+                after: {
+                    rating: "4.1",
+                    stars: 4,
+                    count: "650 authentic",
+                    bars: [35, 32, 15, 12, 6],
+                    verdict: "ORGANIC · TRUST CONSENSUS"
+                },
+                insight: "Coordinated cluster of 240 new accounts posting within 48 hours; organic rating corrected.",
+                confidence: "97.8%"
+            },
+            {
+                name: "The Grammar Room",
+                before: {
+                    rating: "4.9",
+                    stars: 5,
+                    count: "1,450 reviews",
+                    bars: [91, 6, 1, 1, 1],
+                    verdict: "MANIPULATED · THREAT LEVEL CRITICAL"
+                },
+                after: {
+                    rating: "4.2",
+                    stars: 4,
+                    count: "1,070 authentic",
+                    bars: [42, 30, 12, 10, 6],
+                    verdict: "ORGANIC · TRUST CONSENSUS"
+                },
+                insight: "Repetitive bot phrase matching ('amazing food', 'best cafe') flagged on 380 five-star entries.",
+                confidence: "99.1%"
+            }
         ];
 
-        const LOG_TEMPLATES = [
-            { type: 'verified', zone: 'Cyber Hub', msg: 'Verified authentic wait-time pattern' },
-            { type: 'verified', zone: 'Khan Market', msg: 'Eliminated 14 coordinates showing bot patterns' },
-            { type: 'flagged', zone: 'Sector 29', msg: 'Coordinated click-farm review burst flagged' },
-            { type: 'flagged', zone: 'DLF Phase 4', msg: 'Flagged 12 coordinated new account profiles' },
-            { type: 'newNode', zone: 'Sushant Lok', msg: 'Analyzing new organic review signatures' },
-            { type: 'verified', zone: 'Khan Market', msg: 'Consensus verified for verified coffee house' },
-            { type: 'flagged', zone: 'Cyber Hub', msg: 'Removed 32 reviews from blacklisted click network' },
-            { type: 'newNode', zone: 'Sector 29', msg: 'Scanning geo-location trust density' },
-            { type: 'verified', zone: 'DLF Phase 4', msg: 'Trust score adjusted: organic consensus high' },
-            { type: 'flagged', zone: 'Sushant Lok', msg: 'Coordinated fake rating attack neutralized' }
-        ];
+        let currentIdx = 0;
+        let autoCycleTimer = null;
+        let isUserInteracting = false;
 
-        function weightedZonePoint() {
-            const total = ZONES.reduce((s, z) => s + z.weight, 0);
-            let r = Math.random() * total;
-            let zone = ZONES[0];
-            for (const z of ZONES) { r -= z.weight; if (r <= 0) { zone = z; break; } }
-            return {
-                zone: zone.name,
-                x: zone.x + (Math.random() - 0.5) * 0.22,
-                y: zone.y + (Math.random() - 0.5) * 0.22,
-            };
+        const prevBtn = document.getElementById('vct-prev-btn');
+        const nextBtn = document.getElementById('vct-next-btn');
+
+        function generateStars(ratingVal) {
+            const count = Math.round(parseFloat(ratingVal));
+            return '★'.repeat(count) + '☆'.repeat(5 - count);
         }
 
-        function createNode(type) {
-            const pt = weightedZonePoint();
-            return {
-                type,
-                nx: Math.max(0.04, Math.min(0.96, pt.x)),
-                ny: Math.max(0.04, Math.min(0.96, pt.y)),
-                zone: pt.zone,
-                pulsePhase: Math.random() * Math.PI * 2,
-                pulseSpeed: 0.6 + Math.random() * 1.2,
-                spawnTime: time,
-                isPinging: type === 'newNode',
-                pingProgress: 0,
-            };
-        }
-
-        function initNodes() {
-            nodes = [];
-            Object.entries(NODE_TYPES).forEach(([type, cfg]) => {
-                for (let i = 0; i < cfg.count; i++) nodes.push(createNode(type));
-            });
-            updateStats();
-        }
-
-        function updateStats() {
-            const v = nodes.filter(n => n.type === 'verified').length;
-            const f = nodes.filter(n => n.type === 'flagged').length;
-            const nw = nodes.filter(n => n.type === 'newNode').length;
-            const vs = document.getElementById('vmc-map-stat-verified');
-            const fs = document.getElementById('vmc-map-stat-flagged');
-            const ns = document.getElementById('vmc-map-stat-new');
-            if (vs) vs.textContent = `${v} verified`;
-            if (fs) fs.textContent = `${f} flagged`;
-            if (ns) ns.textContent = `${nw} new today`;
-        }
-
-        function resize() {
-            const parent = canvas.parentElement;
-            if (!parent) return;
-            const rect = parent.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-            const h = Math.max(rect.height, 140);
-            canvas.width  = rect.width * dpr;
-            canvas.height = h * dpr;
-            canvas.style.width  = rect.width + 'px';
-            canvas.style.height = h + 'px';
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        }
-
-        function drawNode(node, W, H) {
-            const cfg = NODE_TYPES[node.type];
-            if (!cfg) return;
-            const x = node.nx * W, y = node.ny * H;
-            const breathe = 1 + 0.2 * Math.sin(time * node.pulseSpeed + node.pulsePhase);
-            const r = cfg.r * breathe;
-
-            const grd = ctx.createRadialGradient(x, y, 0, x, y, cfg.glowR * breathe);
-            grd.addColorStop(0, `rgba(${cfg.color},0.22)`);
-            grd.addColorStop(1, `rgba(${cfg.color},0)`);
-            ctx.beginPath(); ctx.arc(x, y, cfg.glowR * breathe, 0, Math.PI * 2);
-            ctx.fillStyle = grd; ctx.fill();
-
-            ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(${cfg.color},0.9)`; ctx.fill();
-
-            if (node.isPinging && node.pingProgress < 1) {
-                node.pingProgress += 0.015;
-                const pingR = r + node.pingProgress * 25;
-                const pingA = (1 - node.pingProgress) * 0.6;
-                ctx.beginPath(); ctx.arc(x, y, pingR, 0, Math.PI * 2);
-                ctx.strokeStyle = `rgba(${cfg.color},${pingA})`; ctx.lineWidth = 1; ctx.stroke();
-                if (node.pingProgress >= 1) node.isPinging = false;
-            }
-        }
-
-        function drawConnections(W, H) {
-            const verified = nodes.filter(n => n.type === 'verified');
-            for (let i = 0; i < verified.length; i++) {
-                for (let j = i + 1; j < verified.length; j++) {
-                    const dx = verified[i].nx - verified[j].nx;
-                    const dy = verified[i].ny - verified[j].ny;
-                    const dist = Math.sqrt(dx*dx + dy*dy);
-                    if (dist < 0.24) {
-                        const alpha = (1 - dist / 0.24) * 0.14;
-                        ctx.beginPath();
-                        ctx.moveTo(verified[i].nx * W, verified[i].ny * H);
-                        ctx.lineTo(verified[j].nx * W, verified[j].ny * H);
-                        ctx.strokeStyle = `rgba(111,183,214,${alpha})`; ctx.lineWidth = 0.5; ctx.stroke();
-                    }
-                }
-            }
-        }
-
-        function drawGridLines(W, H) {
-            ctx.strokeStyle = 'rgba(255,255,255,0.02)'; ctx.lineWidth = 0.5;
-            for (let i = 0; i <= 12; i++) { const x = (i / 12) * W; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-            for (let i = 0; i <= 7; i++)  { const y = (i / 7) * H;  ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-        }
-
-        function animate() {
-            if (!isVisible) return;
-            animFrame = requestAnimationFrame(animate);
-            time += 0.016;
-            const dpr = window.devicePixelRatio || 1;
-            const W = canvas.width / dpr, H = canvas.height / dpr;
-            ctx.clearRect(0, 0, W, H);
-            drawGridLines(W, H);
-            drawConnections(W, H);
-            for (const node of nodes) drawNode(node, W, H);
-        }
-
-        function addLogEntry(type, zone, msg) {
-            if (!logBox) return;
-            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        function vctRenderBars(containerId, barsData, isBefore) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
             
-            const badgeClass = type === 'verified' ? 'verified' : type === 'flagged' ? 'flagged' : 'new';
-            const badgeLabel = type === 'newNode' ? 'NEW' : type.toUpperCase();
-
-            const logItem = document.createElement('div');
-            logItem.className = `log-item ${badgeClass}`;
-            logItem.innerHTML = `
-                <span class="log-time">[${timeStr}]</span>
-                <span class="log-badge badge-${badgeClass}">${badgeLabel}</span>
-                <span class="log-zone">${zone}</span>
-                <span class="log-msg">${msg}</span>
-            `;
-            logBox.appendChild(logItem);
-            logBox.scrollTop = logBox.scrollHeight;
-
-            while (logBox.children.length > 25) {
-                logBox.removeChild(logBox.firstChild);
-            }
-        }
-
-        function addLiveEvent() {
-            if (!isVisible) return;
-            
-            const types = ['verified', 'verified', 'verified', 'newNode', 'flagged'];
-            const type = types[Math.floor(Math.random() * types.length)];
-            const newNode = createNode(type);
-            newNode.isPinging = true;
-            newNode.pingProgress = 0;
-            nodes.push(newNode);
-
-            // Trigger corresponding log entry
-            const matches = LOG_TEMPLATES.filter(l => {
-                if (type === 'newNode') return l.type === 'newNode';
-                return l.type === type;
-            });
-            const picked = matches[Math.floor(Math.random() * matches.length)] || LOG_TEMPLATES[0];
-            addLogEntry(picked.type, newNode.zone, picked.msg);
-
-            const typeNodes = nodes.filter(n => n.type === type);
-            if (typeNodes.length > NODE_TYPES[type].count + 3) {
-                const idx = nodes.indexOf(typeNodes[0]);
-                if (idx > -1) nodes.splice(idx, 1);
-            }
-            updateStats();
-        }
-
-        function prepopulateLogs() {
-            if (!logBox) return;
-            logBox.innerHTML = '';
-            
-            // Generate a few initial logs spaced out backwards
-            for (let i = 4; i >= 0; i--) {
-                const template = LOG_TEMPLATES[Math.floor(Math.random() * LOG_TEMPLATES.length)];
-                const randomTime = new Date(Date.now() - i * 8000);
-                const timeStr = randomTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+            // barsData is 5 down to 1
+            for (let i = 0; i < 5; i++) {
+                const starNum = 5 - i;
+                const pct = barsData[i];
                 
-                const badgeClass = template.type === 'verified' ? 'verified' : template.type === 'flagged' ? 'flagged' : 'new';
-                const badgeLabel = template.type === 'newNode' ? 'NEW' : template.type.toUpperCase();
-
-                const logItem = document.createElement('div');
-                logItem.className = `log-item ${badgeClass}`;
-                logItem.innerHTML = `
-                    <span class="log-time">[${timeStr}]</span>
-                    <span class="log-badge badge-${badgeClass}">${badgeLabel}</span>
-                    <span class="log-zone">${template.zone}</span>
-                    <span class="log-msg">${template.msg}</span>
-                `;
-                logBox.appendChild(logItem);
+                const row = document.createElement('div');
+                row.className = 'vct-bar-row';
+                
+                const label = document.createElement('span');
+                label.className = 'vct-bar-label';
+                label.textContent = `${starNum}★`;
+                
+                const track = document.createElement('div');
+                track.className = 'vct-bar-track';
+                
+                const fill = document.createElement('div');
+                fill.className = `vct-bar-fill ${isBefore ? 'vct-bar--before' : 'vct-bar--after'}`;
+                // Animate fill width on load
+                fill.style.width = '0%';
+                
+                // Suspicious top bar highlighting (5-star is suspicious on Before side)
+                if (isBefore && starNum === 5) {
+                    fill.classList.add('vct-bar--suspicious');
+                    const flag = document.createElement('span');
+                    flag.className = 'vct-bar-flag';
+                    flag.textContent = 'INFLATED';
+                    fill.appendChild(flag);
+                }
+                
+                track.appendChild(fill);
+                
+                const pctSpan = document.createElement('span');
+                pctSpan.className = `vct-bar-pct ${isBefore ? 'vct-pct--bad' : 'vct-pct--good'}`;
+                pctSpan.textContent = `${pct}%`;
+                
+                row.appendChild(label);
+                row.appendChild(track);
+                row.appendChild(pctSpan);
+                
+                container.appendChild(row);
+                
+                // Trigger animation on next tick
+                setTimeout(() => {
+                    fill.style.width = `${pct}%`;
+                }, 50);
             }
-            logBox.scrollTop = logBox.scrollHeight;
         }
 
+        function vctLoadCafe(idx) {
+            const cafe = VCT_CAFES[idx];
+            if (!cafe) return;
+
+            // Update selectors/labels
+            const labelEl = document.querySelector('.vct-cafe-label');
+            if (labelEl) {
+                labelEl.textContent = `CAFÉ: ${cafe.name}`;
+            }
+
+            // Update BEFORE side
+            const beforeRating = document.getElementById('vct-before-rating');
+            if (beforeRating) beforeRating.textContent = cafe.before.rating;
+            const beforeStars = document.getElementById('vct-before-stars');
+            if (beforeStars) beforeStars.textContent = generateStars(cafe.before.rating);
+            const beforeCount = document.getElementById('vct-before-count');
+            if (beforeCount) beforeCount.textContent = cafe.before.count;
+            const beforeVerdict = document.getElementById('vct-before-verdict');
+            if (beforeVerdict) beforeVerdict.textContent = cafe.before.verdict;
+
+            vctRenderBars('vct-before-bars', cafe.before.bars, true);
+
+            // Update AFTER side
+            const afterRating = document.getElementById('vct-after-rating');
+            if (afterRating) afterRating.textContent = cafe.after.rating;
+            const afterStars = document.getElementById('vct-after-stars');
+            if (afterStars) afterStars.textContent = generateStars(cafe.after.rating);
+            const afterCount = document.getElementById('vct-after-count');
+            if (afterCount) afterCount.textContent = cafe.after.count;
+            const afterVerdict = document.getElementById('vct-after-verdict');
+            if (afterVerdict) afterVerdict.textContent = cafe.after.verdict;
+
+            vctRenderBars('vct-after-bars', cafe.after.bars, false);
+
+            // Update insight bar
+            const insightText = document.getElementById('vct-insight-text');
+            if (insightText) insightText.textContent = cafe.insight;
+            const insightConf = document.getElementById('vct-insight-conf');
+            if (insightConf) insightConf.textContent = `CONFIDENCE: ${cafe.confidence}`;
+        }
+
+        function startAutoCycle() {
+            if (autoCycleTimer) clearInterval(autoCycleTimer);
+            autoCycleTimer = setInterval(() => {
+                if (!isUserInteracting && document.body.classList.contains('visual-mode-on')) {
+                    currentIdx = (currentIdx + 1) % VCT_CAFES.length;
+                    vctLoadCafe(currentIdx);
+                }
+            }, 6000);
+        }
+
+        function resetAutoCycleTimer() {
+            isUserInteracting = true;
+            if (autoCycleTimer) {
+                clearInterval(autoCycleTimer);
+                autoCycleTimer = null;
+            }
+            // Resume auto cycle after 15 seconds of inactivity
+            setTimeout(() => {
+                isUserInteracting = false;
+                startAutoCycle();
+            }, 15000);
+        }
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                currentIdx = (currentIdx - 1 + VCT_CAFES.length) % VCT_CAFES.length;
+                vctLoadCafe(currentIdx);
+                resetAutoCycleTimer();
+            });
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                currentIdx = (currentIdx + 1) % VCT_CAFES.length;
+                vctLoadCafe(currentIdx);
+                resetAutoCycleTimer();
+            });
+        }
+
+        // Initialize on vmopen event
         window.addEventListener('snyf:vmopen', () => {
-            isVisible = true; 
-            resize();
-            prepopulateLogs();
-            if (nodes.length === 0) initNodes();
-            animate();
-            
-            if (eventInterval) clearInterval(eventInterval);
-            eventInterval = setInterval(addLiveEvent, 2200);
+            currentIdx = 0;
+            vctLoadCafe(currentIdx);
+            startAutoCycle();
         });
 
-        window.addEventListener('snyf:vmclose', () => {
-            isVisible = false; 
-            cancelAnimationFrame(animFrame);
-            if (eventInterval) clearInterval(eventInterval);
-        });
-
-        window.addEventListener('resize', resize, { passive: true });
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) { 
-                isVisible = false; 
-                cancelAnimationFrame(animFrame); 
-                if (eventInterval) clearInterval(eventInterval);
-            }
-            else if (document.body.classList.contains('visual-mode-on')) {
-                isVisible = true; 
-                animate();
-                if (eventInterval) clearInterval(eventInterval);
-                eventInterval = setInterval(addLiveEvent, 2200);
-            }
-        });
-
+        // Initialize immediately if visual mode is already on
         if (document.body.classList.contains('visual-mode-on')) {
-            isVisible = true; 
-            resize(); 
-            prepopulateLogs();
-            initNodes(); 
-            animate();
-            if (eventInterval) clearInterval(eventInterval);
-            eventInterval = setInterval(addLiveEvent, 2200);
+            currentIdx = 0;
+            vctLoadCafe(currentIdx);
+            startAutoCycle();
         }
     })();
     </script>
