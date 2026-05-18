@@ -458,16 +458,59 @@ const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').mat
     }, { passive: true });
 })();
 
-// ── 2. Card Mouse-Tracking Spotlight ─────────────────────────
+// ── 2. Card Mouse-Tracking Spotlight & Magnetic Tilt ─────────
 document.querySelectorAll('.feature-card, .problem-card, .value-card, .story-content, .ai-card, .hero-intel-card').forEach(card => {
+    let targetY = -6;
+    let targetScale = 1;
+    if (card.classList.contains('value-card')) {
+        targetY = -3;
+    } else if (card.classList.contains('hero-intel-card')) {
+        targetY = -8;
+        targetScale = 1.02;
+    } else if (card.classList.contains('story-content') || card.classList.contains('ai-card')) {
+        targetY = 0;
+    }
+
     card.addEventListener('mousemove', e => {
         const r = card.getBoundingClientRect();
-        card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
-        card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+        const x = e.clientX - r.left;
+        const y = e.clientY - r.top;
+        
+        card.style.setProperty('--mx', x + 'px');
+        card.style.setProperty('--my', y + 'px');
         card.style.setProperty('--spotlight', '1');
+
+        if (isFinePonter && !prefersReduced) {
+            const dx = (x - r.width / 2) / (r.width / 2);
+            const dy = (y - r.height / 2) / (r.height / 2);
+            gsap.to(card, {
+                rotateY: dx * 3.5,
+                rotateX: -dy * 3.5,
+                x: dx * 7,
+                y: dy * 7 + targetY,
+                scale: targetScale,
+                duration: 0.35,
+                ease: 'power2.out',
+                overwrite: 'auto'
+            });
+        }
     }, { passive: true });
+    
     card.addEventListener('mouseleave', () => {
         card.style.setProperty('--spotlight', '0');
+        
+        if (isFinePonter && !prefersReduced) {
+            gsap.to(card, {
+                rotateY: 0,
+                rotateX: 0,
+                x: 0,
+                y: 0,
+                scale: 1,
+                duration: 0.5,
+                ease: 'power2.out',
+                overwrite: 'auto'
+            });
+        }
     });
 });
 

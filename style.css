@@ -1185,19 +1185,33 @@ body.visual-mode-on .nav-inner {
 .hero-intel-card:hover {
     background: rgba(30, 30, 27, 0.6);
     border-color: rgba(111, 183, 214, 0.4);
-    transform: translateY(-8px) scale(1.02);
+    /* transform handled by GSAP */
     box-shadow: 
         0 24px 60px rgba(111, 183, 214, 0.15),
         0 0 0 1px rgba(111, 183, 214, 0.08) inset;
 }
 
-.hero-intel-card.card-1 {
-    animation: float-card-1 6s ease-in-out infinite;
+.hero-card-float-wrapper {
+    flex: 1;
+    display: flex;
+    perspective: 1000px;
+}
+
+.hero-card-float-wrapper.float-1 {
+    animation: float-card-1 6.5s ease-in-out infinite;
+}
+
+.hero-card-float-wrapper.float-2 {
+    animation: float-card-2 8.5s ease-in-out infinite;
+    animation-delay: 1.5s;
+}
+
+.hero-card-float-wrapper.float-3 {
+    animation: float-card-3 7.5s ease-in-out infinite;
+    animation-delay: 3s;
 }
 
 .hero-intel-card.card-2 {
-    animation: float-card-2 8s ease-in-out infinite;
-    animation-delay: 1.5s;
     border-color: rgba(245, 158, 11, 0.1);
 }
 
@@ -1214,11 +1228,6 @@ body.visual-mode-on .nav-inner {
     box-shadow: 
         0 24px 60px rgba(245, 158, 11, 0.12),
         0 0 0 1px rgba(245, 158, 11, 0.08) inset;
-}
-
-.hero-intel-card.card-3 {
-    animation: float-card-3 7s ease-in-out infinite;
-    animation-delay: 3s;
 }
 
 .card-header {
@@ -2109,7 +2118,7 @@ body.visual-mode-on .nav-inner {
 .problem-card:hover {
     background: rgba(255, 255, 255, 0.65);
     border-color: rgba(219, 122, 74, 0.4);
-    transform: translateY(-6px);
+    /* transform handled by GSAP */
     box-shadow: 
         0 20px 40px rgba(30, 30, 27, 0.08),
         0 0 0 1px rgba(219, 122, 74, 0.05) inset;
@@ -2481,7 +2490,7 @@ body.visual-mode-on .nav-inner {
 .feature-card:hover {
     background: rgba(255, 255, 255, 0.65);
     border-color: rgba(111, 183, 214, 0.35);
-    transform: translateY(-6px);
+    /* transform handled by GSAP */
     box-shadow: 
         0 24px 48px rgba(30, 30, 27, 0.08),
         0 0 0 1px rgba(111, 183, 214, 0.05) inset;
@@ -2628,7 +2637,7 @@ body.visual-mode-on .nav-inner {
 
 .value-card:hover {
     background: rgba(255, 255, 255, 0.65);
-    transform: translateY(-3px);
+    /* transform handled by GSAP */
     border-color: rgba(111, 183, 214, 0.35);
     box-shadow: 
         0 16px 32px rgba(30, 30, 27, 0.06),
@@ -3050,18 +3059,18 @@ body.visual-mode-on .nav-inner {
 }
 
 @keyframes float-card-1 {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-8px); }
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-12px) rotate(1.2deg); }
 }
 
 @keyframes float-card-2 {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-7px); }
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(-1deg); }
 }
 
 @keyframes float-card-3 {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-6px); }
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-9px) rotate(0.8deg); }
 }
 
 @keyframes pl-grid-breathe {
@@ -3310,14 +3319,15 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     max-width: 1200px;
     gap: 14px;
     margin-top: 10px;
-    grid-template-columns: 1.1fr 0.9fr 0.9fr;
-    grid-template-rows: auto auto auto auto auto;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
     grid-template-areas:
-        "hero  hero   ai"
-        "prob1 prob2  ai"
-        "cycle cycle  wl"
-        "truth truth  wl"
-        "hiw   hiw    wl";
+        "hero  hero"
+        "prob1 prob2"
+        "ai    cycle"
+        "truth truth"
+        "hiw   hiw"
+        "wl    wl";
     position: relative;
     z-index: 92;
 }
@@ -3389,9 +3399,30 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
 .vmc-prob-1   { grid-area: prob1; }
 .vmc-prob-2   { grid-area: prob2; }
 .vmc-truth    { grid-area: truth; }
-.vmc-cycle    { grid-area: cycle; }
+.vmc-cycle {
+    grid-area: cycle;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
 .vmc-hiw      { grid-area: hiw;   }
-.vmc-waitlist { grid-area: wl;    }
+.vmc-waitlist {
+    grid-area: wl;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 36px 40px;
+}
+.vmc-waitlist .vmc-form {
+    max-width: 420px;
+    width: 100%;
+    margin: 0 auto;
+}
+.vmc-waitlist .vmc-radio-row {
+    justify-content: center;
+    margin: 6px 0;
+}
 
 .vmc-eyebrow {
     font-family: var(--font-mono);
@@ -5598,9 +5629,11 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
 .broken-cycle-wrap {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  justify-content: space-between;
+  flex-grow: 1;
+  gap: 16px;
   width: 100%;
-  padding: 4px 0;
+  padding: 8px 0 4px;
 }
 
 .bc-header {
@@ -5616,7 +5649,7 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   align-items: center;
   gap: 7px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   color: rgba(255, 255, 255, 0.45);
   text-transform: uppercase;
@@ -5664,7 +5697,7 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
 
 .bc-rupee-label {
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 10.5px;
   color: rgba(217, 122, 74, 0.75);
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -5673,7 +5706,7 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
 
 .bc-rupee-count {
   font-family: var(--font-mono);
-  font-size: 16px;
+  font-size: 21px;
   font-weight: 700;
   color: #D97A4A;
   letter-spacing: 0.04em;
@@ -5688,7 +5721,7 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   justify-content: center;
   gap: 8px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   color: rgba(255, 255, 255, 0.45);
   text-transform: uppercase;
@@ -6453,5 +6486,414 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   .vct-bar-flag {
     display: none;
   }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FEATURE CARD DECK
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.deck-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+  margin-top: 48px;
+}
+
+/* ── Deck Stage ─────────────────────────────────────────────── */
+.deck-stage {
+  position: relative;
+  height: 440px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.deck-stack {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  height: 400px;
+}
+
+/* ── Placeholder shadow card ────────────────────────────────── */
+.deck-placeholder {
+  position: absolute;
+  inset: 0;
+  max-width: 380px;
+  height: 400px;
+  background: rgba(30,30,27,0.15);
+  border: 1px dashed rgba(180,175,168,0.15);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 0;
+  transition: opacity 0.4s ease;
+}
+
+.deck-placeholder-text {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: rgba(180,175,168,0.25);
+  text-transform: uppercase;
+}
+
+/* ── Individual Card ────────────────────────────────────────── */
+.deck-card {
+  position: absolute;
+  inset: 0;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  cursor: grab;
+  user-select: none;
+  will-change: transform;
+  box-shadow:
+    0 4px 24px rgba(30,30,27,0.08),
+    0 1px 4px rgba(30,30,27,0.04);
+  transition: box-shadow 0.3s ease;
+  touch-action: none;
+}
+
+.deck-card:active {
+  cursor: grabbing;
+  box-shadow:
+    0 16px 48px rgba(30,30,27,0.16),
+    0 2px 8px rgba(30,30,27,0.08);
+}
+
+.deck-card.thrown {
+  pointer-events: none;
+}
+
+/* Card inner elements */
+.dc-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dc-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+}
+
+.dc-icon-wrap {
+  width: 42px;
+  height: 42px;
+  background: var(--card-bg, rgba(111,183,214,0.08));
+  border: 1px solid var(--card-accent, rgba(111,183,214,0.2));
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dc-tag {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border: 1px solid;
+  padding: 3px 9px;
+  border-radius: 4px;
+  align-self: flex-start;
+  font-weight: 600;
+}
+
+.deck-card h3.dc-title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: var(--text);
+  line-height: 1.2;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.deck-card p.dc-body {
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.65;
+  flex: 1;
+  margin: 0;
+}
+
+.dc-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(30,30,27,0.03);
+  border: 1px solid;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.dc-stat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: pulse-dot 2s infinite;
+}
+
+/* Drag direction indicators */
+.dc-drag-indicator {
+  position: absolute;
+  bottom: 18px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.dc-drag-left,
+.dc-drag-right {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+/* ── Drag hint ───────────────────────────────────────────────── */
+.deck-hint {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.deck-hint-mobile { display: none; }
+
+/* ── Info Panel ─────────────────────────────────────────────── */
+.deck-info-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 8px 0;
+}
+
+.dip-counter {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.dip-counter span:first-child {
+  font-family: var(--font-display);
+  font-size: 2.8rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -2px;
+  transition: color 0.3s ease;
+}
+
+.dip-sep {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  color: var(--border);
+}
+
+.dip-total {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.dip-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 700;
+  border: 1px solid;
+  padding: 3px 10px;
+  border-radius: 4px;
+  align-self: flex-start;
+  transition: color 0.3s, border-color 0.3s;
+}
+
+.deck-info-panel h3.dip-title {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--text);
+  line-height: 1.15;
+  margin: 0;
+  letter-spacing: -0.5px;
+  transition: opacity 0.18s, transform 0.18s;
+}
+
+.deck-info-panel p.dip-body {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 0;
+  transition: opacity 0.18s, transform 0.18s;
+}
+
+.dip-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  transition: opacity 0.18s, transform 0.18s;
+}
+
+.dip-stat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: pulse-dot 2s infinite;
+  transition: background 0.3s;
+}
+
+/* Progress dots */
+.dip-dots {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+
+.dip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
+  flex-shrink: 0;
+}
+
+.dip-dot.active {
+  width: 22px;
+  border-radius: 4px;
+}
+
+.dip-dot:hover {
+  transform: scale(1.2);
+}
+
+/* Navigation buttons */
+.dip-nav {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.dip-nav-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+}
+
+.dip-nav-btn:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(111,183,214,0.04);
+}
+
+.dip-nav-btn--primary {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--white);
+  padding: 10px 24px;
+}
+
+.dip-nav-btn--primary:hover {
+  background: #2d2d29;
+  border-color: #2d2d29;
+  color: var(--white);
+}
+
+/* Reshuffle button */
+.dip-reshuffle-btn {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: flex-start;
+}
+
+.dip-reshuffle-btn:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(111,183,214,0.04);
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .deck-layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .deck-stage {
+    height: 380px;
+    order: 2;
+  }
+  .deck-info-panel {
+    order: 1;
+  }
+  .deck-hint-desktop { display: none; }
+  .deck-hint-mobile  { display: block; }
+  .deck-hint {
+    bottom: -24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .deck-stage { height: 340px; }
+  .deck-card  { padding: 22px 20px; border-radius: 16px; }
+  .deck-stack { max-width: 100%; }
+  .deck-placeholder { max-width: 100%; }
+  .deck-info-panel h3.dip-title { font-size: 1.4rem; }
+  .dip-counter span:first-child  { font-size: 2.2rem; }
 }
 
