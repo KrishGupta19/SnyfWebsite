@@ -3391,9 +3391,9 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     grid-template-rows: auto;
     grid-template-areas:
         "hero  hero"
+        "cycle cycle"
         "prob1 prob2"
-        "ai    cycle"
-        "truth truth"
+        "ai    ai"
         "hiw   hiw"
         "wl    wl";
     position: relative;
@@ -3713,9 +3713,9 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
 }
 
 .vmc-ai-metrics {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px 40px;
     margin-bottom: 14px;
 }
 
@@ -7098,7 +7098,7 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   .visual-mode { padding: 80px 12px 32px; }
   .vm-grid {
     grid-template-columns: 1fr;
-    grid-template-areas: "hero" "ai" "prob1" "prob2" "cycle" "truth" "hiw" "wl";
+    grid-template-areas: "hero" "prob1" "prob2" "cycle" "ai" "hiw" "wl";
     gap: 12px; margin-top: 6px;
   }
   .vmc-hero-inner { flex-direction: column; gap: 16px; }
@@ -7252,17 +7252,29 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   .snippet-item { height: 24px; line-height: 24px; font-size: 0.78rem; }
   .section { padding: 52px 0; }
   .container { padding: 0 14px; }
-  .deck-stage { height: 400px; }
+  .deck-stage { height: auto; min-height: 320px; }
   .deck-stack {
-    height: 350px;
+    height: auto;
+    min-height: 300px;
     max-width: 300px;
     margin: 0 auto;
   }
   .deck-placeholder {
-    height: 350px;
+    height: 300px;
     max-width: 300px;
   }
-  .deck-card  { padding: 18px 16px; border-radius: 14px; }
+  .deck-card  { padding: 14px; border-radius: 12px; }
+  
+  /* Compact the inner Intelligence Report for phones */
+  .deck-card > div:first-child { padding-bottom: 10px !important; margin-bottom: 12px !important; }
+  .score-display { transform: scale(0.85); transform-origin: top center; margin-bottom: 0 !important; }
+  .score-display > div:nth-child(2) { margin: 4px 0 8px !important; }
+  .deck-card > div:nth-child(3) { margin-bottom: 12px !important; }
+  .deck-card .metric-row { margin-bottom: 6px !important; }
+  .deck-card .metric-row > div:first-child { font-size: 9px !important; }
+  #try-it-anomaly-box { padding: 10px !important; margin-bottom: 12px !important; }
+  #try-it-anomaly-box h5 { font-size: 10px !important; }
+  #try-it-anomaly-box p { font-size: 10px !important; line-height: 1.3 !important; }
   .deck-info-panel h3.dip-title { font-size: 1.25rem; }
   .dip-counter span:first-child  { font-size: 2rem; }
   .dip-body { font-size: 0.88rem; }
@@ -7281,8 +7293,8 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     font-size: clamp(1.95rem, 10.5vw, 2.75rem);
     letter-spacing: 0;
   }
-  .deck-stage { height: 380px; }
-  .deck-card  { padding: 16px 14px; border-radius: 12px; }
+  .deck-stage { height: auto; min-height: 300px; }
+  .deck-card  { padding: 12px 10px; border-radius: 12px; }
   .deck-card-num { font-size: 10px; }
   .deck-card-tag { font-size: 8px; }
   .deck-card-title { font-size: 1.1rem; }
