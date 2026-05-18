@@ -795,7 +795,7 @@ sections.forEach(s => navObs.observe(s));
         });
     }
 
-    // ── Mouse spotlight & Magnetic Tilt ─────────────────
+    // ── Mouse spotlight & Magnetic Tilt & Desktop Hover Scaling ─────────────────
     visualMode.querySelectorAll('.vm-card').forEach(card => {
         card.addEventListener('mousemove', e => {
             const r = card.getBoundingClientRect();
@@ -807,17 +807,20 @@ sections.forEach(s => navObs.observe(s));
             card.style.setProperty('--my', y + 'px');
             card.style.setProperty('--spotlight', '1');
 
-            // Magnetic Tilt
+            // Magnetic Tilt & Scale Up
             const dx = (x - r.width / 2) / (r.width / 2);
             const dy = (y - r.height / 2) / (r.height / 2);
             gsap.to(card, {
                 rotateY: dx * 4,
                 rotateX: -dy * 4,
                 x: dx * 8,
-                y: dy * 8,
+                y: dy * 8 - 6,
+                scale: 1.04,
                 duration: 0.4,
-                ease: 'power2.out'
+                ease: 'power2.out',
+                overwrite: 'auto'
             });
+            card.style.zIndex = '100';
         }, { passive: true });
 
         card.addEventListener('mouseleave', () => {
@@ -827,10 +830,42 @@ sections.forEach(s => navObs.observe(s));
                 rotateX: 0,
                 x: 0,
                 y: 0,
+                scale: 1,
                 duration: 0.6,
-                ease: 'elastic.out(1, 0.3)'
+                ease: 'elastic.out(1, 0.3)',
+                overwrite: 'auto'
             });
+            setTimeout(() => {
+                if (!card.matches(':hover') && !card.classList.contains('tapped')) {
+                    card.style.zIndex = '';
+                }
+            }, 300);
         });
+
+        // Mobile Touch Tap Interaction
+        card.addEventListener('click', e => {
+            if (window.innerWidth > 768) return;
+            e.stopPropagation(); // Avoid triggering document background click handler
+
+            if (card.classList.contains('tapped')) {
+                card.classList.remove('tapped');
+            } else {
+                // Collapse any currently expanded card
+                visualMode.querySelectorAll('.vm-card.tapped').forEach(other => {
+                    other.classList.remove('tapped');
+                });
+                card.classList.add('tapped');
+            }
+        });
+    });
+
+    // Close any expanded card on clicking background on mobile
+    document.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+            visualMode.querySelectorAll('.vm-card.tapped').forEach(card => {
+                card.classList.remove('tapped');
+            });
+        }
     });
 
     // ── Init ──────────────────────────────────────────
