@@ -7265,16 +7265,34 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   }
   .deck-card  { padding: 14px; border-radius: 12px; }
   
-  /* Compact the inner Intelligence Report for phones */
-  .deck-card > div:first-child { padding-bottom: 10px !important; margin-bottom: 12px !important; }
-  .score-display { transform: scale(0.85); transform-origin: top center; margin-bottom: 0 !important; }
-  .score-display > div:nth-child(2) { margin: 4px 0 8px !important; }
-  .deck-card > div:nth-child(3) { margin-bottom: 12px !important; }
-  .deck-card .metric-row { margin-bottom: 6px !important; }
-  .deck-card .metric-row > div:first-child { font-size: 9px !important; }
-  #try-it-anomaly-box { padding: 10px !important; margin-bottom: 12px !important; }
-  #try-it-anomaly-box h5 { font-size: 10px !important; }
-  #try-it-anomaly-box p { font-size: 10px !important; line-height: 1.3 !important; }
+  /* Compact the inner Intelligence Report for phones to fit without scrolling */
+  #try-it-report.report-card { padding: 12px !important; border-radius: 12px !important; }
+  #try-it-report > div:nth-child(2) { padding-bottom: 6px !important; margin-bottom: 8px !important; gap: 4px !important; }
+  #try-it-report > div:nth-child(2) h4 { font-size: 11px !important; }
+  #try-it-report > div:nth-child(2) span { font-size: 9px !important; }
+  
+  #try-it-report .score-display { transform: scale(0.65); transform-origin: top center; margin: -10px 0 -15px !important; }
+  #try-it-report .score-display > div:nth-child(2) { margin: 2px 0 6px !important; }
+  
+  #try-it-report > div:nth-child(4) { margin-bottom: 8px !important; }
+  #try-it-report .metric-row { margin-bottom: 4px !important; }
+  #try-it-report .metric-row > div:first-child { font-size: 8.5px !important; }
+  
+  #try-it-anomaly-box { padding: 8px 10px !important; margin-bottom: 8px !important; }
+  #try-it-anomaly-box h5, #try-it-anomaly-box p { font-size: 9px !important; line-height: 1.2 !important; }
+  
+  #try-it-report > div:nth-child(6) { padding: 10px !important; margin-bottom: 12px !important; gap: 8px !important; }
+  #try-it-report > div:nth-child(6) > div:first-child { padding: 2px 4px !important; font-size: 8px !important; }
+  #try-it-report > div:nth-child(6) h5 { font-size: 9px !important; margin: 0 0 4px !important; }
+  #synthesis-text { font-size: 10px !important; line-height: 1.3 !important; }
+  
+  #try-it-report > div:nth-child(7) { display: none !important; } /* Hide divider */
+  #try-it-report > div:nth-child(8) { margin-bottom: 12px !important; }
+  #try-it-report > div:nth-child(8) span { font-size: 9px !important; }
+  
+  .report-actions { justify-content: center !important; gap: 8px !important; }
+  .report-actions button { padding: 8px 12px !important; font-size: 10px !important; }
+  
   .deck-info-panel h3.dip-title { font-size: 1.25rem; }
   .dip-counter span:first-child  { font-size: 2rem; }
   .dip-body { font-size: 0.88rem; }
