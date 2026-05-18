@@ -2,3 +2,5 @@ node_modules/
 dist/
 .env
 .netlify/state.json
+server.out.log
+server.err.log
