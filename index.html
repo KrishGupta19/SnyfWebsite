@@ -133,7 +133,7 @@
             </ul>
             <button class="view-toggle" id="view-toggle" aria-label="Switch view mode" title="Toggle Visual Mode">
                 <span class="vt-opt vt-opt--read">FEED</span>
-                <span class="vt-opt vt-opt--visual">RADAR</span>
+                <span class="vt-opt vt-opt--visual">VIBE</span>
                 <div class="vt-pill"></div>
             </button>
             <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">&#9776;</button>
@@ -1396,14 +1396,22 @@
                         <span class="legend-dot legend-new"></span>New
                     </span>
                 </div>
-                <div class="vmc-map-body">
-                    <canvas id="vmc-city-canvas" aria-label="NCR city trust heatmap"></canvas>
-                    <div class="vmc-map-overlay-labels">
-                        <span class="map-zone-label" style="left:18%;top:22%">Cyber Hub</span>
-                        <span class="map-zone-label" style="left:52%;top:15%">Sector 29</span>
-                        <span class="map-zone-label" style="left:72%;top:38%">DLF Phase 4</span>
-                        <span class="map-zone-label" style="left:28%;top:65%">Khan Market</span>
-                        <span class="map-zone-label" style="left:62%;top:72%">Sushant Lok</span>
+                <div class="vmc-map-new-body">
+                    <div class="vmc-map-visual">
+                        <canvas id="vmc-city-canvas" aria-label="NCR city trust heatmap"></canvas>
+                        <div class="vmc-map-overlay-labels">
+                            <span class="map-zone-label zone-cyber" style="left:18%;top:20%">Cyber Hub</span>
+                            <span class="map-zone-label zone-sec29" style="left:52%;top:15%">Sector 29</span>
+                            <span class="map-zone-label zone-dlf4" style="left:72%;top:38%">DLF Phase 4</span>
+                            <span class="map-zone-label zone-khan" style="left:28%;top:65%">Khan Market</span>
+                            <span class="map-zone-label zone-sushant" style="left:62%;top:72%">Sushant Lok</span>
+                        </div>
+                    </div>
+                    <div class="vmc-map-console">
+                        <div class="console-title">LIVE VERIFICATION ENGINE</div>
+                        <div class="console-logs" id="console-logs">
+                            <!-- Dynamic scrolling logs are appended here -->
+                        </div>
                     </div>
                 </div>
                 <div class="vmc-map-footer">
@@ -1427,164 +1435,294 @@
                         <span class="vmc-cycle-pulse"></span>LOOPING
                     </span>
                 </div>
-                <div class="vmc-cycle-body">
-                    <svg id="broken-loop-svg" viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-                        <g id="bl-edges"></g>
-                        <g id="bl-nodes"></g>
-                        <g id="bl-traveler"></g>
-                    </svg>
+                <div class="broken-cycle-wrap" id="broken-cycle-wrap">
+                  <div class="bc-header">
+                    <div class="bc-header-left">
+                      <span class="bc-pulse-dot bc-pulse-dot--orange"></span>
+                      Endless Discovery Loop
+                    </div>
+                    <div class="bc-header-right">
+                      <span class="bc-loop-label">LOOP <span id="bc-loop-counter">0</span></span>
+                    </div>
+                  </div>
+                  
+                  <!-- Responsive Canvas -->
+                  <svg id="bc-svg" viewBox="0 0 800 380">
+                    <g id="bc-edges"></g>
+                    <g id="bc-nodes"></g>
+                    <g id="bc-traveler"></g>
+                    <g id="bc-interception" opacity="0"></g>
+                  </svg>
+                  
+                  <div class="bc-rupee-bar">
+                    <span class="bc-rupee-label">Estimated Funds Wasted on Fake Reviews</span>
+                    <span class="bc-rupee-count" id="bc-rupee-count">₹0</span>
+                  </div>
                 </div>
-                <div class="vmc-cycle-footer">
-                    <span class="vmc-cycle-caption-dot"></span>
-                    <span class="vmc-cycle-caption-text">The cycle repeats. Every. Single. Time.</span>
+                <div class="vmc-cycle-footer" id="bc-caption">
+                    <span class="vmc-cycle-caption-dot bc-caption-dot"></span>
+                    <span class="vmc-cycle-caption-text" id="bc-caption-text">THE CYCLE REPEATS. EVERY. SINGLE. TIME.</span>
                 </div>
             </div>
 
-            <!-- HOW IT WORKS -->
             <div class="vm-card vmc-hiw" data-spotlight>
                 <div class="vm-card-glow"></div>
+
+                <!-- Card eyebrow -->
                 <div class="vmc-eyebrow">
-                    <span class="vmc-dot"></span>
-                    THE PROCESS
-                </div>
-                
-                <!-- Steps header tabs -->
-                <div class="vmc-steps" id="vmc-steps-tabs">
-                    <div class="vmc-step active" data-step="1">
-                        <div class="vmc-step-n">01</div>
-                        <div class="vmc-step-text">
-                            <strong>Beyond 5 Stars</strong>
-                            <span>Structured dimensions</span>
-                        </div>
-                    </div>
-                    <div class="vmc-step-arrow">→</div>
-                    <div class="vmc-step" data-step="2">
-                        <div class="vmc-step-n">02</div>
-                        <div class="vmc-step-text">
-                            <strong>Visit Verified</strong>
-                            <span>Identity confirmed</span>
-                        </div>
-                    </div>
-                    <div class="vmc-step-arrow">→</div>
-                    <div class="vmc-step" data-step="3">
-                        <div class="vmc-step-n">03</div>
-                        <div class="vmc-step-text">
-                            <strong>AI Synthesizes</strong>
-                            <span>Emotion removed</span>
-                        </div>
-                    </div>
-                    <div class="vmc-step-arrow">→</div>
-                    <div class="vmc-step" data-step="4">
-                        <div class="vmc-step-n">04</div>
-                        <div class="vmc-step-text">
-                            <strong>Truth Indexed</strong>
-                            <span>Score published</span>
-                        </div>
-                    </div>
+                  <span class="vmc-dot vmc-dot--amber"></span>
+                  YOUR SATURDAY, REIMAGINED
                 </div>
 
-                <!-- NEW PROCESS VISUALIZATION ZONE -->
-                <div class="vmc-process-viz-wrap">
-                    <!-- Visualization Panel 1: Radar dimensional chart -->
-                    <div class="vmc-viz-panel active" id="vm-panel-1">
-                        <div class="vmc-viz-graphic">
-                            <svg class="radar-svg" viewBox="0 0 200 200">
-                                <circle cx="100" cy="100" r="80" class="radar-circle-bg"></circle>
-                                <circle cx="100" cy="100" r="55" class="radar-circle-bg"></circle>
-                                <circle cx="100" cy="100" r="30" class="radar-circle-bg"></circle>
-                                <!-- Axes lines (5-axis pentagon) -->
-                                <line x1="100" y1="100" x2="100" y2="20" class="radar-axis"></line>
-                                <line x1="100" y1="100" x2="176.1" y2="75.1" class="radar-axis"></line>
-                                <line x1="100" y1="100" x2="147.0" y2="164.7" class="radar-axis"></line>
-                                <line x1="100" y1="100" x2="53.0" y2="164.7" class="radar-axis"></line>
-                                <line x1="100" y1="100" x2="23.9" y2="75.1" class="radar-axis"></line>
-                                <!-- Animated Radar Web -->
-                                <polygon points="100,35 150,70 140,140 70,130 50,80" class="radar-polygon-glowing"></polygon>
-                                <polygon points="100,50 135,80 125,125 80,120 65,85" class="radar-polygon-inner"></polygon>
-                                <!-- Nodal markers -->
-                                <circle cx="100" cy="35" r="3" class="radar-node node-food"></circle>
-                                <circle cx="150" cy="70" r="3" class="radar-node node-ambience"></circle>
-                                <circle cx="140" cy="140" r="3" class="radar-node node-service"></circle>
-                                <circle cx="70" cy="130" r="3" class="radar-node node-value"></circle>
-                                <circle cx="50" cy="80" r="3" class="radar-node node-wait"></circle>
-                            </svg>
-                        </div>
-                        <div class="vmc-viz-description">
-                            <h4>Multidimensional Trust Matrix</h4>
-                            <p>Snyf splits ratings into 5 core vectors (Food, Ambient, Service, Value, Wait-time) to build an authenticated, multi-layered score profile.</p>
-                        </div>
-                    </div>
+                <!-- Card subhead -->
+                <p class="saturday-subhead">
+                  Two evenings. Same budget. Completely different outcomes.
+                </p>
 
-                    <!-- Visualization Panel 2: Visit ledger device chain -->
-                    <div class="vmc-viz-panel" id="vm-panel-2">
-                        <div class="vmc-viz-graphic">
-                            <div class="ledger-chain">
-                                <div class="chain-node block-device">
-                                    <span class="chain-icon">📱</span>
-                                    <span class="chain-lbl">Device GPS</span>
-                                </div>
-                                <div class="chain-arrow chain-arrow-active"></div>
-                                <div class="chain-node block-verify">
-                                    <span class="chain-icon">🛡</span>
-                                    <span class="chain-lbl">Attestation</span>
-                                </div>
-                                <div class="chain-arrow"></div>
-                                <div class="chain-node block-cafe">
-                                    <span class="chain-icon">☕</span>
-                                    <span class="chain-lbl">Verified Visit</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="vmc-viz-description">
-                            <h4>Geospatial Telemetry Proof</h4>
-                            <p>Before any review is indexed, non-spoofable spatial coordinates are matched with temporal check-in markers to confirm the user was physically inside the establishment.</p>
-                        </div>
+                <!-- Main comparison -->
+                <div class="saturday-comparison">
+                  
+                  <!-- Left path: Without Snyf (Broken Loop) -->
+                  <div class="sat-col sat-col--bad">
+                    <div class="sat-col-header">
+                      <span class="sat-col-tag sat-col-tag--bad">Without Snyf</span>
+                      <span class="sat-col-emoji" id="sat-emoji-bad">😑</span>
                     </div>
+                    
+                    <div class="sat-steps" id="sat-steps-bad">
+                      <!-- Steps will be injected/controlled by js -->
+                    </div>
+                    
+                    <div class="sat-outcome sat-outcome--bad" id="sat-outcome-bad">
+                      <span class="sat-outcome-amount">₹4,200</span>
+                      <span class="sat-outcome-label">Spent & wasted</span>
+                      <span class="sat-outcome-emoji">🤬</span>
+                    </div>
+                  </div>
 
-                    <!-- Visualization Panel 3: Emotional voice noise-cancelling waves -->
-                    <div class="vmc-viz-panel" id="vm-panel-3">
-                        <div class="vmc-viz-graphic">
-                            <div class="wave-analyzer-container">
-                                <div class="analyzer-label">EMOTIONAL HYPERBOLE (INPUT)</div>
-                                <div class="wave-raw">
-                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                                </div>
-                                <div class="filter-gate-box">AI DENOISING GATE</div>
-                                <div class="wave-filtered">
-                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                                </div>
-                                <div class="analyzer-label-bottom">VERIFIED TRUST SIGNALS (OUTPUT)</div>
-                            </div>
-                        </div>
-                        <div class="vmc-viz-description">
-                            <h4>Sentiment De-Noising Gate</h4>
-                            <p>Natural Language Processing strips away adjectives, subjective bias, emotion spikes, and paid promotional phrases, keeping only factual consensus indicators.</p>
-                        </div>
-                    </div>
+                  <!-- Center spacer / divider -->
+                  <div class="sat-divider">
+                    <div class="sat-div-line"></div>
+                    <div class="sat-div-badge">VS</div>
+                    <div class="sat-div-line"></div>
+                  </div>
 
-                    <!-- Visualization Panel 4: Blockchain Block hash indexing -->
-                    <div class="vmc-viz-panel" id="vm-panel-4">
-                        <div class="vmc-viz-graphic">
-                            <div class="ledger-index-block">
-                                <div class="block-cube">
-                                    <div class="cube-face cube-front">SNYF INDEXED</div>
-                                    <div class="cube-face cube-back">SECURE</div>
-                                    <div class="cube-face cube-right">HASH</div>
-                                    <div class="cube-face cube-left">PROOF</div>
-                                    <div class="cube-face cube-top">TRUST</div>
-                                    <div class="cube-face cube-bottom">INDEX</div>
-                                </div>
-                                <div class="index-hash-ticker">HASH: 4b29c927f8d6ea0120b</div>
-                            </div>
-                        </div>
-                        <div class="vmc-viz-description">
-                            <h4>Immutable Ledger Index</h4>
-                            <p>Compiled consensus records are signed cryptographically and indexed into an immutable public trust ledger, guaranteeing reviews cannot be deleted, bought, or altered.</p>
-                        </div>
+                  <!-- Right path: With Snyf (Perfect Flow) -->
+                  <div class="sat-col sat-col--good">
+                    <div class="sat-col-header">
+                      <span class="sat-col-tag sat-col-tag--good">With Snyf</span>
+                      <span class="sat-col-emoji" id="sat-emoji-good">✨</span>
                     </div>
+                    
+                    <div class="sat-steps" id="sat-steps-good">
+                      <!-- Steps will be injected/controlled by js -->
+                    </div>
+                    
+                    <div class="sat-outcome sat-outcome--good" id="sat-outcome-good">
+                      <span class="sat-outcome-amount">₹3,400</span>
+                      <span class="sat-outcome-label">Value locked</span>
+                      <span class="sat-outcome-emoji">🥰</span>
+                    </div>
+                  </div>
+
                 </div>
+
+                <!-- Replay Button -->
+                <button class="sat-replay-btn" id="sat-replay-btn">
+                  <span>🔄</span> REPLAY TIMELINE
+                </button>
+
+                <script>
+                (function initSaturdayCard() {
+                  const badStepsEl  = document.getElementById('sat-steps-bad');
+                  const goodStepsEl = document.getElementById('sat-steps-good');
+                  const replayBtn   = document.getElementById('sat-replay-btn');
+                  
+                  const outcomeBad  = document.getElementById('sat-outcome-bad');
+                  const outcomeGood = document.getElementById('sat-outcome-good');
+                  
+                  const emojiBad    = document.getElementById('sat-emoji-bad');
+                  const emojiGood   = document.getElementById('sat-emoji-good');
+
+                  if (!badStepsEl || !goodStepsEl || !replayBtn) return;
+
+                  const BAD_PATH = [
+                    { text: "Choose hyped cafe based on 4.6★ rating online", icon: "🔍", type: "neutral" },
+                    { text: "Arrive to find 45-min wait time, hyper-crowded", icon: "⏳", type: "warn" },
+                    { text: "Food is dry, overpriced, and completely generic", icon: "🤮", type: "bad" },
+                    { text: "Hidden tourist surcharge applied on check", icon: "💸", type: "bad" }
+                  ];
+
+                  const GOOD_PATH = [
+                    { text: "Filter by Snyf verified index score (9.2★)", icon: "🎯", type: "neutral" },
+                    { text: "Consensus wait-time predicted at 10 mins (accurate)", icon: "⏰", type: "good" },
+                    { text: "Authentic, spectacular culinary execution", icon: "🤤", type: "good" },
+                    { text: "Pricing perfectly aligned with value matrix", icon: "💰", type: "good" }
+                  ];
+
+                  let hasPlayed = false;
+                  let animTimeoutIds = [];
+
+                  function clearAllTimeouts() {
+                    animTimeoutIds.forEach(id => clearTimeout(id));
+                    animTimeoutIds = [];
+                  }
+
+                  function runAnimation() {
+                    clearAllTimeouts();
+                    hasPlayed = true;
+
+                    // Reset UI state
+                    badStepsEl.innerHTML = '';
+                    goodStepsEl.innerHTML = '';
+                    
+                    outcomeBad.style.opacity = '0';
+                    outcomeBad.style.transform = 'translateY(8px)';
+                    outcomeGood.style.opacity = '0';
+                    outcomeGood.style.transform = 'translateY(8px)';
+                    
+                    replayBtn.style.opacity = '0';
+                    replayBtn.style.transform = 'translateY(4px)';
+
+                    emojiBad.textContent = "😑";
+                    emojiBad.style.transform = "scale(1)";
+                    emojiGood.textContent = "✨";
+                    emojiGood.style.transform = "scale(1)";
+
+                    // Play BAD path steps (0.6s spacing)
+                    BAD_PATH.forEach((step, idx) => {
+                      const delay = idx * 600;
+                      const tid = setTimeout(() => {
+                        const row = document.createElement('div');
+                        row.className = `sat-step sat-step--${step.type}`;
+                        row.style.opacity = '0';
+                        row.style.transform = 'translateY(4px)';
+                        
+                        row.innerHTML = `
+                          <span class="sat-step-icon">${step.icon}</span>
+                          <span class="sat-step-text">${step.text}</span>
+                          <span class="sat-step-x">✕</span>
+                        `;
+                        badStepsEl.appendChild(row);
+
+                        // Micro-fade-in
+                        requestAnimationFrame(() => {
+                          row.style.transition = 'all 0.3s cubic-bezier(0.215, 0.610, 0.355, 1)';
+                          row.style.opacity = '1';
+                          row.style.transform = 'translateY(0)';
+                        });
+
+                        // Trigger shake/glitch if it is bad or warn
+                        if (step.type === 'bad' || step.type === 'warn') {
+                          setTimeout(() => {
+                            row.classList.add('shaking');
+                            if (idx === 2) emojiBad.textContent = "🤢";
+                            if (idx === 3) emojiBad.textContent = "🤬";
+                          }, 150);
+                        }
+                      }, delay);
+                      animTimeoutIds.push(tid);
+                    });
+
+                    // Play GOOD path steps (0.45s spacing — flows faster and smoother!)
+                    GOOD_PATH.forEach((step, idx) => {
+                      const delay = idx * 450;
+                      const tid = setTimeout(() => {
+                        const row = document.createElement('div');
+                        row.className = `sat-step sat-step--${step.type}`;
+                        row.style.opacity = '0';
+                        row.style.transform = 'translateY(4px)';
+                        
+                        row.innerHTML = `
+                          <span class="sat-step-icon">${step.icon}</span>
+                          <span class="sat-step-text">${step.text}</span>
+                          <span class="sat-step-check">✓</span>
+                        `;
+                        goodStepsEl.appendChild(row);
+
+                        // Smooth slide-in
+                        requestAnimationFrame(() => {
+                          row.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                          row.style.opacity = '1';
+                          row.style.transform = 'translateY(0)';
+                        });
+
+                        // Emojis progression
+                        setTimeout(() => {
+                          if (idx === 1) emojiGood.textContent = "😌";
+                          if (idx === 2) emojiGood.textContent = "😋";
+                          if (idx === 3) emojiGood.textContent = "🥰";
+                        }, 150);
+                      }, delay);
+                      animTimeoutIds.push(tid);
+                    });
+
+                    // Show Outcomes
+                    const endDelay = Math.max(BAD_PATH.length * 600, GOOD_PATH.length * 450) + 200;
+                    
+                    const outcomeTid = setTimeout(() => {
+                      // Fade in outcomes
+                      outcomeBad.style.transition = 'all 0.5s cubic-bezier(0.215, 0.610, 0.355, 1)';
+                      outcomeBad.style.opacity = '1';
+                      outcomeBad.style.transform = 'translateY(0)';
+
+                      outcomeGood.style.transition = 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                      outcomeGood.style.opacity = '1';
+                      outcomeGood.style.transform = 'translateY(0)';
+
+                      // Shake bad emoji, scale good emoji
+                      emojiBad.style.animation = "sat-shake 0.3s ease infinite";
+                      emojiGood.style.transform = "scale(1.25)";
+
+                      // Fade in replay button
+                      setTimeout(() => {
+                        replayBtn.style.transition = 'all 0.4s ease';
+                        replayBtn.style.opacity = '1';
+                        replayBtn.style.transform = 'translateY(0)';
+                      }, 300);
+
+                    }, endDelay);
+                    animTimeoutIds.push(outcomeTid);
+                  }
+
+                  // ── IntersectionObserver — play when card enters viewport ────
+                  const card = document.querySelector('.vmc-hiw');
+                  if (!card) return;
+
+                  const observer = new IntersectionObserver(entries => {
+                    entries.forEach(e => {
+                      if (e.isIntersecting && !hasPlayed) {
+                        setTimeout(runAnimation, 600);
+                      }
+                    });
+                  }, { threshold: 0.4 });
+
+                  observer.observe(card);
+
+                  // Play animation on custom view-toggle event (visual mode opens)
+                  window.addEventListener('snyf:vmopen', () => {
+                    // Only run if visible
+                    if (getComputedStyle(card).visibility !== 'hidden') {
+                      setTimeout(runAnimation, 500);
+                    }
+                  });
+
+                  // Replay click
+                  replayBtn.addEventListener('click', () => {
+                    // Clear animation emoji shake
+                    emojiBad.style.animation = "";
+                    runAnimation();
+                  });
+
+                  // Fallback to run if user has prefers-reduced-motion
+                  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    runAnimation();
+                  }
+
+                })();
+                </script>
             </div>
-
+            
             <!-- WAITLIST -->
             <div class="vm-card vmc-waitlist" data-spotlight>
                 <div class="vm-card-glow"></div>
@@ -2224,499 +2362,184 @@
     <!-- ========== BROKEN LOOP DIAGRAM SYSTEM ========== -->
     <script id="broken-loop-js">
     (function initBrokenLoop() {
-
-        const NODES = [
+        const STAGES = [
             {
                 id: 'search',
-                label: 'SEARCH',
-                sublabel: 'for a place',
-                x: 350, y: 36,
-                type: 'neutral',
-            },
-            {
-                id: 'results',
-                label: 'RESULTS',
-                sublabel: '4.8★ everywhere',
-                x: 590, y: 110,
-                type: 'neutral',
+                num: '01',
+                title: '01 / SEARCH',
+                icon: '🔍',
+                problem: 'Blindly trusting rating apps',
+                desc: 'You open a standard map app or review aggregator, seeking a top-rated dinner spot or cafe in Delhi/NCR.'
             },
             {
                 id: 'overwhelm',
-                label: 'OVERWHELM',
-                sublabel: 'too many options',
-                x: 630, y: 210,
-                type: 'warn',
+                num: '02',
+                title: '02 / OVERWHELM',
+                icon: '😵‍💫',
+                problem: 'Identical 4.8★ ratings everywhere',
+                desc: 'Sifting through dozens of venues with identical bought reviews, leaving you unable to separate quality from spam.'
             },
             {
-                id: 'decision',
-                label: 'DECIDE',
-                sublabel: 'pick the top rated',
-                x: 480, y: 288,
-                type: 'neutral',
+                id: 'guess',
+                num: '03',
+                title: '03 / THE GUESS',
+                icon: '🎲',
+                problem: 'Rolling the dice blindly',
+                desc: 'You select a restaurant based solely on a singular, meaningless aggregate star rating, hoping the crowd is right.'
             },
             {
-                id: 'experience',
-                label: 'EXPERIENCE',
-                sublabel: 'reality vs expectation',
-                x: 220, y: 288,
-                type: 'neutral',
-            },
-            {
-                id: 'disappointment',
-                label: 'DISAPPOINT',
-                sublabel: 'it was average at best',
-                x: 70, y: 210,
-                type: 'danger',
+                id: 'fail',
+                num: '04',
+                title: '04 / THE FAIL',
+                icon: '😞',
+                problem: 'Reality fails to match paid hype',
+                desc: 'Average food, bad service, and exhausting wait times — a far cry from the bot-farm rating you trusted.'
             },
             {
                 id: 'silence',
-                label: 'SILENCE',
-                sublabel: 'you say nothing',
-                x: 110, y: 110,
-                type: 'warn',
-            },
+                num: '05',
+                title: '05 / SILENCE',
+                icon: '🤫',
+                problem: 'Status quo remains unchallenged',
+                desc: 'You leave without writing a review. The bought star rating wins again, and the system continues untamed.'
+            }
         ];
 
-        const LOOP = [0, 1, 2, 3, 4, 5, 6, 0];
-
-        const PALETTE = {
-            neutral: {
-                fill:   'rgba(246,245,242,0.05)',
-                stroke: 'rgba(180,175,168,0.3)',
-                text:   'rgba(246,245,242,0.7)',
-                sub:    'rgba(180,175,168,0.45)',
-                glow:   'none',
-            },
-            warn: {
-                fill:   'rgba(217,122,74,0.08)',
-                stroke: 'rgba(217,122,74,0.5)',
-                text:   'rgba(246,245,242,0.8)',
-                sub:    'rgba(217,122,74,0.55)',
-                glow:   'rgba(217,122,74,0.12)',
-            },
-            danger: {
-                fill:   'rgba(217,122,74,0.12)',
-                stroke: 'rgba(217,122,74,0.7)',
-                text:   '#D97A4A',
-                sub:    'rgba(217,122,74,0.6)',
-                glow:   'rgba(217,122,74,0.2)',
-            },
-            active: {
-                fill:   'rgba(111,183,214,0.14)',
-                stroke: '#6FB7D6',
-                text:   '#F6F5F2',
-                sub:    'rgba(111,183,214,0.65)',
-                glow:   'rgba(111,183,214,0.2)',
-            },
-            passed: {
-                fill:   'rgba(111,183,214,0.04)',
-                stroke: 'rgba(111,183,214,0.2)',
-                text:   'rgba(246,245,242,0.45)',
-                sub:    'rgba(111,183,214,0.3)',
-                glow:   'none',
-            },
-        };
-
-        const NODE_R = 34;
-        const NODE_R_MOBILE = 26;
-
-        const svg  = document.getElementById('broken-loop-svg');
-        const gEdges   = document.getElementById('bl-edges');
-        const gNodes   = document.getElementById('bl-nodes');
-        const gTraveler = document.getElementById('bl-traveler');
-
-        if (!svg || !gEdges || !gNodes || !gTraveler) return;
-
-        const isMobile = window.innerWidth < 560;
-        const R = isMobile ? NODE_R_MOBILE : NODE_R;
-
-        // Draw edges
-        const edgePaths = [];
-        for (let i = 0; i < LOOP.length - 1; i++) {
-            const from = NODES[LOOP[i]];
-            const to   = NODES[LOOP[i + 1]];
-
-            const mx = (from.x + to.x) / 2;
-            const my = (from.y + to.y) / 2;
-
-            const cx = 350, cy = 170;
-            const dx = mx - cx;
-            const dy = my - cy;
-            const len = Math.sqrt(dx * dx + dy * dy) || 1;
-            const nudge = 18;
-            const cpx = mx + (dx / len) * nudge;
-            const cpy = my + (dy / len) * nudge;
-
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', `M ${from.x} ${from.y} Q ${cpx} ${cpy} ${to.x} ${to.y}`);
-            path.setAttribute('fill', 'none');
-            path.setAttribute('stroke', 'rgba(180,175,168,0.15)');
-            path.setAttribute('stroke-width', '1.2');
-            path.setAttribute('stroke-dasharray', '4 5');
-            path.dataset.edgeIdx = i;
-            gEdges.appendChild(path);
-            edgePaths.push({ el: path, from, to, cpx, cpy });
-        }
-
-        // Draw arrow heads
-        edgePaths.forEach(({ from, to, cpx, cpy }) => {
-            const t = 0.65;
-            const ax = (1-t)*(1-t)*from.x + 2*(1-t)*t*cpx + t*t*to.x;
-            const ay = (1-t)*(1-t)*from.y + 2*(1-t)*t*cpy + t*t*to.y;
-            const dtx = 2*(1-t)*(cpx-from.x) + 2*t*(to.x-cpx);
-            const dty = 2*(1-t)*(cpy-from.y) + 2*t*(to.y-cpy);
-            const angle = Math.atan2(dty, dtx) * 180 / Math.PI;
-
-            const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-            arrow.setAttribute('points', '-5,-3 5,0 -5,3');
-            arrow.setAttribute('fill', 'rgba(180,175,168,0.2)');
-            arrow.setAttribute('transform', `translate(${ax},${ay}) rotate(${angle})`);
-            gEdges.appendChild(arrow);
-        });
-
-        // Draw nodes
-        const nodeEls = {};
-
-        NODES.forEach(node => {
-            const p = PALETTE[node.type];
-
-            const glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            glow.setAttribute('cx', node.x);
-            glow.setAttribute('cy', node.y);
-            glow.setAttribute('r', R + 10);
-            glow.setAttribute('fill', p.glow === 'none' ? 'transparent' : p.glow);
-            glow.setAttribute('opacity', '0');
-            glow.dataset.glowFor = node.id;
-            gNodes.appendChild(glow);
-
-            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            circle.setAttribute('cx', node.x);
-            circle.setAttribute('cy', node.y);
-            circle.setAttribute('r', R);
-            circle.setAttribute('fill', p.fill);
-            circle.setAttribute('stroke', p.stroke);
-            circle.setAttribute('stroke-width', node.type === 'danger' ? '1.5' : '1');
-            gNodes.appendChild(circle);
-
-            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            label.setAttribute('x', node.x);
-            label.setAttribute('y', node.y - 4);
-            label.setAttribute('text-anchor', 'middle');
-            label.setAttribute('dominant-baseline', 'middle');
-            label.setAttribute('fill', p.text);
-            label.setAttribute('font-family', 'var(--font-mono), monospace');
-            label.setAttribute('font-size', isMobile ? '7' : '8.5');
-            label.setAttribute('font-weight', '700');
-            label.setAttribute('letter-spacing', '0.1em');
-            label.textContent = node.label;
-            gNodes.appendChild(label);
-
-            const sub = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            sub.setAttribute('x', node.x);
-            sub.setAttribute('y', node.y + 10);
-            sub.setAttribute('text-anchor', 'middle');
-            sub.setAttribute('dominant-baseline', 'middle');
-            sub.setAttribute('fill', p.sub);
-            sub.setAttribute('font-family', 'var(--font-sans), sans-serif');
-            sub.setAttribute('font-size', isMobile ? '6' : '7.5');
-            sub.setAttribute('font-weight', '400');
-            sub.textContent = node.sublabel;
-            gNodes.appendChild(sub);
-
-            if (node.type === 'danger') {
-                const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                ring.setAttribute('cx', node.x);
-                ring.setAttribute('cy', node.y);
-                ring.setAttribute('r', R + 6);
-                ring.setAttribute('fill', 'none');
-                ring.setAttribute('stroke', 'rgba(217,122,74,0.4)');
-                ring.setAttribute('stroke-width', '1');
-                ring.id = 'bl-danger-ring';
-                gNodes.insertBefore(ring, glow);
-            }
-
-            nodeEls[node.id] = { circle, label, sub, glow };
-        });
-
-        // Traveler dot
-        const travDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        travDot.setAttribute('r', '5');
-        travDot.setAttribute('fill', '#6FB7D6');
-        travDot.setAttribute('filter', 'url(#bl-glow-filter)');
-        gTraveler.appendChild(travDot);
-
-        const travCore = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        travCore.setAttribute('r', '2.5');
-        travCore.setAttribute('fill', '#F6F5F2');
-        gTraveler.appendChild(travCore);
-
-        const travHalo = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        travHalo.setAttribute('r', '10');
-        travHalo.setAttribute('fill', 'rgba(111,183,214,0.15)');
-        gTraveler.appendChild(travHalo);
-
-        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        defs.innerHTML = `
-            <filter id="bl-glow-filter" x="-100%" y="-100%" width="300%" height="300%">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
-                <feMerge>
-                    <feMergeNode in="blur"/>
-                    <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-            </filter>
-            <filter id="bl-danger-glow" x="-100%" y="-100%" width="300%" height="300%">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
-                <feMerge>
-                    <feMergeNode in="blur"/>
-                    <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-            </filter>
-        `;
-        svg.insertBefore(defs, svg.firstChild);
+        let activeStep = 0;
+        let isRunning = false;
+        let loopTimer = null;
+        let resumeTimer = null;
+        const dwellTime = 4500; // 4.5 seconds per step
 
         const gsap = window.gsap;
-        if (!gsap) { console.warn('Broken Loop: GSAP not found'); return; }
+        const panel = document.getElementById('cycle-panel');
+        const iconWrap = document.getElementById('panel-icon');
+        const titleEl = document.getElementById('panel-title');
+        const probEl = document.getElementById('panel-problem');
+        const descEl = document.getElementById('panel-desc');
+        const progressFill = document.getElementById('cycle-progress-fill');
+        const steps = document.querySelectorAll('.timeline-step');
 
-        let currentSegment = 0;
-        let isRunning = false;
+        if (!panel || !iconWrap || !titleEl || !probEl || !descEl || !progressFill || !steps.length) return;
 
-        const SEGMENT_SPEED = {
-            default: 1.1,
-            warn:    1.4,
-            danger:  0.8,
-        };
+        function showStep(idx) {
+            activeStep = idx;
+            const stage = STAGES[idx];
 
-        const DWELL = {
-            neutral:      0.25,
-            warn:         0.4,
-            danger:       1.2,
-            search_loop:  0.6,
-        };
-
-        function getPointOnQuadratic(from, cpx, cpy, to, t) {
-            return {
-                x: (1-t)*(1-t)*from.x + 2*(1-t)*t*cpx + t*t*to.x,
-                y: (1-t)*(1-t)*from.y + 2*(1-t)*t*cpy + t*t*to.y,
-            };
-        }
-
-        function setTravelerPos(x, y) {
-            [travDot, travCore, travHalo].forEach(el => {
-                el.setAttribute('cx', x);
-                el.setAttribute('cy', y);
-            });
-        }
-
-        function setTravelerColor(color, coreColor) {
-            travDot.setAttribute('fill', color);
-            travCore.setAttribute('fill', coreColor || '#F6F5F2');
-            travHalo.setAttribute('fill', color.replace(')', ',0.15)').replace('rgb(', 'rgba('));
-        }
-
-        function activateNode(nodeId) {
-            const node = NODES.find(n => n.id === nodeId);
-            if (!node) return;
-            const els = nodeEls[nodeId];
-            if (!els) return;
-
-            const isDanger = node.type === 'danger';
-            const isWarn = node.type === 'warn';
-
-            gsap.to(els.circle, {
-                attr: {
-                    fill: isDanger ? 'rgba(217,122,74,0.18)' : 'rgba(111,183,214,0.16)',
-                    stroke: isDanger ? '#D97A4A' : '#6FB7D6',
-                    strokeWidth: isDanger ? '2' : '1.5',
-                },
-                duration: 0.2,
-            });
-            gsap.to(els.label, { attr: { fill: isDanger ? '#D97A4A' : '#F6F5F2' }, duration: 0.2 });
-            gsap.to(els.sub, { attr: { fill: isDanger ? 'rgba(217,122,74,0.7)' : 'rgba(111,183,214,0.65)' }, duration: 0.2 });
-            gsap.to(els.glow, { opacity: 1, duration: 0.3 });
-        }
-
-        function deactivateNode(nodeId) {
-            const node = NODES.find(n => n.id === nodeId);
-            if (!node) return;
-            const els = nodeEls[nodeId];
-            if (!els) return;
-            const p = PALETTE[node.type];
-
-            gsap.to(els.circle, {
-                attr: { fill: p.fill, stroke: p.stroke, strokeWidth: node.type === 'danger' ? '1.5' : '1' },
-                duration: 0.5,
-            });
-            gsap.to(els.label, { attr: { fill: p.text }, duration: 0.5 });
-            gsap.to(els.sub, { attr: { fill: p.sub }, duration: 0.5 });
-            gsap.to(els.glow, { opacity: 0, duration: 0.4 });
-        }
-
-        function triggerDisappointmentEffect() {
-            const dangerId = 'disappointment';
-            const els = nodeEls[dangerId];
-            const dangerNode = NODES.find(n => n.id === dangerId);
-
-            setTravelerColor('#D97A4A', '#F6F5F2');
-            gsap.to(travDot, { attr: { r: '7' }, duration: 0.15, yoyo: true, repeat: 5 });
-
-            const baseX = dangerNode.x;
-            const baseY = dangerNode.y;
-            const shudderTL = gsap.timeline();
-            for (let i = 0; i < 8; i++) {
-                const ox = (Math.random() - 0.5) * 6;
-                const oy = (Math.random() - 0.5) * 4;
-                shudderTL.to([travDot, travCore, travHalo], {
-                    attr: { cx: baseX + ox, cy: baseY + oy },
-                    duration: 0.06,
-                    ease: 'none',
-                });
-            }
-            shudderTL.to([travDot, travCore, travHalo], {
-                attr: { cx: baseX, cy: baseY },
-                duration: 0.1,
-            });
-
-            gsap.to(els.circle, {
-                attr: { fill: 'rgba(217,122,74,0.35)' },
-                duration: 0.1,
-                yoyo: true,
-                repeat: 5,
-            });
-
-            const ring = document.getElementById('bl-danger-ring');
-            if (ring) {
-                gsap.fromTo(ring,
-                    { attr: { r: R + 6, opacity: 0.7 } },
-                    { attr: { r: R + 22, opacity: 0 }, duration: 0.8, ease: 'power2.out' }
-                );
-            }
-        }
-
-        function runLoop() {
-            if (!isRunning) return;
-            let segIdx = 0;
-
-            function runSegment() {
-                if (!isRunning) return;
-
-                const fromNodeId = NODES[LOOP[segIdx]].id;
-                const toNodeId   = NODES[LOOP[segIdx + 1]].id;
-                const fromNode   = NODES[LOOP[segIdx]];
-                const toNode     = NODES[LOOP[segIdx + 1]];
-                const edge       = edgePaths[segIdx];
-
-                highlightEdge(segIdx, toNode.type === 'danger' ? '#D97A4A' : '#6FB7D6');
-                activateNode(toNodeId);
-
-                const isLoopBack = segIdx === LOOP.length - 2;
-
-                const speed = toNode.type === 'warn' ? SEGMENT_SPEED.warn
-                            : toNode.type === 'danger' ? SEGMENT_SPEED.danger
-                            : SEGMENT_SPEED.default;
-
-                const fromPt = fromNode;
-                const toPt   = toNode;
-                const { cpx, cpy } = edge;
-
-                if (toNode.type !== 'danger') {
-                    setTravelerColor('#6FB7D6');
+            // Update classes on steps
+            steps.forEach((step, sIdx) => {
+                step.classList.remove('active', 'passed', 'step-danger');
+                if (sIdx === idx) {
+                    step.classList.add('active');
+                    if (stage.id === 'fail') {
+                        step.classList.add('step-danger');
+                    }
+                } else if (sIdx < idx) {
+                    step.classList.add('passed');
                 }
+            });
 
-                gsap.to({}, {
-                    duration: speed,
-                    ease: 'power1.inOut',
-                    onUpdate: function() {
-                        const t = this.progress();
-                        const pt = getPointOnQuadratic(fromPt, cpx, cpy, toPt, t);
-                        setTravelerPos(pt.x, pt.y);
-                    },
-                    onComplete: function() {
-                        const dwell = toNode.type === 'danger' ? DWELL.danger
-                                    : toNode.type === 'warn'   ? DWELL.warn
-                                    : isLoopBack               ? DWELL.search_loop
-                                    : DWELL.neutral;
-
-                        if (toNode.type === 'danger') {
-                            triggerDisappointmentEffect();
-                        }
-
-                        setTimeout(() => deactivateNode(fromNodeId), 200);
-
-                        setTimeout(() => {
-                            segIdx = isLoopBack ? 0 : segIdx + 1;
-                            runSegment();
-                        }, dwell * 1000);
-                    },
-                });
+            // Animate progress fill
+            const pct = (idx / (STAGES.length - 1)) * 100;
+            if (gsap) {
+                gsap.to(progressFill, { width: `${pct}%`, duration: 0.5, ease: 'power2.out' });
+            } else {
+                progressFill.style.width = `${pct}%`;
             }
 
-            setTravelerPos(NODES[0].x, NODES[0].y);
-            activateNode(NODES[0].id);
-            setTimeout(runSegment, 500);
+            // Animate details card content
+            if (stage.id === 'fail') {
+                panel.classList.add('pulse-danger');
+            } else {
+                panel.classList.remove('pulse-danger');
+            }
+
+            const animOut = gsap ? gsap.to(panel, { opacity: 0, y: 5, duration: 0.18, ease: 'power1.in' }) : null;
+            
+            const updateContent = () => {
+                iconWrap.textContent = stage.icon;
+                titleEl.textContent = stage.title;
+                probEl.textContent = stage.problem;
+                descEl.textContent = stage.desc;
+                
+                if (gsap) {
+                    gsap.to(panel, { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' });
+                } else {
+                    panel.style.opacity = '1';
+                    panel.style.transform = 'translateY(0)';
+                }
+            };
+
+            if (animOut) {
+                animOut.eventCallback('onComplete', updateContent);
+            } else {
+                updateContent();
+            }
         }
 
-        function pulsesDangerRing() {
-            const ring = document.getElementById('bl-danger-ring');
-            if (!ring) return;
-            gsap.to(ring, {
-                attr: { opacity: [0.6, 0.15, 0.6] },
-                duration: 2.2,
-                repeat: -1,
-                ease: 'sine.inOut',
-            });
+        function nextStep() {
+            if (!isRunning) return;
+            const nextIdx = (activeStep + 1) % STAGES.length;
+            showStep(nextIdx);
         }
 
-        function highlightEdge(edgeIdx, color) {
-            const path = edgePaths[edgeIdx]?.el;
-            if (!path) return;
-            gsap.to(path, {
-                attr: { stroke: color, strokeOpacity: 0.6 },
-                duration: 0.3,
-            });
-            gsap.to(path, {
-                attr: { stroke: 'rgba(180,175,168,0.15)', strokeOpacity: 1 },
-                duration: 0.8,
-                delay: 0.3,
-            });
+        function startAutoLoop() {
+            stopAutoLoop();
+            loopTimer = setInterval(nextStep, dwellTime);
         }
 
-        const wrap = document.getElementById('broken-loop-svg')?.closest('.vmc-cycle');
-        if (!wrap) return;
+        function stopAutoLoop() {
+            if (loopTimer) clearInterval(loopTimer);
+            if (resumeTimer) clearTimeout(resumeTimer);
+        }
 
-        // Start when Visual Mode opens
+        // Setup manual triggers
+        steps.forEach((step) => {
+            step.addEventListener('click', () => {
+                const targetIdx = parseInt(step.getAttribute('data-step'), 10);
+                if (isNaN(targetIdx)) return;
+
+                // Stop loop on click
+                stopAutoLoop();
+                showStep(targetIdx);
+
+                // Resume loop after 8 seconds of inactivity
+                if (isRunning) {
+                    resumeTimer = setTimeout(() => {
+                        startAutoLoop();
+                    }, 8000);
+                }
+            });
+        });
+
+        // Toggle state depending on visual mode
         window.addEventListener('snyf:vmopen', () => {
             if (!isRunning) {
                 isRunning = true;
-                pulsesDangerRing();
-                setTimeout(runLoop, 600);
+                showStep(0);
+                startAutoLoop();
             }
         });
 
         window.addEventListener('snyf:vmclose', () => {
             isRunning = false;
+            stopAutoLoop();
         });
 
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                isRunning = false;
-            } else if (document.body.classList.contains('visual-mode-on') && !isRunning) {
-                isRunning = true;
-                runLoop();
+                stopAutoLoop();
+            } else if (document.body.classList.contains('visual-mode-on') && isRunning) {
+                startAutoLoop();
             }
         });
 
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            wrap.style.display = 'none';
-            return;
-        }
-
-        // Auto-start if VM is already open
+        // Initialize state if already active
         if (document.body.classList.contains('visual-mode-on')) {
             isRunning = true;
-            pulsesDangerRing();
-            setTimeout(runLoop, 600);
+            showStep(0);
+            startAutoLoop();
         }
-
     })();
     </script>
 
@@ -2900,6 +2723,7 @@
     <script id="city-heatmap-js">
     (function initCityHeatmap() {
         const canvas = document.getElementById('vmc-city-canvas');
+        const logBox = document.getElementById('console-logs');
         if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
@@ -2907,21 +2731,34 @@
         let nodes = [];
         let time = 0;
         let isVisible = false;
+        let eventInterval = null;
 
         const NODE_TYPES = {
-            verified: { color: '111,183,214', r: 3.5,  glowR: 10, count: 28 },
-            flagged:  { color: '217,122,74',  r: 2.5,  glowR: 8,  count: 8  },
-            newNode:  { color: '123,198,164', r: 3,    glowR: 9,  count: 12  },
-            inactive: { color: '110,106,100', r: 1.8,  glowR: 5,  count: 18  },
+            verified: { color: '111,183,214', r: 3.5,  glowR: 10, count: 22 },
+            flagged:  { color: '217,122,74',  r: 2.5,  glowR: 8,  count: 6  },
+            newNode:  { color: '123,198,164', r: 3,    glowR: 9,  count: 8  },
+            inactive: { color: '110,106,100', r: 1.8,  glowR: 5,  count: 12  },
         };
 
         const ZONES = [
-            { x: 0.20, y: 0.28, weight: 3 },
-            { x: 0.54, y: 0.20, weight: 2 },
-            { x: 0.74, y: 0.42, weight: 2 },
-            { x: 0.30, y: 0.68, weight: 2 },
-            { x: 0.65, y: 0.74, weight: 1 },
-            { x: 0.48, y: 0.50, weight: 1 },
+            { name: 'Cyber Hub', x: 0.20, y: 0.28, weight: 3 },
+            { name: 'Sector 29', x: 0.54, y: 0.20, weight: 2 },
+            { name: 'DLF Phase 4', x: 0.74, y: 0.42, weight: 2 },
+            { name: 'Khan Market', x: 0.30, y: 0.68, weight: 2 },
+            { name: 'Sushant Lok', x: 0.65, y: 0.74, weight: 1 },
+        ];
+
+        const LOG_TEMPLATES = [
+            { type: 'verified', zone: 'Cyber Hub', msg: 'Verified authentic wait-time pattern' },
+            { type: 'verified', zone: 'Khan Market', msg: 'Eliminated 14 coordinates showing bot patterns' },
+            { type: 'flagged', zone: 'Sector 29', msg: 'Coordinated click-farm review burst flagged' },
+            { type: 'flagged', zone: 'DLF Phase 4', msg: 'Flagged 12 coordinated new account profiles' },
+            { type: 'newNode', zone: 'Sushant Lok', msg: 'Analyzing new organic review signatures' },
+            { type: 'verified', zone: 'Khan Market', msg: 'Consensus verified for verified coffee house' },
+            { type: 'flagged', zone: 'Cyber Hub', msg: 'Removed 32 reviews from blacklisted click network' },
+            { type: 'newNode', zone: 'Sector 29', msg: 'Scanning geo-location trust density' },
+            { type: 'verified', zone: 'DLF Phase 4', msg: 'Trust score adjusted: organic consensus high' },
+            { type: 'flagged', zone: 'Sushant Lok', msg: 'Coordinated fake rating attack neutralized' }
         ];
 
         function weightedZonePoint() {
@@ -2930,6 +2767,7 @@
             let zone = ZONES[0];
             for (const z of ZONES) { r -= z.weight; if (r <= 0) { zone = z; break; } }
             return {
+                zone: zone.name,
                 x: zone.x + (Math.random() - 0.5) * 0.22,
                 y: zone.y + (Math.random() - 0.5) * 0.22,
             };
@@ -2941,6 +2779,7 @@
                 type,
                 nx: Math.max(0.04, Math.min(0.96, pt.x)),
                 ny: Math.max(0.04, Math.min(0.96, pt.y)),
+                zone: pt.zone,
                 pulsePhase: Math.random() * Math.PI * 2,
                 pulseSpeed: 0.6 + Math.random() * 1.2,
                 spawnTime: time,
@@ -2990,7 +2829,7 @@
             const r = cfg.r * breathe;
 
             const grd = ctx.createRadialGradient(x, y, 0, x, y, cfg.glowR * breathe);
-            grd.addColorStop(0, `rgba(${cfg.color},0.25)`);
+            grd.addColorStop(0, `rgba(${cfg.color},0.22)`);
             grd.addColorStop(1, `rgba(${cfg.color},0)`);
             ctx.beginPath(); ctx.arc(x, y, cfg.glowR * breathe, 0, Math.PI * 2);
             ctx.fillStyle = grd; ctx.fill();
@@ -2999,9 +2838,9 @@
             ctx.fillStyle = `rgba(${cfg.color},0.9)`; ctx.fill();
 
             if (node.isPinging && node.pingProgress < 1) {
-                node.pingProgress += 0.012;
-                const pingR = r + node.pingProgress * 20;
-                const pingA = (1 - node.pingProgress) * 0.5;
+                node.pingProgress += 0.015;
+                const pingR = r + node.pingProgress * 25;
+                const pingA = (1 - node.pingProgress) * 0.6;
                 ctx.beginPath(); ctx.arc(x, y, pingR, 0, Math.PI * 2);
                 ctx.strokeStyle = `rgba(${cfg.color},${pingA})`; ctx.lineWidth = 1; ctx.stroke();
                 if (node.pingProgress >= 1) node.isPinging = false;
@@ -3015,8 +2854,8 @@
                     const dx = verified[i].nx - verified[j].nx;
                     const dy = verified[i].ny - verified[j].ny;
                     const dist = Math.sqrt(dx*dx + dy*dy);
-                    if (dist < 0.22) {
-                        const alpha = (1 - dist / 0.22) * 0.12;
+                    if (dist < 0.24) {
+                        const alpha = (1 - dist / 0.24) * 0.14;
                         ctx.beginPath();
                         ctx.moveTo(verified[i].nx * W, verified[i].ny * H);
                         ctx.lineTo(verified[j].nx * W, verified[j].ny * H);
@@ -3027,7 +2866,7 @@
         }
 
         function drawGridLines(W, H) {
-            ctx.strokeStyle = 'rgba(255,255,255,0.025)'; ctx.lineWidth = 0.5;
+            ctx.strokeStyle = 'rgba(255,255,255,0.02)'; ctx.lineWidth = 0.5;
             for (let i = 0; i <= 12; i++) { const x = (i / 12) * W; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
             for (let i = 0; i <= 7; i++)  { const y = (i / 7) * H;  ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
         }
@@ -3044,13 +2883,47 @@
             for (const node of nodes) drawNode(node, W, H);
         }
 
+        function addLogEntry(type, zone, msg) {
+            if (!logBox) return;
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+            
+            const badgeClass = type === 'verified' ? 'verified' : type === 'flagged' ? 'flagged' : 'new';
+            const badgeLabel = type === 'newNode' ? 'NEW' : type.toUpperCase();
+
+            const logItem = document.createElement('div');
+            logItem.className = `log-item ${badgeClass}`;
+            logItem.innerHTML = `
+                <span class="log-time">[${timeStr}]</span>
+                <span class="log-badge badge-${badgeClass}">${badgeLabel}</span>
+                <span class="log-zone">${zone}</span>
+                <span class="log-msg">${msg}</span>
+            `;
+            logBox.appendChild(logItem);
+            logBox.scrollTop = logBox.scrollHeight;
+
+            while (logBox.children.length > 25) {
+                logBox.removeChild(logBox.firstChild);
+            }
+        }
+
         function addLiveEvent() {
             if (!isVisible) return;
+            
             const types = ['verified', 'verified', 'verified', 'newNode', 'flagged'];
             const type = types[Math.floor(Math.random() * types.length)];
             const newNode = createNode(type);
-            newNode.isPinging = true; newNode.pingProgress = 0;
+            newNode.isPinging = true;
+            newNode.pingProgress = 0;
             nodes.push(newNode);
+
+            // Trigger corresponding log entry
+            const matches = LOG_TEMPLATES.filter(l => {
+                if (type === 'newNode') return l.type === 'newNode';
+                return l.type === type;
+            });
+            const picked = matches[Math.floor(Math.random() * matches.length)] || LOG_TEMPLATES[0];
+            addLogEntry(picked.type, newNode.zone, picked.msg);
+
             const typeNodes = nodes.filter(n => n.type === type);
             if (typeNodes.length > NODE_TYPES[type].count + 3) {
                 const idx = nodes.indexOf(typeNodes[0]);
@@ -3059,31 +2932,795 @@
             updateStats();
         }
 
-        setInterval(addLiveEvent, 2800);
+        function prepopulateLogs() {
+            if (!logBox) return;
+            logBox.innerHTML = '';
+            
+            // Generate a few initial logs spaced out backwards
+            for (let i = 4; i >= 0; i--) {
+                const template = LOG_TEMPLATES[Math.floor(Math.random() * LOG_TEMPLATES.length)];
+                const randomTime = new Date(Date.now() - i * 8000);
+                const timeStr = randomTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+                
+                const badgeClass = template.type === 'verified' ? 'verified' : template.type === 'flagged' ? 'flagged' : 'new';
+                const badgeLabel = template.type === 'newNode' ? 'NEW' : template.type.toUpperCase();
+
+                const logItem = document.createElement('div');
+                logItem.className = `log-item ${badgeClass}`;
+                logItem.innerHTML = `
+                    <span class="log-time">[${timeStr}]</span>
+                    <span class="log-badge badge-${badgeClass}">${badgeLabel}</span>
+                    <span class="log-zone">${template.zone}</span>
+                    <span class="log-msg">${template.msg}</span>
+                `;
+                logBox.appendChild(logItem);
+            }
+            logBox.scrollTop = logBox.scrollHeight;
+        }
 
         window.addEventListener('snyf:vmopen', () => {
-            isVisible = true; resize();
+            isVisible = true; 
+            resize();
+            prepopulateLogs();
             if (nodes.length === 0) initNodes();
             animate();
+            
+            if (eventInterval) clearInterval(eventInterval);
+            eventInterval = setInterval(addLiveEvent, 2200);
         });
 
         window.addEventListener('snyf:vmclose', () => {
-            isVisible = false; cancelAnimationFrame(animFrame);
+            isVisible = false; 
+            cancelAnimationFrame(animFrame);
+            if (eventInterval) clearInterval(eventInterval);
         });
 
         window.addEventListener('resize', resize, { passive: true });
 
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden) { isVisible = false; cancelAnimationFrame(animFrame); }
-            else if (document.getElementById('visual-mode')?.classList.contains('active') ||
-                     document.body.classList.contains('visual-mode-on')) {
-                isVisible = true; animate();
+            if (document.hidden) { 
+                isVisible = false; 
+                cancelAnimationFrame(animFrame); 
+                if (eventInterval) clearInterval(eventInterval);
+            }
+            else if (document.body.classList.contains('visual-mode-on')) {
+                isVisible = true; 
+                animate();
+                if (eventInterval) clearInterval(eventInterval);
+                eventInterval = setInterval(addLiveEvent, 2200);
             }
         });
 
         if (document.body.classList.contains('visual-mode-on')) {
-            isVisible = true; resize(); initNodes(); animate();
+            isVisible = true; 
+            resize(); 
+            prepopulateLogs();
+            initNodes(); 
+            animate();
+            if (eventInterval) clearInterval(eventInterval);
+            eventInterval = setInterval(addLiveEvent, 2200);
         }
+    })();
+    </script>
+
+    <!-- ========== UPGRADED BROKEN DISCOVERY CYCLE SYSTEM ========== -->
+    <script id="broken-cycle-js">
+    (function initBrokenCycleWrapper() {
+      const gsap = window.gsap;
+      if (!gsap) {
+        console.warn("Snyf: GSAP not loaded — Broken Discovery Cycle disabled.");
+        return;
+      }
+
+      // Configuration
+      const BC_NODES = [
+        { id: 'search', label: 'SEARCH', sublabel: 'Saturday night, need a good café', x: 400, y: 55, type: 'neutral', emoji: '🔍', textPos: 'below' },
+        { id: 'results', label: '4.8 ★', sublabel: 'Looks perfect. 200+ reviews.', x: 630, y: 115, type: 'neutral', emoji: '⭐', textPos: 'right' },
+        { id: 'overwhelm', label: 'CONFUSED', sublabel: 'They all look the same though?', x: 650, y: 235, type: 'warn', emoji: '😕', textPos: 'right' },
+        { id: 'decide', label: 'PICK ONE', sublabel: 'Fine. Going with the highest rated.', x: 520, y: 310, type: 'neutral', emoji: '👆', textPos: 'below' },
+        { id: 'experience', label: 'ARRIVE', sublabel: 'This place is... not what I expected.', x: 280, y: 310, type: 'neutral', emoji: '😬', textPos: 'below' },
+        { id: 'disappoint', label: 'REGRET', sublabel: '₹800 for this? The reviews lied.', x: 150, y: 235, type: 'danger', emoji: '😤', textPos: 'left' },
+        { id: 'silence', label: 'MOVE ON', sublabel: 'Whatever. Try somewhere else next time.', x: 170, y: 115, type: 'warn', emoji: '🚶', textPos: 'left' }
+      ];
+
+      const BC_LOOP = [0, 1, 2, 3, 4, 5, 6, 0];
+      const RUPEE_PER_LOOP = 800;
+
+      const BC_COLORS = {
+        neutral:  { fill: 'rgba(246,245,242,0.04)', stroke: 'rgba(255,255,255,0.22)', text: 'rgba(255,255,255,0.85)', sub: 'rgba(255,255,255,0.55)', glow: 'none' },
+        warn:     { fill: 'rgba(217,122,74,0.06)',  stroke: 'rgba(217,122,74,0.4)',   text: '#D97A4A',               sub: 'rgba(217,122,74,0.7)',   glow: 'rgba(217,122,74,0.12)' },
+        danger:   { fill: 'rgba(217,122,74,0.1)',   stroke: '#D97A4A',               text: '#D97A4A',                sub: 'rgba(217,122,74,0.75)',  glow: 'rgba(217,122,74,0.22)' },
+        active:   { fill: 'rgba(0,242,255,0.12)',   stroke: '#00F2FF',               text: '#FFFFFF',                sub: 'rgba(0,242,255,0.75)',   glow: 'rgba(0,242,255,0.25)' },
+        snyf:     { fill: 'rgba(0,242,255,0.18)',   stroke: '#00F2FF',               text: '#00F2FF',                sub: 'rgba(0,242,255,0.7)',    glow: 'rgba(0,242,255,0.3)' }
+      };
+
+      const NODE_R = 28;
+      const NODE_R_MOBILE = 22;
+
+      const BC_SEGMENT_SPEED = { neutral: 1.0, warn: 1.3, danger: 0.75 };
+      const BC_DWELL = { neutral: 0.2, warn: 0.35, danger: 1.1, loopback: 0.5 };
+
+      // State variables
+      let bcLoopCount = 0;
+      let bcRupeeTotal = 0;
+      let bcSegIdx = 0;
+      let bcIsRunning = false;
+      let bcIntercepted = false;
+      let bcEdgeData = [];
+      let bcNodeEls = {};
+
+      // Tween / Timer trackers
+      let bcActiveTween = null;
+      let bcSegmentTimeout = null;
+      let bcDwellTimeout = null;
+      let bcInterceptionTimeout = null;
+
+      const wrap = document.getElementById('broken-cycle-wrap');
+      if (!wrap) return;
+
+      // Handle prefers-reduced-motion
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        wrap.style.display = 'none';
+        return;
+      }
+
+      // Bezier curve calculations
+      function bcPointOnCurve(p0, cpx, cpy, p1, t) {
+        const x = (1 - t) * (1 - t) * p0.x + 2 * (1 - t) * t * cpx + t * t * p1.x;
+        const y = (1 - t) * (1 - t) * p0.y + 2 * (1 - t) * t * cpy + t * t * p1.y;
+        return { x, y };
+      }
+
+      function bcDrawEdges() {
+        const g = document.getElementById('bc-edges');
+        if (!g) return [];
+        g.innerHTML = '';
+        const edgeData = [];
+
+        for (let i = 0; i < BC_LOOP.length - 1; i++) {
+          const from = BC_NODES[BC_LOOP[i]];
+          const to   = BC_NODES[BC_LOOP[i + 1]];
+
+          // Quadratic control point curved away from center
+          const cx = 400, cy = 182;
+          const mx = (from.x + to.x) / 2;
+          const my = (from.y + to.y) / 2;
+          const dx = mx - cx, dy = my - cy;
+          const len = Math.sqrt(dx*dx + dy*dy) || 1;
+          const nudge = 32;
+          const cpx = mx + (dx / len) * nudge;
+          const cpy = my + (dy / len) * nudge;
+
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', `M ${from.x} ${from.y} Q ${cpx} ${cpy} ${to.x} ${to.y}`);
+          path.setAttribute('fill', 'none');
+          path.setAttribute('stroke', 'rgba(255,255,255,0.12)');
+          path.setAttribute('stroke-width', '1.2');
+          path.setAttribute('stroke-dasharray', '5 6');
+          path.setAttribute('id', `bc-edge-${i}`);
+          g.appendChild(path);
+
+          // Arrow indicator along curve
+          const t = 0.65;
+          const ax = (1-t)*(1-t)*from.x + 2*(1-t)*t*cpx + t*t*to.x;
+          const ay = (1-t)*(1-t)*from.y + 2*(1-t)*t*cpy + t*t*to.y;
+          const dtx = 2*(1-t)*(cpx-from.x) + 2*t*(to.x-cpx);
+          const dty = 2*(1-t)*(cpy-from.y) + 2*t*(to.y-cpy);
+          const angle = Math.atan2(dty, dtx) * 180 / Math.PI;
+
+          const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          arrow.setAttribute('points', '-5,-3 5,0 -5,3');
+          arrow.setAttribute('fill', 'rgba(255,255,255,0.2)');
+          arrow.setAttribute('transform', `translate(${ax},${ay}) rotate(${angle})`);
+          g.appendChild(arrow);
+
+          edgeData.push({ el: path, from, to, cpx, cpy });
+        }
+        return edgeData;
+      }
+
+      function bcDrawNodes() {
+        const g = document.getElementById('bc-nodes');
+        if (!g) return {};
+        g.innerHTML = '';
+        const nodeEls = {};
+        const isMobile = window.innerWidth < 560;
+        const R = isMobile ? NODE_R_MOBILE : NODE_R;
+
+        BC_NODES.forEach(node => {
+          const p = BC_COLORS[node.type];
+          const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          group.setAttribute('id', `bc-node-${node.id}`);
+
+          // Glow circle
+          const glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          glow.setAttribute('cx', node.x); glow.setAttribute('cy', node.y);
+          glow.setAttribute('r', R + 10);
+          glow.setAttribute('fill', p.glow === 'none' ? 'transparent' : p.glow);
+          glow.setAttribute('opacity', '0');
+          group.appendChild(glow);
+
+          // Main circle
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          circle.setAttribute('cx', node.x); circle.setAttribute('cy', node.y);
+          circle.setAttribute('r', R);
+          circle.setAttribute('fill', p.fill);
+          circle.setAttribute('stroke', p.stroke);
+          circle.setAttribute('stroke-width', node.type === 'danger' ? '1.8' : '1');
+          group.appendChild(circle);
+
+          // DANGER permanent pulsing ring
+          if (node.type === 'danger') {
+            const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            ring.setAttribute('cx', node.x); ring.setAttribute('cy', node.y);
+            ring.setAttribute('r', R + 8);
+            ring.setAttribute('fill', 'none');
+            ring.setAttribute('stroke', 'rgba(217,122,74,0.35)');
+            ring.setAttribute('stroke-width', '1');
+            ring.setAttribute('id', 'bc-danger-ring');
+            group.insertBefore(ring, glow);
+          }
+
+          // Emoji (centered perfectly inside circle)
+          const emoji = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          emoji.setAttribute('x', node.x); 
+          emoji.setAttribute('y', node.y + (isMobile ? 1.5 : 2)); 
+          emoji.setAttribute('text-anchor', 'middle');
+          emoji.setAttribute('dominant-baseline', 'middle');
+          emoji.setAttribute('font-size', isMobile ? '13' : '17');
+          emoji.textContent = node.emoji;
+          group.appendChild(emoji);
+
+          // Outside text elements (split to avoid circles overlays)
+          const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          label.setAttribute('fill', p.text);
+          label.setAttribute('font-family', 'var(--font-mono), monospace');
+          label.setAttribute('font-size', '11.5');
+          label.setAttribute('font-weight', '700');
+          label.setAttribute('letter-spacing', '0.08em');
+          label.textContent = node.label;
+
+          const sub = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          sub.setAttribute('fill', p.sub);
+          sub.setAttribute('font-family', "'Inter', sans-serif");
+          sub.setAttribute('font-size', '10');
+          sub.setAttribute('font-weight', '400');
+
+          // Split sublabel to wrap nicely
+          const maxLen = (node.textPos === 'left' || node.textPos === 'right') ? 22 : 28;
+          const words = node.sublabel.split(' ');
+          let line = '', lines = [];
+          words.forEach(w => {
+            if ((line + ' ' + w).trim().length > maxLen) { 
+              lines.push(line.trim()); 
+              line = w; 
+            } else {
+              line = (line + ' ' + w).trim();
+            }
+          });
+          if (line) lines.push(line);
+
+          // Position text lines dynamically depending on textPos direction
+          let labelY = node.y;
+          let subY = node.y;
+          let textAnchor = 'middle';
+          let labelX = node.x;
+          let subX = node.x;
+
+          if (node.textPos === 'below') {
+            textAnchor = 'middle';
+            labelY = node.y + R + 17;
+            subY = node.y + R + 30;
+          } else if (node.textPos === 'above') {
+            textAnchor = 'middle';
+            labelY = node.y - R - 26;
+            subY = node.y - R - 13;
+            if (lines.length > 1) {
+              labelY -= 12;
+              subY -= 12;
+            }
+          } else if (node.textPos === 'left') {
+            textAnchor = 'end';
+            labelX = node.x - R - 14;
+            subX = node.x - R - 14;
+            labelY = node.y - 6;
+            subY = node.y + 7;
+            if (lines.length > 1) {
+              labelY -= 6;
+              subY -= 6;
+            }
+          } else if (node.textPos === 'right') {
+            textAnchor = 'start';
+            labelX = node.x + R + 14;
+            subX = node.x + R + 14;
+            labelY = node.y - 6;
+            subY = node.y + 7;
+            if (lines.length > 1) {
+              labelY -= 6;
+              subY -= 6;
+            }
+          }
+
+          label.setAttribute('x', labelX);
+          label.setAttribute('y', labelY);
+          label.setAttribute('text-anchor', textAnchor);
+
+          sub.setAttribute('x', subX);
+          sub.setAttribute('y', subY);
+          sub.setAttribute('text-anchor', textAnchor);
+
+          lines.forEach((ln, li) => {
+            const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+            tspan.setAttribute('x', subX);
+            tspan.setAttribute('dy', li === 0 ? '0' : '12');
+            tspan.textContent = ln;
+            sub.appendChild(tspan);
+          });
+
+          group.appendChild(label);
+          group.appendChild(sub);
+          g.appendChild(group);
+          nodeEls[node.id] = { group, circle, label, sub, glow };
+        });
+
+        return nodeEls;
+      }
+
+      // Draw Traveler
+      function bcDrawTraveler() {
+        const g = document.getElementById('bc-traveler');
+        if (!g) return;
+        g.innerHTML = '';
+
+        const isMobile = window.innerWidth < 560;
+
+        // Outer glow halo
+        const halo = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        halo.setAttribute('r', isMobile ? '10' : '15');
+        halo.setAttribute('fill', 'rgba(0,242,255,0.22)');
+        halo.setAttribute('id', 'bc-trav-halo');
+        g.appendChild(halo);
+
+        // Outer border dot
+        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dot.setAttribute('r', isMobile ? '5' : '7.5');
+        dot.setAttribute('fill', '#00F2FF');
+        dot.setAttribute('id', 'bc-trav-dot');
+        g.appendChild(dot);
+
+        // Inner solid core
+        const core = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        core.setAttribute('r', isMobile ? '2' : '3');
+        core.setAttribute('fill', '#FFFFFF');
+        core.setAttribute('id', 'bc-trav-core');
+        g.appendChild(core);
+      }
+
+      function bcSetTravelerPos(cx, cy) {
+        ['#bc-trav-dot', '#bc-trav-core', '#bc-trav-halo'].forEach(selector => {
+          const el = document.querySelector(selector);
+          if (el) {
+            el.setAttribute('cx', cx);
+            el.setAttribute('cy', cy);
+          }
+        });
+      }
+
+      function bcSetTravelerColor(color) {
+        const dot = document.getElementById('bc-trav-dot');
+        if (dot) dot.setAttribute('fill', color);
+        const halo = document.getElementById('bc-trav-halo');
+        if (halo) {
+          const rgbaColor = color === '#00F2FF' ? 'rgba(0,242,255,0.22)' : 'rgba(217,122,74,0.22)';
+          halo.setAttribute('fill', rgbaColor);
+        }
+      }
+
+      function bcActivateNode(id) {
+        const els = bcNodeEls[id];
+        if (!els) return;
+        const node = BC_NODES.find(n => n.id === id);
+        const p = BC_COLORS[node.type === 'danger' ? 'danger' : 'active'];
+
+        gsap.to(els.circle, {
+          attr: { fill: p.fill, stroke: p.stroke, strokeWidth: node.type === 'danger' ? '2.2' : '2.0' },
+          duration: 0.25
+        });
+        gsap.to(els.label, { fill: p.text, duration: 0.25 });
+        gsap.to(els.sub, { fill: p.sub, duration: 0.25 });
+        if (p.glow !== 'none') {
+          gsap.to(els.glow, { opacity: 0.85, duration: 0.25 });
+        }
+      }
+
+      function bcDeactivateNode(id) {
+        const els = bcNodeEls[id];
+        if (!els) return;
+        const node = BC_NODES.find(n => n.id === id);
+        const p = BC_COLORS[node.type];
+
+        gsap.to(els.circle, {
+          attr: { fill: p.fill, stroke: p.stroke, strokeWidth: node.type === 'danger' ? '1.8' : '1.0' },
+          duration: 0.4
+        });
+        gsap.to(els.label, { fill: p.text, duration: 0.4 });
+        gsap.to(els.sub, { fill: p.sub, duration: 0.4 });
+        gsap.to(els.glow, { opacity: 0, duration: 0.4 });
+      }
+
+      function bcPulseDangerRing() {
+        const ring = document.getElementById('bc-danger-ring');
+        if (!ring) return;
+        gsap.fromTo(ring,
+          { attr: { opacity: 0.6 } },
+          { attr: { opacity: 0.12 }, duration: 1.2, repeat: -1, yoyo: true, ease: 'sine.inOut' }
+        );
+      }
+
+      function bcTriggerRegretEffect() {
+        const regretNode = BC_NODES.find(n => n.id === 'disappoint');
+        const baseX = regretNode.x, baseY = regretNode.y;
+
+        // Orange traveler
+        bcSetTravelerColor('#D97A4A');
+        gsap.to('#bc-trav-dot', { attr: { r: '9.5' }, duration: 0.12, yoyo: true, repeat: 5 });
+
+        // Shudder traveler
+        const shudderTL = gsap.timeline();
+        for (let i = 0; i < 8; i++) {
+          shudderTL.to(['#bc-trav-dot', '#bc-trav-core', '#bc-trav-halo'], {
+            attr: { cx: baseX + (Math.random()-0.5)*7, cy: baseY + (Math.random()-0.5)*5 },
+            duration: 0.05,
+            ease: 'none'
+          });
+        }
+        shudderTL.to(['#bc-trav-dot', '#bc-trav-core', '#bc-trav-halo'], { attr: { cx: baseX, cy: baseY }, duration: 0.1 });
+
+        // Regret node shudder flash
+        const els = bcNodeEls['disappoint'];
+        if (els) {
+          gsap.to(els.circle, { attr: { fill: 'rgba(217,122,74,0.45)' }, duration: 0.08, yoyo: true, repeat: 7 });
+        }
+
+        // Danger ring burst
+        const ring = document.getElementById('bc-danger-ring');
+        if (ring) {
+          const isMobile = window.innerWidth < 560;
+          const R = isMobile ? NODE_R_MOBILE : NODE_R;
+          gsap.fromTo(ring,
+            { attr: { r: R + 6, opacity: 0.9 } },
+            { attr: { r: R + 32, opacity: 0 }, duration: 0.8, ease: 'power2.out' }
+          );
+        }
+
+        // Increment rupees
+        bcRupeeTotal += RUPEE_PER_LOOP;
+        const countEl = document.getElementById('bc-rupee-count');
+        if (countEl) {
+          gsap.to({ val: bcRupeeTotal - RUPEE_PER_LOOP }, {
+            val: bcRupeeTotal,
+            duration: 0.7,
+            ease: 'power2.out',
+            onUpdate: function() {
+              countEl.textContent = `₹${Math.round(this.targets()[0].val).toLocaleString('en-IN')}`;
+            }
+          });
+
+          // Flash counter red
+          gsap.fromTo(countEl,
+            { color: '#ffffff' },
+            { color: '#D97A4A', duration: 0.25, yoyo: true, repeat: 3, onComplete: () => countEl.style.color = '' }
+          );
+        }
+      }
+
+      function bcUpdateLoopCounter() {
+        bcLoopCount++;
+        const loopEl = document.getElementById('bc-loop-counter');
+        if (loopEl) {
+          loopEl.textContent = bcLoopCount;
+          gsap.fromTo(loopEl,
+            { scale: 1.5, color: '#D97A4A' },
+            { scale: 1.0, color: '', duration: 0.45, ease: 'back.out(1.8)' }
+          );
+        }
+      }
+
+      function bcTriggerSnyfInterception() {
+        bcIntercepted = true;
+        bcKillActiveLoop(); // stop loop execution
+
+        const g = document.getElementById('bc-interception');
+        if (!g) return;
+        g.innerHTML = '';
+
+        // Dark attestation card (centered perfectly in 800px viewBox)
+        const panel = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        panel.setAttribute('x', '230'); panel.setAttribute('y', '120');
+        panel.setAttribute('width', '340'); panel.setAttribute('height', '140');
+        panel.setAttribute('rx', '14');
+        panel.setAttribute('fill', 'rgba(10,10,12,0.96)');
+        panel.setAttribute('stroke', '#00F2FF');
+        panel.setAttribute('stroke-width', '1.5');
+        g.appendChild(panel);
+
+        // Header Title
+        const logo = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        logo.setAttribute('x', '400'); logo.setAttribute('y', '152');
+        logo.setAttribute('text-anchor', 'middle');
+        logo.setAttribute('fill', '#00F2FF');
+        logo.setAttribute('font-family', 'var(--font-mono), monospace');
+        logo.setAttribute('font-size', '10');
+        logo.setAttribute('font-weight', '700');
+        logo.setAttribute('letter-spacing', '0.18em');
+        logo.textContent = '◈ SNYF BREAKS THE CYCLE';
+        g.appendChild(logo);
+
+        // Divider
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', '260'); line.setAttribute('y1', '165');
+        line.setAttribute('x2', '540'); line.setAttribute('y2', '165');
+        line.setAttribute('stroke', 'rgba(0,242,255,0.22)');
+        line.setAttribute('stroke-width', '0.8');
+        g.appendChild(line);
+
+        // Benefit lines
+        const benefits = [
+          '✓  Geospatial check-ins confirm visit',
+          '✓  Sentiment analyzer strips promotional hype',
+          '✓  Crypto-ledger protects ratings immutably'
+        ];
+
+        benefits.forEach((text, i) => {
+          const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          t.setAttribute('x', '400'); t.setAttribute('y', String(187 + i * 20));
+          t.setAttribute('text-anchor', 'middle');
+          t.setAttribute('fill', 'rgba(255,255,255,0.85)');
+          t.setAttribute('font-family', "'Inter', sans-serif");
+          t.setAttribute('font-size', '9.5');
+          t.setAttribute('font-weight', '500');
+          t.setAttribute('opacity', '0');
+          t.setAttribute('id', `bc-benefit-${i}`);
+          t.textContent = text;
+          g.appendChild(t);
+        });
+
+        // Slide in attestation card
+        gsap.fromTo(g,
+          { opacity: 0, attr: { transform: 'translate(0, 30)' } },
+          { opacity: 1, attr: { transform: 'translate(0, 0)' }, duration: 0.55, ease: 'power2.out',
+            onComplete: () => {
+              // Stagger benefit lines
+              benefits.forEach((_, i) => {
+                gsap.to(`#bc-benefit-${i}`, { opacity: 1, duration: 0.28, delay: 0.18 + i * 0.18 });
+              });
+            }
+          }
+        );
+
+        // Update bottom caption
+        const captionEl = document.getElementById('bc-caption-text');
+        if (captionEl) {
+          gsap.to('#bc-caption', { opacity: 0, duration: 0.2, onComplete: () => {
+            captionEl.textContent = "You've done this before. So has everyone else. Until now.";
+            gsap.to('#bc-caption', { opacity: 1, duration: 0.45 });
+          }});
+        }
+
+        // Morph SEARCH node to cyan active style
+        bcSetTravelerColor('#00F2FF');
+        const searchEls = bcNodeEls['search'];
+        if (searchEls) {
+          gsap.to(searchEls.circle, {
+            attr: { fill: 'rgba(0,242,255,0.18)', stroke: '#00F2FF', strokeWidth: '2.5' },
+            duration: 0.45
+          });
+        }
+
+        // Hold and restart
+        bcInterceptionTimeout = setTimeout(() => {
+          bcInterceptionTimeout = null;
+          gsap.to(g, { opacity: 0, duration: 0.5, ease: 'power2.in',
+            onComplete: () => {
+              g.innerHTML = '';
+              bcIntercepted = false;
+              bcLoopCount = 0;
+              bcRupeeTotal = 0;
+              
+              const countEl = document.getElementById('bc-rupee-count');
+              if (countEl) countEl.textContent = '₹0';
+              const loopEl = document.getElementById('bc-loop-counter');
+              if (loopEl) loopEl.textContent = '0';
+              if (captionEl) captionEl.textContent = 'THE CYCLE REPEATS. EVERY. SINGLE. TIME.';
+              
+              // Deactivate all nodes and reset search node colors
+              BC_NODES.forEach(n => bcDeactivateNode(n.id));
+              
+              bcDwellTimeout = setTimeout(() => {
+                bcDwellTimeout = null;
+                bcRunLoop();
+              }, 400);
+            }
+          });
+        }, 3200);
+      }
+
+      function bcKillActiveLoop() {
+        bcIsRunning = false;
+        if (bcActiveTween) { bcActiveTween.kill(); bcActiveTween = null; }
+        if (bcSegmentTimeout) { clearTimeout(bcSegmentTimeout); bcSegmentTimeout = null; }
+        if (bcDwellTimeout) { clearTimeout(bcDwellTimeout); bcDwellTimeout = null; }
+        if (bcInterceptionTimeout) { clearTimeout(bcInterceptionTimeout); bcInterceptionTimeout = null; }
+
+        gsap.killTweensOf('#bc-trav-dot');
+        gsap.killTweensOf('#bc-trav-core');
+        gsap.killTweensOf('#bc-trav-halo');
+        gsap.killTweensOf('#bc-traveler');
+        BC_NODES.forEach(n => {
+          const els = bcNodeEls[n.id];
+          if (els) {
+            gsap.killTweensOf(els.circle);
+            gsap.killTweensOf(els.label);
+            gsap.killTweensOf(els.sub);
+            gsap.killTweensOf(els.glow);
+          }
+        });
+      }
+
+      function bcRunLoop() {
+        bcKillActiveLoop();
+        if (bcIntercepted) return;
+        bcIsRunning = true;
+        bcSegIdx = 0;
+
+        bcSetTravelerPos(BC_NODES[0].x, BC_NODES[0].y);
+        bcSetTravelerColor('#00F2FF');
+        bcActivateNode(BC_NODES[0].id);
+
+        // Make traveler visible initially
+        gsap.to('#bc-traveler', { opacity: 1, duration: 0.2 });
+
+        function runSegment() {
+          if (!bcIsRunning || bcIntercepted) return;
+
+          const fromNode = BC_NODES[BC_LOOP[bcSegIdx]];
+          const toNode   = BC_NODES[BC_LOOP[bcSegIdx + 1]];
+          const edge     = bcEdgeData[bcSegIdx];
+          if (!edge) return;
+
+          const isLoopBack = bcSegIdx === BC_LOOP.length - 2;
+          const speed = BC_SEGMENT_SPEED[toNode.type] || 1.0;
+
+          bcActivateNode(toNode.id);
+
+          if (toNode.type !== 'danger') {
+            bcSetTravelerColor('#00F2FF');
+          } else {
+            bcSetTravelerColor('#D97A4A');
+          }
+
+          // Traveler emerges from node (fade in)
+          gsap.to('#bc-traveler', { opacity: 1, duration: 0.2 });
+
+          const { from, to, cpx, cpy } = edge;
+          const proxy = { t: 0 };
+
+          bcActiveTween = gsap.to(proxy, {
+            t: 1,
+            duration: speed,
+            ease: 'power1.inOut',
+            onUpdate: function() {
+              const pt = bcPointOnCurve(from, cpx, cpy, to, proxy.t);
+              bcSetTravelerPos(pt.x, pt.y);
+            },
+            onComplete: () => {
+              bcActiveTween = null;
+              if (!bcIsRunning || bcIntercepted) return;
+
+              // Merge traveler into node (fade out beautifully)
+              gsap.to('#bc-traveler', { opacity: 0, duration: 0.15 });
+
+              const dwell = toNode.type === 'danger' ? BC_DWELL.danger
+                          : toNode.type === 'warn'   ? BC_DWELL.warn
+                          : isLoopBack               ? BC_DWELL.loopback
+                          : BC_DWELL.neutral;
+
+              if (toNode.type === 'danger') {
+                bcTriggerRegretEffect();
+              }
+
+              bcSegmentTimeout = setTimeout(() => {
+                bcSegmentTimeout = null;
+                bcDeactivateNode(fromNode.id);
+              }, 300);
+
+              bcDwellTimeout = setTimeout(() => {
+                bcDwellTimeout = null;
+                if (!bcIsRunning || bcIntercepted) return;
+
+                if (isLoopBack) {
+                  bcUpdateLoopCounter();
+
+                  if (bcLoopCount >= 3) {
+                    bcTriggerSnyfInterception();
+                  } else {
+                    bcSegIdx = 0;
+                    runSegment();
+                  }
+                } else {
+                  bcSegIdx++;
+                  runSegment();
+                }
+              }, dwell * 1000);
+            }
+          });
+        }
+
+        bcSegmentTimeout = setTimeout(runSegment, 400);
+      }
+
+      function bcCheckAndStart() {
+        const isVMOpen = document.body.classList.contains('visual-mode-on');
+        const isVisible = !document.hidden;
+
+        if (isVMOpen && isVisible) {
+          if (!bcIsRunning && !bcIntercepted) {
+            bcRunLoop();
+          }
+        } else {
+          bcKillActiveLoop();
+        }
+      }
+
+      // Initial structures rendering
+      function initBrokenCycle() {
+        bcKillActiveLoop();
+        bcEdgeData = bcDrawEdges();
+        bcNodeEls  = bcDrawNodes();
+        bcDrawTraveler();
+        bcPulseDangerRing();
+        bcCheckAndStart();
+      }
+
+      // Intersection observer to start/stop animations
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            bcCheckAndStart();
+          } else {
+            bcKillActiveLoop();
+          }
+        });
+      }, { threshold: 0.1 });
+
+      observer.observe(wrap);
+
+      // Event triggers
+      window.addEventListener('snyf:vmopen', () => {
+        setTimeout(initBrokenCycle, 300);
+      });
+
+      window.addEventListener('snyf:vmclose', () => {
+        bcKillActiveLoop();
+      });
+
+      document.addEventListener('visibilitychange', () => {
+        bcCheckAndStart();
+      });
+
+      // Window resize redrawing
+      let resizeTimer;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          initBrokenCycle();
+        }, 150);
+      }, { passive: true });
+
+      // Run on DOM load if Visual Mode is already active
+      if (document.body.classList.contains('visual-mode-on')) {
+        setTimeout(initBrokenCycle, 300);
+      }
     })();
     </script>
 </body>
