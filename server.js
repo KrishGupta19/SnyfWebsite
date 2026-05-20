@@ -2,7 +2,7 @@ require('dotenv').config();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 const PORT = 8000;
 
@@ -16,18 +16,12 @@ const mimeTypes = {
     '.ico': 'image/x-icon',
 };
 
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS,
-    },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function sendWelcomeEmail(name, email, type) {
     const typeLabel = type === 'business' ? 'business partner' : 'early user';
-    await transporter.sendMail({
-        from: `"Snyf" <${process.env.GMAIL_USER}>`,
+    const { data, error } = await resend.emails.send({
+        from: `Snyf <${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}>`,
         to: email,
         subject: "You're on the Snyf waitlist!",
         html: `
@@ -38,15 +32,19 @@ async function sendWelcomeEmail(name, email, type) {
             <p>We'll reach out as soon as your spot is ready.</p>
             <br/>
             <p style="color: #555;">— The Snyf Team</p>
-            <p style="font-size: 12px; color: #aaa;">thenarcissistdev@gmail.com</p>
+            <p style="font-size: 12px; color: #aaa;">${process.env.RESEND_FROM_EMAIL || 'thenarcissistdev@gmail.com'}</p>
         </div>
         `,
     });
+
+    if (error) {
+        throw new Error(error.message);
+    }
 }
 
 const server = http.createServer(async (req, res) => {
     // Handle waitlist POST
-    if (req.method === 'POST' && req.url === '/waitlist') {
+    if (req.method === 'POST' && (req.url === '/waitlist' || req.url === '/.netlify/functions/waitlist')) {
         let body = '';
         req.on('data', chunk => { body += chunk; });
         req.on('end', async () => {

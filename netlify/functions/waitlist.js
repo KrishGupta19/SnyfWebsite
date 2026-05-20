@@ -1,12 +1,6 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS,
-    },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 exports.handler = async (event) => {
     if (event.httpMethod !== 'POST') {
@@ -17,8 +11,8 @@ exports.handler = async (event) => {
         const { name, email, type } = JSON.parse(event.body);
         const typeLabel = type === 'business' ? 'business partner' : 'early user';
 
-        await transporter.sendMail({
-            from: `"Snyf" <${process.env.GMAIL_USER}>`,
+        const { data, error } = await resend.emails.send({
+            from: `Snyf <${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}>`,
             to: email,
             subject: "You're on the Snyf waitlist!",
             html: `
@@ -29,10 +23,14 @@ exports.handler = async (event) => {
                 <p>We'll reach out as soon as your spot is ready.</p>
                 <br/>
                 <p style="color: #555;">— The Snyf Team</p>
-                <p style="font-size: 12px; color: #aaa;">thenarcissistdev@gmail.com</p>
+                <p style="font-size: 12px; color: #aaa;">${process.env.RESEND_FROM_EMAIL || 'thenarcissistdev@gmail.com'}</p>
             </div>
             `,
         });
+
+        if (error) {
+            throw new Error(error.message);
+        }
 
         return {
             statusCode: 200,
