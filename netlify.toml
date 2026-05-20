@@ -15,6 +15,26 @@
   status = 301
   force = true
 
+[[redirects]]
+  from = "/blue-tokai"
+  to = "/blue-tokai/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/blue-tokai/admin"
+  to = "/blue-tokai/admin/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/nook-cafe"
+  to = "/nook-cafe/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/nook-cafe/admin"
+  to = "/nook-cafe/admin/index.html"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]
