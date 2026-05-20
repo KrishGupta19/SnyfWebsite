@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) GA4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6BGX89GGJK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-6BGX89GGJK');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snyf Discover — Partner Venues in NCR</title>
+  <meta name="description" content="Discover Snyf-verified partner cafés and restaurants in NCR. Every venue here has passed the Snyf intelligence layer.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Oswald:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="community.css">
+  <style>
+    /* ── Discover-specific styles only ── */
+
+    /* Venue card — horizontal split layout */
+    .dv-card {
+      background: rgba(255,255,255,0.62);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 220px;
+      backdrop-filter: blur(16px);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+      animation: ch-card-in 0.4s ease both;
+      position: relative;
+    }
+
+    .dv-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(30,30,27,0.1);
+      border-color: rgba(111,183,214,0.35);
+    }
+
+    /* LEFT — image carousel */
+    .dv-card-images {
+      position: relative;
+      overflow: hidden;
+      background: var(--hover);
+      min-height: 220px;
+    }
+
+    .dv-img-track {
+      display: flex;
+      height: 100%;
+      transition: transform 0.4s cubic-bezier(0.22,1,0.36,1);
+    }
+
+    .dv-img {
+      flex-shrink: 0;
+      width: 280px;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Image placeholder fallback */
+    .dv-img-placeholder {
+      flex-shrink: 0;
+      width: 280px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--display);
+      font-size: 3rem;
+      font-weight: 900;
+      color: rgba(30,30,27,0.15);
+      background: var(--hover);
+    }
+
+    /* Carousel nav buttons */
+    .dv-img-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 30px;
+      height: 30px;
+      background: rgba(246,245,242,0.88);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: var(--ink);
+      cursor: pointer;
+      z-index: 2;
+      transition: all 0.18s;
+      opacity: 0;
+    }
+
+    .dv-card-images:hover .dv-img-btn {
+      opacity: 1;
+    }
+
+    .dv-img-btn:hover {
+      background: var(--paper);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    .dv-img-btn--prev { left: 10px; }
+    .dv-img-btn--next { right: 10px; }
+
+    .dv-img-btn:disabled {
+      opacity: 0.3 !important;
+      cursor: default;
+    }
+
+    /* Image dots */
+    .dv-img-dots {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 5px;
+      z-index: 2;
+    }
+
+    .dv-img-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(246,245,242,0.5);
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .dv-img-dot.active {
+      background: #F6F5F2;
+      width: 14px;
+      border-radius: 3px;
+    }
+
+    /* Image counter badge */
+    .dv-img-counter {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: rgba(246,245,242,0.9);
+      background: rgba(30,30,27,0.5);
+      backdrop-filter: blur(6px);
+      padding: 3px 8px;
+      border-radius: 4px;
+      z-index: 2;
+    }
+
+    /* Verified partner badge on image */
+    .dv-partner-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--mint);
+      background: rgba(30,30,27,0.65);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(123,198,164,0.4);
+      padding: 3px 9px;
+      border-radius: 4px;
+      z-index: 2;
+    }
+
+    /* RIGHT — venue info */
+    .dv-card-info {
+      padding: 24px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .dv-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .dv-venue-name {
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1.2;
+      margin-bottom: 5px;
+    }
+
+    .dv-venue-meta {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .dv-zone-tag {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--hover);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .dv-cat-tag {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      background: rgba(111,183,214,0.1);
+      border: 1px solid rgba(111,183,214,0.2);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* Trust score badge — top right of info panel */
+    .dv-score-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      flex-shrink: 0;
+      gap: 2px;
+    }
+
+    .dv-score {
+      font-family: var(--display);
+      font-size: 2rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -1px;
+      color: var(--cyan);
+    }
+
+    .dv-score-label {
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* Description */
+    .dv-venue-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.65;
+      flex: 1;
+    }
+
+    /* Vibe tags */
+    .dv-vibes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .dv-vibe {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      background: var(--hover);
+      border-radius: 20px;
+      padding: 4px 10px;
+    }
+
+    /* Dimension mini bars */
+    .dv-dims {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 16px;
+    }
+
+    .dv-dim-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dv-dim-label {
+      font-size: 10px;
+      color: var(--muted);
+      width: 52px;
+      flex-shrink: 0;
+    }
+
+    .dv-dim-track {
+      flex: 1;
+      height: 3px;
+      background: rgba(30,30,27,0.07);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .dv-dim-fill {
+      height: 100%;
+      background: var(--cyan);
+      border-radius: 2px;
+      transition: width 0.8s cubic-bezier(0.22,1,0.36,1);
+    }
+
+    .dv-dim-fill--bad { background: var(--orange); }
+
+    .dv-dim-val {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--ink);
+      width: 22px;
+      text-align: right;
+    }
+
+    /* Card footer */
+    .dv-card-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(30,30,27,0.06);
+      flex-wrap: wrap;
+    }
+
+    .dv-hours {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .dv-hours-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--mint);
+      flex-shrink: 0;
+    }
+
+    .dv-hours-dot--closed {
+      background: var(--orange);
+    }
+
+    /* Know More button */
+    .dv-know-more {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--ink);
+      color: #F6F5F2;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.18s;
+      white-space: nowrap;
+    }
+
+    .dv-know-more:hover {
+      background: #2d2d29;
+      transform: translateY(-1px);
+    }
+
+    .dv-know-more-arrow {
+      transition: transform 0.18s;
+      font-size: 14px;
+    }
+
+    .dv-know-more:hover .dv-know-more-arrow {
+      transform: translateX(3px);
+    }
+
+    /* Venue cards grid — single column (cards are wide) */
+    .dv-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Hero specific overrides */
+    .dv-hero-stat strong { color: var(--ink); font-weight: 700; }
+
+    /* Touch swipe support indicator */
+    .dv-swipe-hint {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      color: rgba(246,245,242,0.5);
+      display: none;
+      white-space: nowrap;
+      z-index: 2;
+    }
+
+    @media (hover: none) {
+      .dv-swipe-hint { display: block; }
+      .dv-img-btn { opacity: 1 !important; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 860px) {
+      .dv-card {
+        grid-template-columns: 1fr;
+        min-height: unset;
+      }
+      .dv-card-images {
+        height: 220px;
+        min-height: 220px;
+      }
+      .dv-img { width: 100%; }
+      .dv-img-track { width: 100%; }
+      .dv-dims { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .dv-card-info { padding: 18px; }
+      .dv-venue-name { font-size: 16px; }
+      .dv-card-foot { flex-direction: column; align-items: flex-start; }
+      .dv-know-more { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Custom cursor — same as community.html -->
+  <div id="cursor-dot" class="custom-cursor"></div>
+  <div id="cursor-ring" class="custom-cursor"></div>
+
+  <!-- Ambient blobs -->
+  <div class="ch-ambient" aria-hidden="true">
+    <div class="ch-blob ch-blob-1"></div>
+    <div class="ch-blob ch-blob-2"></div>
+    <div class="ch-blob ch-blob-3"></div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="ch-nav">
+    <div class="ch-nav-inner">
+      <a class="ch-brand" href="index.html">
+        <svg viewBox="290 205 460 600" fill="none">
+          <path d="M 545.500 217.030 C 524.226 220.316, 502.003 231.768, 483.981 248.733 C 448.819 281.833, 422.448 337.634, 401.087 424.134 C 388.150 476.521, 382.288 517.708, 383.316 549 C 384.599 588.041, 394.818 610.893, 415.560 621.104 C 421.010 623.787, 423.463 624.355, 431.387 624.770 C 451.756 625.835, 461.447 619.381, 487.698 587.270 C 510.136 559.823, 524.938 546.615, 543.378 537.585 C 557.397 530.720, 569.200 528, 584.968 528 C 605.834 528, 618.436 532.166, 630.213 542.958 C 645.364 556.841, 650.843 579.426, 644.449 601.638 C 634.739 635.369, 600.050 661.214, 550.784 671.422 C 531.560 675.406, 518.429 676.317, 489.098 675.702 C 466.098 675.219, 458.848 674.649, 435.500 671.486 C 402.131 666.964, 376.647 665.882, 362.322 668.377 C 343.381 671.675, 331.756 677.263, 320.454 688.500 C 307.781 701.100, 302.978 712.386, 303.024 729.460 C 303.054 740.563, 304.125 745.443, 308.554 754.667 C 321.085 780.763, 354.131 794.178, 406 794.225 C 427.882 794.245, 442.730 793.007, 464 789.389 C 543.382 775.888, 617.688 743.093, 668.256 699.241 C 707.931 664.835, 731.169 626.059, 738.511 582.010 C 740.800 568.281, 740.117 541.774, 737.145 529 C 729.739 497.162, 712.126 471.116, 686.873 454.657 C 667.594 442.091, 648.307 436.683, 623 436.747 C 582.969 436.848, 547.507 452.865, 516.980 484.634 C 506.596 495.441, 498.888 505.289, 483.431 527.500 C 465.304 553.547, 457.749 560, 445.380 560 C 440.507 560, 438.550 559.466, 434.874 557.135 C 428.263 552.943, 426.500 548.703, 426.500 537 C 426.500 528.449, 426.809 526.851, 429.593 521 C 439.059 501.103, 461.024 479.871, 529.570 424.361 C 609.162 359.905, 633.551 326.425, 631.774 284.058 C 630.948 264.346, 624.620 249.708, 611 236.005 C 598.166 223.092, 583.814 217.266, 563 216.517 C 556.675 216.289, 548.800 216.520, 545.500 217.030" fill="currentColor" fill-rule="evenodd"/>
+        </svg>
+        <span>Snyf</span>
+      </a>
+      <div class="ch-nav-links">
+        <a href="index.html">Home</a>
+        <a href="community.html">Commons</a>
+        <a href="discover.html" class="active">Discover</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="ch-hero">
+    <div class="ch-container">
+      <div class="ch-hero-inner">
+        <div class="ch-eyebrow">
+          <span class="ch-pulse"></span>
+          NCR · VERIFIED PARTNER VENUES · LIVE
+        </div>
+        <h1 class="ch-heading">
+          Discover<span class="ch-dot">.</span>
+        </h1>
+        <p class="ch-sub">
+          Every venue here has been through the Snyf intelligence layer.
+          Verified visits. Real scores. No fake consensus.
+        </p>
+        <div class="ch-hero-actions">
+          <div class="ch-hero-stats">
+            <span><strong id="stat-venues">2</strong> partner venues</span>
+            <span class="ch-stat-sep">·</span>
+            <span><strong>NCR</strong> · Gurugram</span>
+            <span class="ch-stat-sep">·</span>
+            <span><strong id="stat-verified-venues">2</strong> Snyf verified</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ticker -->
+      <div class="ch-ticker-wrap">
+        <div class="ch-ticker" id="dv-ticker"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feed Section -->
+  <section class="ch-feed-section">
+    <div class="ch-container">
+
+      <!-- Sticky filter bar -->
+      <div class="ch-filter-bar" id="dv-filter-bar">
+        <div class="ch-filter-scroll">
+
+          <!-- Search -->
+          <div class="ch-search-wrap">
+            <span class="ch-search-icon">⌕</span>
+            <input
+              type="search"
+              class="ch-search"
+              id="dv-search"
+              placeholder="Search venues, zones..."
+              autocomplete="off"
+            >
+          </div>
+
+          <!-- Category pills -->
+          <div class="ch-pills" id="dv-cat-filters">
+            <button class="ch-pill active" data-cat="all">All Venues</button>
+            <button class="ch-pill" data-cat="Café">Cafés</button>
+            <button class="ch-pill" data-cat="Restaurant">Restaurants</button>
+            <button class="ch-pill" data-cat="Bar">Bars</button>
+          </div>
+
+          <!-- Zone pills -->
+          <div class="ch-pills ch-pills--zones" id="dv-zone-filters">
+            <button class="ch-pill ch-pill--zone active" data-zone="all">All NCR</button>
+            <button class="ch-pill ch-pill--zone" data-zone="Cyber Hub">Cyber Hub</button>
+            <button class="ch-pill ch-pill--zone" data-zone="Sector 29">Sector 29</button>
+            <button class="ch-pill ch-pill--zone" data-zone="DLF Phase 4">DLF Phase 4</button>
+            <button class="ch-pill ch-pill--zone" data-zone="Khan Market">Khan Market</button>
+            <button class="ch-pill ch-pill--zone" data-zone="Sushant Lok">Sushant Lok</button>
+          </div>
+
+          <!-- Sort -->
+          <select class="ch-sort" id="dv-sort">
+            <option value="score">Top Rated</option>
+            <option value="name">A → Z</option>
+            <option value="newest">Newest</option>
+          </select>
+
+        </div>
+      </div>
+
+      <!-- Feed meta -->
+      <div class="ch-feed-meta">
+        <span class="ch-feed-count" id="dv-count">Showing 2 venues</span>
+        <span class="ch-feed-live">
+          <span class="ch-pulse ch-pulse--small"></span>
+          Snyf verified
+        </span>
+      </div>
+
+      <!-- Venue cards -->
+      <div class="dv-grid" id="dv-grid">
+        <!-- Injected by JS -->
+      </div>
+
+    </div>
+  </section>
+
+  <script>
+  // ── VENUE DATA ────────────────────────────────────────────────
+  const VENUES = [
+    {
+      slug:     'blue-tokai',
+      name:     'Blue Tokai Coffee Roasters',
+      zone:     'Cyber Hub',
+      category: 'Café',
+      desc:     'Specialty single-origin coffee roasted in-house. NCR\'s most consistent flat white. Minimal interiors, serious beans, zero pretension.',
+      vibes:    ['Specialty Coffee', 'Work-friendly', 'Minimal', 'Morning spot'],
+      hours:    'Open · 8AM – 10PM',
+      isOpen:   true,
+      scores: {
+        food:     8.8,
+        ambience: 9.1,
+        service:  8.2,
+        value:    7.4,
+        wait:     6.1,
+      },
+      images: [
+        'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&q=80',
+        'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=80',
+        'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80',
+        'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=600&q=80',
+      ],
+      page: 'blue-tokai/index.html',
+    },
+    {
+      slug:     'nook-cafe',
+      name:     'Nook Café',
+      zone:     'Sector 29',
+      category: 'Café',
+      desc:     'Hidden gem tucked behind the main strip. Exceptional croissants, the best value breakfast in Sector 29, and a space that actually lets you think.',
+      vibes:    ['Hidden gem', 'Best value', 'Quiet', 'Breakfast'],
+      hours:    'Open · 9AM – 9PM',
+      isOpen:   true,
+      scores: {
+        food:     9.0,
+        ambience: 7.6,
+        service:  8.4,
+        value:    9.1,
+        wait:     8.2,
+      },
+      images: [
+        'https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?w=600&q=80',
+        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80',
+        'https://images.unsplash.com/photo-1521017432531-fbd92d768814?w=600&q=80',
+        'https://images.unsplash.com/photo-1525193612562-0ec53b0e5d7c?w=600&q=80',
+      ],
+      page: 'nook-cafe/index.html',
+    },
+  ];
+
+  // ── STATE ─────────────────────────────────────────────────────
+  let activeCategory = 'all';
+  let activeZone     = 'all';
+  let activeSort     = 'score';
+  let searchQuery    = '';
+
+  // Per-card carousel state
+  const carouselState = {};
+
+  // ── FILTER + SORT ─────────────────────────────────────────────
+  function getFiltered() {
+    return VENUES
+      .filter(v => {
+        if (activeCategory !== 'all' && v.category !== activeCategory) return false;
+        if (activeZone !== 'all' && v.zone !== activeZone) return false;
+        if (searchQuery) {
+          const q = searchQuery.toLowerCase();
+          return v.name.toLowerCase().includes(q) ||
+                 v.zone.toLowerCase().includes(q) ||
+                 v.desc.toLowerCase().includes(q) ||
+                 v.vibes.some(vb => vb.toLowerCase().includes(q));
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        if (activeSort === 'score')  return overallScore(b) - overallScore(a);
+        if (activeSort === 'name')   return a.name.localeCompare(b.name);
+        if (activeSort === 'newest') return VENUES.indexOf(b) - VENUES.indexOf(a);
+        return 0;
+      });
+  }
+
+  function overallScore(v) {
+    const s = v.scores;
+    return s.food*0.3 + s.ambience*0.2 + s.service*0.2 + s.value*0.2 + s.wait*0.1;
+  }
+
+  // ── RENDER CARD ───────────────────────────────────────────────
+  function renderDimRow(label, score) {
+    const isBad = score < 5.0;
+    const pct = (score / 10 * 100).toFixed(0);
+    return `
+    <div class="dv-dim-row">
+      <span class="dv-dim-label">${label}</span>
+      <div class="dv-dim-track">
+        <div class="dv-dim-fill ${isBad ? 'dv-dim-fill--bad' : ''}" style="width:0%" data-target="${pct}"></div>
+      </div>
+      <span class="dv-dim-val">${score.toFixed(1)}</span>
+    </div>`;
+  }
+
+  function renderCard(venue, idx) {
+    const overall = overallScore(venue).toFixed(1);
+    const imgCount = venue.images.length;
+
+    return `
+    <div class="dv-card" data-idx="${idx}" data-slug="${venue.slug}">
+
+      <!-- LEFT — image carousel -->
+      <div class="dv-card-images" id="imgs-${venue.slug}">
+        <div class="dv-img-track" id="track-${venue.slug}">
+          ${venue.images.map((src, i) => `
+            <img
+              class="dv-img"
+              src="${src}"
+              alt="${venue.name} — photo ${i+1}"
+              loading="${i === 0 ? 'eager' : 'lazy'}"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+            >
+            <div class="dv-img-placeholder" style="display:none">${venue.name[0]}</div>
+          `).join('')}
+        </div>
+
+        <!-- Prev/Next buttons -->
+        <button class="dv-img-btn dv-img-btn--prev" id="prev-${venue.slug}" onclick="carouselMove('${venue.slug}', -1)" aria-label="Previous image" ${imgCount <= 1 ? 'disabled' : ''}>‹</button>
+        <button class="dv-img-btn dv-img-btn--next" id="next-${venue.slug}" onclick="carouselMove('${venue.slug}', 1)" aria-label="Next image" ${imgCount <= 1 ? 'disabled' : ''}>›</button>
+
+        <!-- Dots -->
+        <div class="dv-img-dots" id="dots-${venue.slug}">
+          ${venue.images.map((_, i) => `
+            <div class="dv-img-dot ${i === 0 ? 'active' : ''}" onclick="carouselGoTo('${venue.slug}', ${i})"></div>
+          `).join('')}
+        </div>
+
+        <!-- Counter -->
+        <div class="dv-img-counter" id="counter-${venue.slug}">1 / ${imgCount}</div>
+
+        <!-- Partner badge -->
+        <div class="dv-partner-badge">✓ Snyf Partner</div>
+
+        <!-- Swipe hint on touch -->
+        <div class="dv-swipe-hint">swipe for more</div>
+      </div>
+
+      <!-- RIGHT — info -->
+      <div class="dv-card-info">
+
+        <div class="dv-card-top">
+          <div>
+            <div class="dv-venue-name">${venue.name}</div>
+            <div class="dv-venue-meta">
+              <span class="dv-zone-tag">${venue.zone}</span>
+              <span class="dv-cat-tag">${venue.category}</span>
+            </div>
+          </div>
+          <div class="dv-score-wrap">
+            <div class="dv-score">${overall}</div>
+            <div class="dv-score-label">trust score</div>
+          </div>
+        </div>
+
+        <p class="dv-venue-desc">${venue.desc}</p>
+
+        <div class="dv-vibes">
+          ${venue.vibes.map(v => `<span class="dv-vibe">${v}</span>`).join('')}
+        </div>
+
+        <!-- Mini dimension bars -->
+        <div class="dv-dims">
+          ${renderDimRow('Food', venue.scores.food)}
+          ${renderDimRow('Ambience', venue.scores.ambience)}
+          ${renderDimRow('Service', venue.scores.service)}
+          ${renderDimRow('Value', venue.scores.value)}
+          ${renderDimRow('Wait', venue.scores.wait)}
+        </div>
+
+        <div class="dv-card-foot">
+          <div class="dv-hours">
+            <span class="dv-hours-dot ${venue.isOpen ? '' : 'dv-hours-dot--closed'}"></span>
+            ${venue.hours}
+          </div>
+          <a href="${venue.page}" class="dv-know-more" target="_blank" rel="noopener">
+            Know More
+            <span class="dv-know-more-arrow">→</span>
+          </a>
+        </div>
+
+      </div>
+    </div>`;
+  }
+
+  // ── RENDER GRID ───────────────────────────────────────────────
+  function renderGrid() {
+    const venues = getFiltered();
+    const grid = document.getElementById('dv-grid');
+    const countEl = document.getElementById('dv-count');
+
+    if (!grid) return;
+
+    countEl.textContent = `Showing ${venues.length} venue${venues.length !== 1 ? 's' : ''}`;
+
+    if (venues.length === 0) {
+      grid.innerHTML = `
+        <div style="text-align:center;padding:60px 20px;color:var(--muted)">
+          <div style="font-size:2rem;margin-bottom:12px">◈</div>
+          <div style="font-weight:700;margin-bottom:6px">No venues found</div>
+          <div style="font-size:13px">Try a different filter or search term</div>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = venues.map((v, i) => renderCard(v, i)).join('');
+
+    // Initialise carousel state for each card
+    venues.forEach(v => {
+      carouselState[v.slug] = { current: 0 };
+      initTouchSwipe(v.slug, v.images.length);
+    });
+
+    // Animate dimension bars in after short delay
+    setTimeout(() => {
+      document.querySelectorAll('.dv-dim-fill').forEach(bar => {
+        bar.style.transition = 'width 0.9s cubic-bezier(0.22,1,0.36,1)';
+        bar.style.width = bar.dataset.target + '%';
+      });
+    }, 100);
+  }
+
+  // ── CAROUSEL LOGIC ────────────────────────────────────────────
+  function carouselMove(slug, dir) {
+    const venue = VENUES.find(v => v.slug === slug);
+    if (!venue) return;
+
+    const state = carouselState[slug] || { current: 0 };
+    const total = venue.images.length;
+    state.current = Math.max(0, Math.min(total - 1, state.current + dir));
+    carouselState[slug] = state;
+    updateCarousel(slug, state.current, total);
+  }
+
+  function carouselGoTo(slug, idx) {
+    const venue = VENUES.find(v => v.slug === slug);
+    if (!venue) return;
+    const total = venue.images.length;
+    carouselState[slug] = { current: idx };
+    updateCarousel(slug, idx, total);
+  }
+
+  function updateCarousel(slug, current, total) {
+    const track   = document.getElementById(`track-${slug}`);
+    const dots    = document.getElementById(`dots-${slug}`);
+    const counter = document.getElementById(`counter-${slug}`);
+    const prevBtn = document.getElementById(`prev-${slug}`);
+    const nextBtn = document.getElementById(`next-${slug}`);
+
+    if (!track) return;
+
+    // Get the actual rendered width of one image
+    const imgEl = track.querySelector('.dv-img');
+    const imgWidth = imgEl ? imgEl.offsetWidth : 280;
+
+    track.style.transform = `translateX(-${current * imgWidth}px)`;
+
+    // Update dots
+    if (dots) {
+      dots.querySelectorAll('.dv-img-dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === current);
+      });
+    }
+
+    // Update counter
+    if (counter) counter.textContent = `${current + 1} / ${total}`;
+
+    // Update button disabled state
+    if (prevBtn) prevBtn.disabled = current === 0;
+    if (nextBtn) nextBtn.disabled = current === total - 1;
+  }
+
+  // Touch swipe support
+  function initTouchSwipe(slug, total) {
+    const imgWrap = document.getElementById(`imgs-${slug}`);
+    if (!imgWrap) return;
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let isDragging  = false;
+
+    imgWrap.addEventListener('touchstart', e => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      isDragging  = true;
+    }, { passive: true });
+
+    imgWrap.addEventListener('touchend', e => {
+      if (!isDragging) return;
+      isDragging = false;
+
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+
+      // Only trigger if horizontal swipe dominates
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+        carouselMove(slug, dx < 0 ? 1 : -1);
+      }
+    }, { passive: true });
+  }
+
+  // ── TICKER ────────────────────────────────────────────────────
+  function initTicker() {
+    const ticker = document.getElementById('dv-ticker');
+    if (!ticker) return;
+
+    const events = [
+      '✓ Blue Tokai, Cyber Hub — Snyf partner · verified',
+      '◈ Nook Café, Sector 29 — Snyf partner · verified',
+      '✓ Trust scores updated — Blue Tokai · 8.6/10',
+      '◈ New partner onboarding — DLF Phase 4 · coming soon',
+      '✓ Nook Café — 318 verified visits indexed',
+      '◈ QR scans active — all partner tables',
+      '✓ Snyf intelligence layer — all venues verified',
+      '◈ Partner network growing — 2 venues live',
+    ];
+
+    const doubled = [...events, ...events];
+    ticker.innerHTML = doubled.map(e => {
+      const isNew = e.startsWith('◈');
+      return `<span class="ch-tick-item ${isNew ? 'ch-tick--new' : 'ch-tick--ok'}">${e}</span>
+              <span class="ch-tick-sep">·</span>`;
+    }).join('');
+  }
+
+  // ── FILTER BINDINGS ───────────────────────────────────────────
+  document.querySelectorAll('#dv-cat-filters .ch-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#dv-cat-filters .ch-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeCategory = btn.dataset.cat;
+      renderGrid();
+    });
+  });
+
+  document.querySelectorAll('#dv-zone-filters .ch-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#dv-zone-filters .ch-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeZone = btn.dataset.zone;
+      renderGrid();
+    });
+  });
+
+  document.getElementById('dv-sort')?.addEventListener('change', e => {
+    activeSort = e.target.value;
+    renderGrid();
+  });
+
+  document.getElementById('dv-search')?.addEventListener('input', e => {
+    searchQuery = e.target.value.trim();
+    renderGrid();
+  });
+
+  // ── NAVBAR SCROLL ─────────────────────────────────────────────
+  window.addEventListener('scroll', () => {
+    document.querySelector('.ch-nav')?.classList.toggle('scrolled', window.scrollY > 10);
+  }, { passive: true });
+
+  // ── INIT ──────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    initTicker();
+    renderGrid();
+  });
+
+  // Recalculate carousel widths on resize (images may resize)
+  window.addEventListener('resize', () => {
+    Object.keys(carouselState).forEach(slug => {
+      const venue = VENUES.find(v => v.slug === slug);
+      if (!venue) return;
+      const state = carouselState[slug];
+      updateCarousel(slug, state.current, venue.images.length);
+    });
+  }, { passive: true });
+  </script>
+</body>
+</html>
