@@ -645,6 +645,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      sessionStorage.setItem('snyf_visited', 'true');
       initTicker();
       renderStats();
       renderReports();

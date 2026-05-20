@@ -15,6 +15,21 @@ window.addEventListener('load', () => {
     const preloader    = document.getElementById('preloader');
     if (!preloader) return;
 
+    // Skip preloader if returning from Commons or Discover
+    if (sessionStorage.getItem('snyf_visited') === 'true') {
+        document.body.classList.remove('loading');
+        preloader.style.display = 'none';
+        if (typeof AOS !== 'undefined') {
+            AOS.init({
+                once: true,
+                offset: 60,
+                duration: 800,
+                easing: 'ease-out-cubic',
+            });
+        }
+        return;
+    }
+
     const chars        = preloader.querySelectorAll('.pl-char');
     const scanBeam     = document.getElementById('pl-scan-beam');
     const underline    = document.getElementById('pl-logo-underline');
@@ -304,6 +319,7 @@ window.addEventListener('load', () => {
     }
 
     function finishPreloader() {
+        sessionStorage.setItem('snyf_visited', 'true');
         window.scrollTo(0, 0);
         setTimeout(() => {
             preloader.style.display = 'none';
@@ -319,6 +335,7 @@ window.addEventListener('load', () => {
     }
 
     function fallbackExit() {
+        sessionStorage.setItem('snyf_visited', 'true');
         window.scrollTo(0, 0);
         body.classList.remove('loading');
         preloader.style.transition = 'opacity 0.6s ease';
