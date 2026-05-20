@@ -945,6 +945,68 @@
   document.addEventListener('DOMContentLoaded', () => {
     initTicker();
     renderGrid();
+
+    // ── Custom Cybernetic Cursor Tracking ───────────────────────────
+    (function () {
+      const isFinePointer = window.matchMedia('(pointer: fine)').matches;
+      if (!isFinePointer) return;
+
+      const dot = document.getElementById('cursor-dot');
+      const ring = document.getElementById('cursor-ring');
+      if (!dot || !ring) return;
+
+      let mouseX = window.innerWidth / 2;
+      let mouseY = window.innerHeight / 2;
+      
+      let ringX = mouseX;
+      let ringY = mouseY;
+      let dotX = mouseX;
+      let dotY = mouseY;
+
+      window.addEventListener('mousemove', e => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      }, { passive: true });
+
+      document.addEventListener('mouseleave', () => {
+        dot.style.opacity = '0';
+        ring.style.opacity = '0';
+      });
+      document.addEventListener('mouseenter', () => {
+        dot.style.opacity = '1';
+        ring.style.opacity = '1';
+      });
+
+      function updateCursor() {
+        // Instant dot lock for zero lag feel
+        dotX += (mouseX - dotX);
+        dotY += (mouseY - dotY);
+        dot.style.transform = `translate3d(${dotX}px, ${dotY}px, 0)`;
+
+        // Spring damped trailing ring
+        ringX += (mouseX - ringX) * 0.15;
+        ringY += (mouseY - ringY) * 0.15;
+        ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0)`;
+
+        requestAnimationFrame(updateCursor);
+      }
+      requestAnimationFrame(updateCursor);
+
+      // Hover effect for interactive elements
+      const hoverTargets = 'a, button, input, select, textarea, [role="button"], .ch-card, .ch-pill, .ch-react, .quick-place, .dv-card, .dv-know-more, .dv-img-btn, .dv-img-dot';
+      
+      document.addEventListener('mouseover', e => {
+        if (e.target && e.target.closest(hoverTargets)) {
+          document.body.classList.add('cursor-hovering');
+        }
+      }, { passive: true });
+
+      document.addEventListener('mouseout', e => {
+        if (e.target && !e.target.closest(hoverTargets)) {
+          document.body.classList.remove('cursor-hovering');
+        }
+      }, { passive: true });
+    })();
   });
 
   // Recalculate carousel widths on resize (images may resize)
