@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snyf Admin</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Oswald:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #141412;
+      --surface:   #1E1E1B;
+      --surface2:  #242420;
+      --surface3:  #2A2A26;
+      --border:    rgba(246,245,242,0.08);
+      --border-hi: rgba(246,245,242,0.14);
+      --text:      #F6F5F2;
+      --muted:     rgba(246,245,242,0.45);
+      --dim:       rgba(246,245,242,0.22);
+      --cyan:      #6FB7D6;
+      --mint:      #7BC6A4;
+      --orange:    #D97A4A;
+      --gold:      #D4A853;
+      --violet:    #A59BB7;
+      --red:       #D97A4A;
+      --success:   #7BC6A4;
+      --warning:   #D4A853;
+      --danger:    #D97A4A;
+      --info:      #6FB7D6;
+      --sidebar-w: 240px;
+      --mono:      'JetBrains Mono', monospace;
+      --display:   'Oswald', sans-serif;
+      --sans:      'Inter', system-ui, sans-serif;
+      --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-xl: 18px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); height: 100%; overflow: hidden; -webkit-font-smoothing: antialiased; }
+    button { cursor: pointer; font: inherit; border: none; background: none; }
+    input, textarea, select { font: inherit; }
+    a { text-decoration: none; color: inherit; }
+    img { display: block; max-width: 100%; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(246,245,242,0.12); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(246,245,242,0.22); }
+
+    .pulse-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .pulse-dot--cyan   { background: var(--cyan);   animation: pulse-anim 2s infinite; }
+    .pulse-dot--mint   { background: var(--mint);   animation: pulse-anim 2s infinite; }
+    .pulse-dot--orange { background: var(--orange); animation: pulse-anim 2s infinite; }
+    .pulse-dot--gold   { background: var(--gold);   animation: pulse-anim 2s infinite; }
+    @keyframes pulse-anim { 0%,100% { box-shadow: 0 0 0 0 currentColor; opacity: 1; } 50% { box-shadow: 0 0 0 4px transparent; opacity: 0.7; } }
+
+    .badge { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; border: 1px solid; white-space: nowrap; }
+    .badge--active   { color: var(--mint);   border-color: rgba(123,198,164,0.3);  background: rgba(123,198,164,0.08); }
+    .badge--inactive { color: var(--muted);  border-color: var(--border);           background: rgba(246,245,242,0.04); }
+    .badge--draft    { color: var(--gold);   border-color: rgba(212,168,83,0.3);   background: rgba(212,168,83,0.08); }
+    .badge--flagged  { color: var(--orange); border-color: rgba(217,122,74,0.3);   background: rgba(217,122,74,0.08); }
+    .badge--verified { color: var(--cyan);   border-color: rgba(111,183,214,0.3);  background: rgba(111,183,214,0.08); }
+    .badge--user     { color: var(--violet); border-color: rgba(165,155,183,0.3);  background: rgba(165,155,183,0.08); }
+    .badge--business { color: var(--gold);   border-color: rgba(212,168,83,0.3);   background: rgba(212,168,83,0.08); }
+    .badge--manual   { color: var(--gold);   border-color: rgba(212,168,83,0.3);   background: rgba(212,168,83,0.08); }
+    .badge--ai       { color: var(--cyan);   border-color: rgba(111,183,214,0.3);  background: rgba(111,183,214,0.08); }
+
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: var(--r-md); font-size: 13px; font-weight: 600; transition: all 0.18s; white-space: nowrap; }
+    .btn--primary   { background: var(--text); color: var(--bg); }
+    .btn--primary:hover { background: #d8d5cf; }
+    .btn--ghost     { border: 1px solid var(--border); color: var(--muted); }
+    .btn--ghost:hover { border-color: var(--border-hi); color: var(--text); background: rgba(246,245,242,0.04); }
+    .btn--cyan      { background: rgba(111,183,214,0.12); border: 1px solid rgba(111,183,214,0.25); color: var(--cyan); }
+    .btn--cyan:hover { background: rgba(111,183,214,0.2); }
+    .btn--danger    { background: rgba(217,122,74,0.1); border: 1px solid rgba(217,122,74,0.25); color: var(--orange); }
+    .btn--danger:hover { background: rgba(217,122,74,0.18); }
+    .btn--sm  { padding: 6px 12px; font-size: 12px; }
+    .btn--xs  { padding: 4px 9px; font-size: 11px; border-radius: var(--r-sm); }
+
+    .input { width: 100%; background: rgba(246,245,242,0.04); border: 1px solid var(--border); border-radius: var(--r-md); padding: 11px 14px; color: var(--text); font-size: 13px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+    .input:focus { border-color: rgba(111,183,214,0.4); box-shadow: 0 0 0 3px rgba(111,183,214,0.08); }
+    .input::placeholder { color: var(--dim); }
+    .input-label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 7px; }
+    .field { display: flex; flex-direction: column; gap: 7px; }
+
+    .select { appearance: none; background: rgba(246,245,242,0.04) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(246,245,242,0.3)'/%3E%3C/svg%3E") no-repeat right 12px center; border: 1px solid var(--border); border-radius: var(--r-md); padding: 10px 32px 10px 14px; color: var(--text); font-size: 13px; outline: none; cursor: pointer; transition: border-color 0.2s; }
+    .select:focus { border-color: rgba(111,183,214,0.4); }
+    .select option { background: var(--surface2); }
+
+    .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+    .toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-slider { position: absolute; inset: 0; background: rgba(246,245,242,0.1); border: 1px solid var(--border); border-radius: 999px; cursor: pointer; transition: all 0.2s; }
+    .toggle-slider::after { content: ''; position: absolute; left: 3px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; border-radius: 50%; background: var(--muted); transition: all 0.2s; }
+    .toggle input:checked + .toggle-slider { background: rgba(123,198,164,0.2); border-color: rgba(123,198,164,0.4); }
+    .toggle input:checked + .toggle-slider::after { left: calc(100% - 15px); background: var(--mint); }
+    .toggle-label { font-size: 13px; color: var(--muted); }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 20px 22px; }
+
+    .tbl-wrap { overflow-x: auto; }
+    .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .tbl th { text-align: left; padding: 10px 14px; font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .tbl td { padding: 12px 14px; border-bottom: 1px solid rgba(246,245,242,0.04); color: var(--text); vertical-align: middle; }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl tr:hover td { background: rgba(246,245,242,0.02); }
+    .tbl-actions { display: flex; gap: 6px; align-items: center; }
+
+    .sec-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+    .sec-title { font-family: var(--display); font-size: 1.4rem; font-weight: 900; letter-spacing: -0.3px; text-transform: uppercase; }
+    .sec-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+    .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 24px; overflow-x: auto; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab-btn { padding: 10px 18px; font-size: 13px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.18s; white-space: nowrap; flex-shrink: 0; }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .admin-slider { width: 100%; accent-color: var(--cyan); cursor: pointer; }
+
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; }
+    .stat-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+    .stat-value { font-family: var(--display); font-size: 2rem; font-weight: 900; line-height: 1; letter-spacing: -1px; }
+    .stat-delta { font-family: var(--mono); font-size: 10px; color: var(--mint); }
+
+    .activity-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(246,245,242,0.04); }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+    .activity-icon--cyan   { background: rgba(111,183,214,0.1); color: var(--cyan); }
+    .activity-icon--mint   { background: rgba(123,198,164,0.1); color: var(--mint); }
+    .activity-icon--orange { background: rgba(217,122,74,0.1);  color: var(--orange); }
+    .activity-icon--gold   { background: rgba(212,168,83,0.1);  color: var(--gold); }
+    .activity-text { font-size: 12.5px; color: var(--text); line-height: 1.5; }
+    .activity-time { font-family: var(--mono); font-size: 9px; color: var(--muted); margin-top: 2px; }
+
+    .pending-card { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(246,245,242,0.03); border: 1px solid var(--border); border-radius: var(--r-md); margin-bottom: 8px; }
+    .pending-icon { font-size: 14px; flex-shrink: 0; }
+    .pending-text { flex: 1; font-size: 13px; color: var(--text); }
+    .pending-sub  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .search-wrap { position: relative; flex-shrink: 0; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--dim); font-size: 13px; pointer-events: none; }
+    .search-input { background: rgba(246,245,242,0.04); border: 1px solid var(--border); border-radius: var(--r-md); padding: 9px 14px 9px 34px; color: var(--text); font-size: 13px; outline: none; width: 220px; transition: border-color 0.2s, width 0.2s; }
+    .search-input:focus { border-color: rgba(111,183,214,0.35); width: 260px; }
+    .search-input::placeholder { color: var(--dim); }
+
+    .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filter-pill { padding: 6px 13px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); color: var(--muted); transition: all 0.18s; }
+    .filter-pill:hover { color: var(--text); border-color: var(--border-hi); }
+    .filter-pill.active { background: var(--text); border-color: var(--text); color: var(--bg); }
+
+    .score-source-row { display: grid; grid-template-columns: 120px 1fr 40px; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(246,245,242,0.05); }
+    .score-source-row:last-child { border-bottom: none; }
+
+    .danger-zone { border: 1px solid rgba(217,122,74,0.2); border-radius: var(--r-lg); padding: 20px; margin-top: 32px; }
+    .danger-zone-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--orange); margin-bottom: 14px; }
+
+    .analytics-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 60px 20px; text-align: center; border: 1px dashed rgba(246,245,242,0.1); border-radius: var(--r-lg); }
+    .analytics-placeholder-icon  { font-size: 2rem; opacity: 0.3; }
+    .analytics-placeholder-title { font-weight: 700; color: var(--muted); }
+    .analytics-placeholder-sub   { font-size: 12px; color: var(--dim); }
+
+    .discover-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-md); margin-bottom: 8px; cursor: grab; transition: all 0.18s; }
+    .discover-item:hover { border-color: var(--border-hi); }
+    .discover-drag-handle { color: var(--dim); font-size: 14px; flex-shrink: 0; }
+    .discover-item-name { font-weight: 700; font-size: 14px; flex: 1; }
+    .discover-item-zone { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+
+    .qr-preview-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 28px; background: #F6F5F2; border-radius: var(--r-lg); width: fit-content; }
+    .qr-mock { width: 180px; height: 180px; background: var(--surface); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 9px; color: rgba(246,245,242,0.3); letter-spacing: 0.1em; text-align: center; padding: 16px; }
+    .qr-venue-label { font-family: var(--display); font-size: 1rem; font-weight: 900; color: var(--surface); text-transform: uppercase; letter-spacing: -0.3px; }
+    .qr-hint-label  { font-family: var(--mono); font-size: 9px; color: rgba(30,30,27,0.4); letter-spacing: 0.12em; text-transform: uppercase; }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal { background: var(--surface); border: 1px solid var(--border-hi); border-radius: var(--r-xl); padding: 28px 32px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; transform: translateY(16px) scale(0.97); transition: transform 0.3s cubic-bezier(0.22,1,0.36,1); }
+    .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+    .modal-title { font-family: var(--display); font-size: 1.2rem; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; }
+    .modal-sub   { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+    .modal-close { position: absolute; top: 18px; right: 18px; width: 28px; height: 28px; background: rgba(246,245,242,0.06); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--muted); transition: all 0.18s; }
+    .modal-close:hover { background: rgba(246,245,242,0.12); color: var(--text); }
+
+    .toast { position: fixed; bottom: 28px; right: 28px; background: var(--surface3); border: 1px solid var(--border-hi); border-radius: var(--r-md); padding: 12px 18px; font-size: 13px; font-weight: 600; color: var(--text); z-index: 1000; transform: translateY(16px); opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.22,1,0.36,1); display: flex; align-items: center; gap: 8px; max-width: 320px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast--success { border-left: 3px solid var(--mint); }
+    .toast--error   { border-left: 3px solid var(--orange); }
+    .toast--info    { border-left: 3px solid var(--cyan); }
+
+    .cred-box { background: rgba(111,183,214,0.05); border: 1px solid rgba(111,183,214,0.2); border-radius: var(--r-md); padding: 16px 18px; }
+    .cred-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; }
+    .cred-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.08em; }
+    .cred-value { font-family: var(--mono); font-size: 13px; color: var(--cyan); font-weight: 700; word-break: break-all; }
+    .cred-copy  { width: 26px; height: 26px; background: rgba(246,245,242,0.06); border: 1px solid var(--border); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--muted); transition: all 0.18s; flex-shrink: 0; }
+    .cred-copy:hover { background: rgba(246,245,242,0.1); color: var(--text); }
+
+    .step-bar { display: flex; align-items: center; gap: 0; margin-bottom: 8px; }
+    .step-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border); border: 2px solid var(--border); flex-shrink: 0; transition: all 0.25s; }
+    .step-dot.active { background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(111,183,214,0.2); }
+    .step-dot.done   { background: var(--mint); border-color: var(--mint); }
+    .step-line { flex: 1; height: 1px; background: var(--border); }
+    .step-labels { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-top: 6px; margin-bottom: 24px; }
+
+    .nav-item { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r-md); font-size: 13px; font-weight: 600; color: var(--muted); transition: all 0.18s; margin-bottom: 2px; text-align: left; }
+    .nav-item:hover { color: var(--text); background: rgba(246,245,242,0.04); }
+    .nav-item.active-nav { color: var(--text); background: rgba(246,245,242,0.06); }
+
+    @media (max-width: 900px) {
+      :root { --sidebar-w: 60px; }
+      .nav-label, .nav-section-label, .sidebar-brand-text { display: none; }
+      .sidebar-brand { justify-content: center; }
+      .nav-item { justify-content: center; padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;">
+  <div style="width:100%;max-width:400px;padding:0 24px;">
+    <div style="text-align:center;margin-bottom:40px;">
+      <div style="font-family:var(--display);font-size:2.2rem;font-weight:900;letter-spacing:-1px;margin-bottom:6px;">SNYF</div>
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.2em;color:var(--muted);text-transform:uppercase;">Super Admin · Internal Access Only</div>
+    </div>
+    <div class="card" style="padding:28px 28px 24px;">
+      <div style="margin-bottom:20px;">
+        <div class="field" style="margin-bottom:14px;">
+          <label class="input-label">Email</label>
+          <input class="input" type="email" id="login-email" placeholder="teams@snyf.co.in" autocomplete="email">
+        </div>
+        <div class="field">
+          <label class="input-label">Password</label>
+          <div style="position:relative;">
+            <input class="input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" style="padding-right:44px;">
+            <button onclick="toggleLoginPass()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:13px;" id="login-eye">👁</button>
+          </div>
+        </div>
+      </div>
+      <div id="login-error" style="color:var(--orange);font-size:12px;margin-bottom:12px;display:none;font-family:var(--mono);">⚠ Invalid credentials</div>
+      <button class="btn btn--primary" style="width:100%;justify-content:center;height:44px;" onclick="doLogin()">Sign In →</button>
+    </div>
+    <div style="text-align:center;margin-top:16px;font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:0.1em;">SECURED ACCESS · SNYF INTERNAL ONLY</div>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="admin-app" style="display:none;height:100vh;overflow:hidden;">
+
+  <div class="toast" id="toast"></div>
+
+  <div style="display:flex;height:100%;">
+
+    <!-- SIDEBAR -->
+    <aside style="width:var(--sidebar-w);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;overflow:hidden;transition:width 0.2s;">
+
+      <div class="sidebar-brand" style="padding:20px 16px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <div style="width:32px;height:32px;background:var(--text);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:14px;font-weight:900;color:var(--bg);flex-shrink:0;">S</div>
+        <div class="sidebar-brand-text">
+          <div style="font-family:var(--display);font-size:15px;font-weight:900;letter-spacing:-0.3px;">SNYF</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.1em;">SUPER ADMIN</div>
+        </div>
+      </div>
+
+      <nav style="flex:1;overflow-y:auto;padding:12px 8px;">
+        <div class="nav-section-label" style="font-family:var(--mono);font-size:8px;letter-spacing:0.14em;color:var(--dim);text-transform:uppercase;padding:8px 10px 4px;">Main</div>
+
+        <button class="nav-item active-nav" data-section="overview" onclick="navTo('overview',this)">
+          <span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">⬡</span>
+          <span class="nav-label">Overview</span>
+        </button>
+        <button class="nav-item" data-section="venues" onclick="navTo('venues',this)">
+          <span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">🏢</span>
+          <span class="nav-label">Venues</span>
+        </button>
+        <button class="nav-item" data-section="reports" onclick="navTo('reports',this)">
+          <span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">📋</span>
+          <span class="nav-label">Field Reports</span>
+          <span style="margin-left:auto;background:rgba(217,122,74,0.15);color:var(--orange);font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:4px;" class="nav-label">3</span>
+        </button>
+        <button class="nav-item" data-section="qr" onclick="navTo('qr',this)">
+          <span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">📱</span>
+          <span class="nav-label">QR Codes</span>
+        </button>
+        <button class="nav-item" data-section="waitlist" onclick="navTo('waitlist',this)">
+          <span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">📧</span>
+          <span class="nav-label">Waitlist</span>
+          <span style="margin-left:auto;background:rgba(212,168,83,0.15);color:var(--gold);font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:4px;" class="nav-label">12</span>
+        </button>
+        <button class="nav-item" data-section="discover" onclick="navTo('discover',this)">
+          <span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">🔍</span>
+          <span class="nav-label">Discover Control</span>
+        </button>
+
+        <div class="nav-section-label" style="font-family:var(--mono);font-size:8px;letter-spacing:0.14em;color:var(--dim);text-transform:uppercase;padding:16px 10px 4px;">System</div>
+
+        <button class="nav-item" data-section="analytics" onclick="navTo('analytics',this)">
+          <span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">📊</span>
+          <span class="nav-label">Analytics</span>
+          <span style="margin-left:auto;font-family:var(--mono);font-size:8px;color:var(--dim);padding:1px 5px;border:1px solid var(--border);border-radius:3px;" class="nav-label">Soon</span>
+        </button>
+        <button class="nav-item" data-section="settings" onclick="navTo('settings',this)">
+          <span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">⚙️</span>
+          <span class="nav-label">Settings</span>
+        </button>
+      </nav>
+
+      <div style="padding:12px 8px;border-top:1px solid var(--border);flex-shrink:0;">
+        <button onclick="doLogout()" class="nav-item" style="width:100%;">
+          <span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">↩</span>
+          <span class="nav-label">Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+
+      <div style="position:sticky;top:0;z-index:50;background:rgba(20,20,18,0.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+        <div id="topbar-title" style="font-family:var(--display);font-size:1rem;font-weight:900;letter-spacing:-0.3px;text-transform:uppercase;">Overview</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="pulse-dot pulse-dot--mint"></span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.1em;">SYSTEM LIVE</span>
+          </div>
+          <div style="width:32px;height:32px;background:rgba(111,183,214,0.12);border:1px solid rgba(111,183,214,0.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--cyan);">S</div>
+        </div>
+      </div>
+
+      <div style="flex:1;padding:28px;">
+
+        <!-- OVERVIEW -->
+        <div id="section-overview" class="admin-section">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px;">
+            <div class="stat-card"><div class="stat-label">Total Venues</div><div class="stat-value" style="color:var(--cyan);">2</div><div class="stat-delta">↑ 2 this month</div></div>
+            <div class="stat-card"><div class="stat-label">Active Venues</div><div class="stat-value" style="color:var(--mint);">2</div><div class="stat-delta">100% uptime</div></div>
+            <div class="stat-card"><div class="stat-label">Field Reports</div><div class="stat-value" style="color:var(--text);">847</div><div class="stat-delta">↑ 47 this week</div></div>
+            <div class="stat-card"><div class="stat-label">QR Scans</div><div class="stat-value" style="color:var(--gold);">312</div><div class="stat-delta">↑ 28 today</div></div>
+            <div class="stat-card"><div class="stat-label">Waitlist</div><div class="stat-value" style="color:var(--violet);">1,247</div><div class="stat-delta">↑ 12 today</div></div>
+            <div class="stat-card"><div class="stat-label">Avg Trust Score</div><div class="stat-value" style="color:var(--cyan);">8.5</div><div class="stat-delta">Across 2 venues</div></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;">
+            <div style="display:flex;flex-direction:column;gap:20px;">
+              <div class="card">
+                <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:14px;">Pending Actions</div>
+                <div class="pending-card">
+                  <div class="pending-icon">⚠</div>
+                  <div><div class="pending-text">3 field reports flagged for review</div><div class="pending-sub">Anomaly patterns detected</div></div>
+                  <button class="btn btn--xs btn--ghost" onclick="navTo('reports',document.querySelector('[data-section=reports]'))">Review</button>
+                </div>
+                <div class="pending-card">
+                  <div class="pending-icon">◈</div>
+                  <div><div class="pending-text">2 business waitlist signups</div><div class="pending-sub">Potential café partners</div></div>
+                  <button class="btn btn--xs btn--cyan" onclick="navTo('waitlist',document.querySelector('[data-section=waitlist]'))">View</button>
+                </div>
+                <div class="pending-card">
+                  <div class="pending-icon">📱</div>
+                  <div><div class="pending-text">QR codes not yet generated</div><div class="pending-sub">Blue Tokai · Nook Café</div></div>
+                  <button class="btn btn--xs btn--cyan" onclick="navTo('qr',document.querySelector('[data-section=qr]'))">Generate</button>
+                </div>
+              </div>
+
+              <div class="card" style="padding:0;overflow:hidden;">
+                <div style="padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;">Venue Health</span>
+                  <button class="btn btn--xs btn--primary" onclick="openAddVenueModal()">+ Add Venue</button>
+                </div>
+                <div class="tbl-wrap">
+                  <table class="tbl">
+                    <thead><tr><th>Venue</th><th>Zone</th><th>Trust Score</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead>
+                    <tbody id="overview-venues-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="height:fit-content;max-height:520px;display:flex;flex-direction:column;">
+              <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:7px;">
+                <span class="pulse-dot pulse-dot--mint"></span>Live Activity
+              </div>
+              <div style="flex:1;overflow-y:auto;" id="activity-feed"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VENUES -->
+        <div id="section-venues" class="admin-section" style="display:none;">
+          <div id="venues-list-view">
+            <div class="sec-head">
+              <div><div class="sec-title">Venues</div><div class="sec-sub">Manage all Snyf partner venues</div></div>
+              <button class="btn btn--primary" onclick="openAddVenueModal()">+ Add New Venue</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+              <div class="search-wrap">
+                <span class="search-icon">⌕</span>
+                <input class="search-input" type="search" placeholder="Search venues..." id="venues-search" oninput="filterVenues()">
+              </div>
+              <div class="filter-pills" id="venue-status-filters">
+                <button class="filter-pill active" onclick="setVenueFilter('status','all',this)">All</button>
+                <button class="filter-pill" onclick="setVenueFilter('status','active',this)">Active</button>
+                <button class="filter-pill" onclick="setVenueFilter('status','inactive',this)">Inactive</button>
+              </div>
+              <div class="filter-pills" id="venue-zone-filters">
+                <button class="filter-pill active" onclick="setVenueFilter('zone','all',this)">All Zones</button>
+                <button class="filter-pill" onclick="setVenueFilter('zone','Cyber Hub',this)">Cyber Hub</button>
+                <button class="filter-pill" onclick="setVenueFilter('zone','Sector 29',this)">Sector 29</button>
+              </div>
+            </div>
+            <div class="card" style="padding:0;overflow:hidden;">
+              <div class="tbl-wrap">
+                <table class="tbl">
+                  <thead><tr><th>#</th><th>Venue Name</th><th>Slug</th><th>Zone</th><th>Category</th><th>Trust Score</th><th>Score Source</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+                  <tbody id="venues-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div id="venue-detail-view" style="display:none;">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;">
+              <button class="btn btn--ghost btn--sm" onclick="showVenueList()">← Back</button>
+              <div>
+                <div style="font-family:var(--display);font-size:1.3rem;font-weight:900;text-transform:uppercase;letter-spacing:-0.3px;" id="detail-venue-name"></div>
+                <div style="font-size:12px;color:var(--muted);font-family:var(--mono);" id="detail-venue-url"></div>
+              </div>
+              <div style="margin-left:auto;display:flex;gap:8px;">
+                <a id="detail-view-live" href="#" target="_blank" class="btn btn--ghost btn--sm">View Live ↗</a>
+                <button class="btn btn--cyan btn--sm" onclick="openQRForVenue()">Get QR Code</button>
+              </div>
+            </div>
+
+            <div class="tabs">
+              <button class="tab-btn active" onclick="switchTab('overview-tab',this)">Overview</button>
+              <button class="tab-btn" onclick="switchTab('menu-tab',this)">Menu</button>
+              <button class="tab-btn" onclick="switchTab('reports-tab',this)">Reports</button>
+              <button class="tab-btn" onclick="switchTab('trust-tab',this)">Trust Scores</button>
+              <button class="tab-btn" onclick="switchTab('credentials-tab',this)">Credentials</button>
+            </div>
+
+            <!-- Tab: Overview -->
+            <div class="tab-panel active" id="overview-tab">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px;">
+                <div class="stat-card"><div class="stat-label">Trust Score</div><div class="stat-value" id="dt-trust" style="color:var(--cyan);">—</div></div>
+                <div class="stat-card"><div class="stat-label">Verified Visits</div><div class="stat-value" id="dt-visits" style="color:var(--mint);">—</div></div>
+                <div class="stat-card"><div class="stat-label">Menu Items</div><div class="stat-value" id="dt-menu-count" style="color:var(--text);">—</div></div>
+                <div class="stat-card"><div class="stat-label">Field Reports</div><div class="stat-value" id="dt-report-count" style="color:var(--gold);">—</div></div>
+              </div>
+              <div class="card" style="margin-bottom:20px;">
+                <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:18px;">Basic Information</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                  <div class="field"><label class="input-label">Venue Name</label><input class="input" type="text" id="edit-name"></div>
+                  <div class="field"><label class="input-label">Slug</label><input class="input" type="text" id="edit-slug"></div>
+                  <div class="field"><label class="input-label">Zone</label><select class="select" id="edit-zone"><option>Cyber Hub</option><option>Sector 29</option><option>DLF Phase 4</option><option>Khan Market</option><option>Sushant Lok</option></select></div>
+                  <div class="field"><label class="input-label">Category</label><select class="select" id="edit-category"><option>Café</option><option>Restaurant</option><option>Bar</option></select></div>
+                  <div class="field" style="grid-column:1/-1;"><label class="input-label">Description</label><textarea class="input" id="edit-desc" rows="2" style="resize:vertical;"></textarea></div>
+                  <div class="field" style="grid-column:1/-1;"><label class="input-label">One-liner tagline <span style="color:var(--dim)">(shows on discover card)</span></label><input class="input" type="text" id="edit-tagline"></div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;">
+                  <div class="toggle-wrap">
+                    <label class="toggle"><input type="checkbox" id="edit-active" checked><span class="toggle-slider"></span></label>
+                    <span class="toggle-label">Active — visible on discover page</span>
+                  </div>
+                  <button class="btn btn--primary btn--sm" onclick="saveVenueInfo()">Save Changes</button>
+                </div>
+              </div>
+              <div class="danger-zone">
+                <div class="danger-zone-title">⚠ Danger Zone</div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                  <button class="btn btn--danger btn--sm" onclick="resetCredentials()">Reset Admin Credentials</button>
+                  <button class="btn btn--danger btn--sm" onclick="deactivateVenue()">Deactivate Venue</button>
+                  <button class="btn btn--danger btn--sm" onclick="deleteVenueConfirm()">Delete Venue</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab: Menu -->
+            <div class="tab-panel" id="menu-tab">
+              <div class="sec-head">
+                <div><div style="font-weight:700;font-size:15px;">Menu Items</div><div style="font-size:12px;color:var(--muted);">Items managed by venue admin. You can add/edit here too.</div></div>
+                <button class="btn btn--primary btn--sm" onclick="openAddMenuModal()">+ Add Item</button>
+              </div>
+              <div class="card" style="padding:0;overflow:hidden;">
+                <table class="tbl">
+                  <thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Tag</th><th>Available</th><th>Actions</th></tr></thead>
+                  <tbody id="menu-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Tab: Reports -->
+            <div class="tab-panel" id="reports-tab">
+              <div class="sec-head"><div style="font-weight:700;font-size:15px;">Field Reports for this venue</div></div>
+              <div class="card" style="padding:0;overflow:hidden;">
+                <table class="tbl">
+                  <thead><tr><th>Reviewer</th><th>Score</th><th>Note</th><th>Trust Level</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+                  <tbody id="venue-reports-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Tab: Trust Scores -->
+            <div class="tab-panel" id="trust-tab">
+              <div class="card" style="max-width:560px;">
+                <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;">
+                  <span>Trust Score Override</span><span class="badge badge--manual">Manual Override</span>
+                </div>
+                <div id="trust-sliders"></div>
+                <div class="field" style="margin-top:16px;">
+                  <label class="input-label">Override Reason <span style="color:var(--dim)">(internal note)</span></label>
+                  <input class="input" type="text" id="trust-reason" placeholder="e.g. Based on personal visit + 12 early reports">
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;">
+                  <div class="toggle-wrap">
+                    <label class="toggle"><input type="checkbox" id="trust-lock"><span class="toggle-slider"></span></label>
+                    <span class="toggle-label">Lock scores — prevent auto-computation override</span>
+                  </div>
+                  <button class="btn btn--primary btn--sm" onclick="saveTrustScores()">Save Scores</button>
+                </div>
+              </div>
+              <div class="card" style="margin-top:20px;padding:0;overflow:hidden;">
+                <div style="padding:14px 18px;border-bottom:1px solid var(--border);">
+                  <span style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;">Score History</span>
+                </div>
+                <table class="tbl">
+                  <thead><tr><th>Dimension</th><th>Old Value</th><th>New Value</th><th>Source</th><th>Date</th><th>Note</th></tr></thead>
+                  <tbody id="score-history-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Tab: Credentials -->
+            <div class="tab-panel" id="credentials-tab">
+              <div style="max-width:440px;">
+                <div class="card" style="margin-bottom:16px;">
+                  <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:16px;">Venue Admin Login</div>
+                  <div class="cred-box" id="venue-creds-display"></div>
+                  <div style="margin-top:16px;font-size:12px;color:var(--dim);line-height:1.6;">
+                    Share these with the venue owner. They use these to log in at <span style="color:var(--cyan);font-family:var(--mono);" id="cred-admin-url"></span>
+                  </div>
+                </div>
+                <button class="btn btn--danger btn--sm" onclick="resetCredentials()">↺ Reset Credentials</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FIELD REPORTS -->
+        <div id="section-reports" class="admin-section" style="display:none;">
+          <div class="sec-head">
+            <div><div class="sec-title">Field Reports</div><div class="sec-sub">All community reports across every venue</div></div>
+            <button class="btn btn--ghost btn--sm">Export CSV</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+            <div class="search-wrap"><span class="search-icon">⌕</span><input class="search-input" type="search" placeholder="Search reports..."></div>
+            <div class="filter-pills">
+              <button class="filter-pill active">All</button>
+              <button class="filter-pill">Flagged</button>
+              <button class="filter-pill">Verified</button>
+              <button class="filter-pill">This Week</button>
+            </div>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden;">
+            <table class="tbl">
+              <thead><tr><th>#</th><th>Venue</th><th>Reviewer</th><th>Score</th><th>Note</th><th>Trust Level</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="all-reports-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- QR CODES -->
+        <div id="section-qr" class="admin-section" style="display:none;">
+          <div class="sec-head">
+            <div><div class="sec-title">QR Code Generator</div><div class="sec-sub">Generate Snyf-branded QR codes for partner venues</div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:340px 1fr;gap:24px;align-items:start;">
+            <div class="card">
+              <div class="field" style="margin-bottom:16px;">
+                <label class="input-label">Select Venue</label>
+                <select class="select" id="qr-venue-select" onchange="updateQRPreview()">
+                  <option value="">— Select a venue —</option>
+                  <option value="blue-tokai">Blue Tokai Coffee Roasters</option>
+                  <option value="nook-cafe">Nook Café</option>
+                </select>
+              </div>
+              <div class="field" style="margin-bottom:16px;">
+                <label class="input-label">QR Type</label>
+                <select class="select" id="qr-type">
+                  <option value="venue">Single Venue QR — snyf.co.in/[slug]</option>
+                  <option value="table" disabled>Per-Table QR (Coming Phase 2)</option>
+                </select>
+              </div>
+              <div id="qr-url-preview" style="font-family:var(--mono);font-size:11px;color:var(--cyan);background:rgba(111,183,214,0.07);border:1px solid rgba(111,183,214,0.2);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:16px;display:none;"></div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <button class="btn btn--primary" style="justify-content:center;" onclick="downloadQR('png')">↓ Download PNG (1000×1000px)</button>
+                <button class="btn btn--ghost" style="justify-content:center;" onclick="downloadQR('svg')">↓ Download SVG</button>
+              </div>
+              <div style="margin-top:14px;font-size:11px;color:var(--dim);line-height:1.7;">Print at minimum 4×4cm for reliable scanning. Laminate for table use.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:16px;text-align:center;">Preview</div>
+              <div class="qr-preview-wrap" id="qr-preview-wrap">
+                <div class="qr-mock" id="qr-mock-display">Select a venue to preview QR code</div>
+                <div class="qr-venue-label" id="qr-venue-label-display" style="display:none;"></div>
+                <div class="qr-hint-label" id="qr-hint-display" style="display:none;">Scan to discover &amp; order</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WAITLIST -->
+        <div id="section-waitlist" class="admin-section" style="display:none;">
+          <div class="sec-head">
+            <div><div class="sec-title">Waitlist</div><div class="sec-sub">Early access signups from snyf.co.in</div></div>
+            <button class="btn btn--ghost btn--sm">Export CSV</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+            <div class="search-wrap"><span class="search-icon">⌕</span><input class="search-input" type="search" placeholder="Search by name or email..."></div>
+            <div class="filter-pills">
+              <button class="filter-pill active">All</button>
+              <button class="filter-pill" style="border-color:rgba(212,168,83,0.3);color:var(--gold);">Business 🏢</button>
+              <button class="filter-pill">Users</button>
+              <button class="filter-pill">New Only</button>
+            </div>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden;">
+            <table class="tbl">
+              <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Type</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="waitlist-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- DISCOVER CONTROL -->
+        <div id="section-discover" class="admin-section" style="display:none;">
+          <div class="sec-head">
+            <div><div class="sec-title">Discover Control</div><div class="sec-sub">Control what appears on snyf.co.in/discover</div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start;">
+            <div>
+              <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:14px;">Venue Order — Drag to Reorder</div>
+              <div id="discover-order-list"></div>
+            </div>
+            <div class="card">
+              <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:14px;">Ticker Events</div>
+              <div id="ticker-events-list" style="margin-bottom:12px;display:flex;flex-direction:column;gap:6px;"></div>
+              <button class="btn btn--ghost btn--sm" style="width:100%;justify-content:center;" onclick="addTickerEvent()">+ Add Event</button>
+              <button class="btn btn--primary btn--sm" style="width:100%;justify-content:center;margin-top:8px;" onclick="saveTickerEvents()">Save Ticker</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ANALYTICS -->
+        <div id="section-analytics" class="admin-section" style="display:none;">
+          <div class="sec-head">
+            <div><div class="sec-title">Analytics</div><div class="sec-sub">Platform-wide intelligence dashboard</div></div>
+            <span class="badge badge--draft">Coming Phase 4</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+            <div class="analytics-placeholder"><div class="analytics-placeholder-icon">📈</div><div class="analytics-placeholder-title">Platform Visits Over Time</div><div class="analytics-placeholder-sub">Requires Supabase + tracking integration</div></div>
+            <div class="analytics-placeholder"><div class="analytics-placeholder-icon">📱</div><div class="analytics-placeholder-title">QR Scan Heatmap</div><div class="analytics-placeholder-sub">Per-venue scan tracking coming Phase 2</div></div>
+            <div class="analytics-placeholder"><div class="analytics-placeholder-icon">🛒</div><div class="analytics-placeholder-title">Order Volume</div><div class="analytics-placeholder-sub">Real-time order tracking coming Phase 2</div></div>
+            <div class="analytics-placeholder"><div class="analytics-placeholder-icon">⬡</div><div class="analytics-placeholder-title">Trust Score Trends</div><div class="analytics-placeholder-sub">AI model integration coming Phase 4</div></div>
+          </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div id="section-settings" class="admin-section" style="display:none;">
+          <div class="sec-head">
+            <div><div class="sec-title">Settings</div><div class="sec-sub">Platform configuration</div></div>
+          </div>
+          <div style="max-width:560px;display:flex;flex-direction:column;gap:20px;">
+            <div class="card">
+              <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:18px;">Account</div>
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                <div class="field"><label class="input-label">Super Admin Email</label><input class="input" type="email" value="teams@snyf.co.in"></div>
+                <div class="field"><label class="input-label">Current Password</label><input class="input" type="password" placeholder="••••••••"></div>
+                <div class="field"><label class="input-label">New Password</label><input class="input" type="password" placeholder="New password"></div>
+                <button class="btn btn--primary btn--sm" style="align-self:flex-start;" onclick="showToast('✓ Credentials updated','success')">Update Credentials</button>
+              </div>
+            </div>
+            <div class="card">
+              <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:18px;">Platform</div>
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                <div class="field"><label class="input-label">Platform Name</label><input class="input" type="text" value="Snyf"></div>
+                <div class="field"><label class="input-label">Tagline</label><input class="input" type="text" value="Trust Intelligence for Local Discovery"></div>
+              </div>
+              <div style="margin-top:18px;display:flex;flex-direction:column;gap:10px;">
+                <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">Feature Flags</div>
+                <div class="toggle-wrap"><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label><span class="toggle-label">Commons page enabled</span></div>
+                <div class="toggle-wrap"><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label><span class="toggle-label">Discover page enabled</span></div>
+                <div class="toggle-wrap"><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label><span class="toggle-label">Ordering enabled</span></div>
+                <div class="toggle-wrap"><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label><span class="toggle-label">Field reports enabled</span></div>
+              </div>
+              <button class="btn btn--primary btn--sm" style="margin-top:18px;align-self:flex-start;" onclick="showToast('✓ Platform settings saved','success')">Save Platform Settings</button>
+            </div>
+            <div class="card">
+              <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:18px;">Integrations</div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);"><div><div style="font-weight:600;font-size:13px;">Supabase</div><div style="font-size:11px;color:var(--muted);">Database + Auth</div></div><span class="badge badge--draft">Not Connected</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);"><div><div style="font-weight:600;font-size:13px;">Netlify</div><div style="font-size:11px;color:var(--muted);">Hosting + Functions</div></div><span class="badge badge--active">Connected</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;"><div><div style="font-weight:600;font-size:13px;">Resend</div><div style="font-size:11px;color:var(--muted);">Email / OTP</div></div><span class="badge badge--draft">Not Connected</span></div>
+              </div>
+            </div>
+            <div class="danger-zone">
+              <div class="danger-zone-title">⚠ Danger Zone</div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn btn--danger btn--sm" onclick="showToast('Export triggered','info')">Export All Data as JSON</button>
+                <button class="btn btn--danger btn--sm" onclick="showToast('⚠ Action requires confirmation','error')">Clear All Field Reports</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ADD VENUE MODAL -->
+<div class="modal-overlay" id="add-venue-modal">
+  <div class="modal" style="position:relative;max-width:580px;">
+    <button class="modal-close" onclick="closeModal('add-venue-modal')">×</button>
+    <div class="modal-title">Add New Venue</div>
+    <div class="modal-sub">Fill in the details. Venue page + admin access auto-generated on submit.</div>
+    <div class="step-bar">
+      <div class="step-dot active" id="av-dot-1"></div>
+      <div class="step-line"></div>
+      <div class="step-dot" id="av-dot-2"></div>
+    </div>
+    <div class="step-labels"><span>Basic Info</span><span>Trust Scores</span></div>
+
+    <div id="av-step-1">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="field"><label class="input-label">Venue Name</label><input class="input" type="text" id="av-name" placeholder="Blue Tokai Coffee Roasters" oninput="autoSlug()"></div>
+        <div class="field"><label class="input-label">Slug <span style="color:var(--dim);font-size:10px;">(auto-generated)</span></label><input class="input" type="text" id="av-slug" placeholder="blue-tokai"></div>
+        <div class="field"><label class="input-label">Zone</label><select class="select" id="av-zone"><option value="">Select zone</option><option>Cyber Hub</option><option>Sector 29</option><option>DLF Phase 4</option><option>Khan Market</option><option>Sushant Lok</option></select></div>
+        <div class="field"><label class="input-label">Category</label><select class="select" id="av-category"><option value="">Select category</option><option>Café</option><option>Restaurant</option><option>Bar</option></select></div>
+        <div class="field" style="grid-column:1/-1;"><label class="input-label">Description</label><textarea class="input" id="av-desc" rows="2" placeholder="What makes this place unique..."></textarea></div>
+        <div class="field" style="grid-column:1/-1;"><label class="input-label">One-liner tagline</label><input class="input" type="text" id="av-tagline" placeholder="e.g. NCR's best specialty coffee"></div>
+      </div>
+      <div id="av-url-preview" style="margin-top:14px;font-family:var(--mono);font-size:11px;color:var(--muted);background:rgba(246,245,242,0.03);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;display:none;">
+        Venue URL: <span id="av-url-text" style="color:var(--cyan);"></span><br>
+        Admin URL: <span id="av-admin-url-text" style="color:var(--mint);"></span>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:20px;">
+        <button class="btn btn--primary" onclick="avNextStep()">Continue →</button>
+      </div>
+    </div>
+
+    <div id="av-step-2" style="display:none;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6;">Set initial trust scores manually. These will be overridden by real field reports over time.</div>
+      <div id="av-trust-sliders" style="margin-bottom:16px;"></div>
+      <div class="field" style="margin-bottom:16px;"><label class="input-label">Verified Visit Count <span style="color:var(--dim)">(initial)</span></label><input class="input" type="number" id="av-visits" placeholder="e.g. 50" min="0"></div>
+      <div class="field" style="margin-bottom:16px;"><label class="input-label">Score Source Note <span style="color:var(--dim)">(internal)</span></label><input class="input" type="text" id="av-score-note" placeholder="e.g. Based on personal visit + early beta reports"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:20px;">
+        <button class="btn btn--ghost" onclick="avPrevStep()">← Back</button>
+        <button class="btn btn--primary" onclick="submitNewVenue()">Create Venue →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VENUE CREATED MODAL -->
+<div class="modal-overlay" id="venue-created-modal">
+  <div class="modal" style="position:relative;max-width:460px;">
+    <div class="modal-title" style="color:var(--mint);">✓ Venue Created</div>
+    <div class="modal-sub">Save these credentials now — password will not be shown again.</div>
+    <div class="cred-box" id="new-venue-creds" style="margin-bottom:20px;"></div>
+    <div style="background:rgba(217,122,74,0.07);border:1px solid rgba(217,122,74,0.2);border-radius:var(--r-md);padding:12px 14px;font-size:12px;color:var(--orange);margin-bottom:20px;">⚠ This is the only time the password will be shown. Copy it now.</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn--primary" style="flex:1;justify-content:center;" onclick="closeModal('venue-created-modal');navTo('venues',document.querySelector('[data-section=venues]'))">Go to Venues</button>
+      <button class="btn btn--ghost btn--sm" onclick="closeModal('venue-created-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MENU ITEM MODAL -->
+<div class="modal-overlay" id="add-menu-modal">
+  <div class="modal" style="position:relative;">
+    <button class="modal-close" onclick="closeModal('add-menu-modal')">×</button>
+    <div class="modal-title">Add Menu Item</div>
+    <div class="modal-sub">Item will appear on the venue's ordering page.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="field" style="grid-column:1/-1;"><label class="input-label">Item Name</label><input class="input" type="text" id="mi-name" placeholder="e.g. Signature Flat White"></div>
+      <div class="field" style="grid-column:1/-1;"><label class="input-label">Description</label><textarea class="input" id="mi-desc" rows="2" placeholder="Short description..."></textarea></div>
+      <div class="field"><label class="input-label">Price (₹)</label><input class="input" type="number" id="mi-price" placeholder="280" min="0"></div>
+      <div class="field"><label class="input-label">Category</label><select class="select" id="mi-category"><option>Coffee</option><option>Food</option><option>Snacks</option><option>Cold Drinks</option><option>Breakfast</option><option>Desserts</option></select></div>
+      <div class="field" style="grid-column:1/-1;"><label class="input-label">Photo URL</label><input class="input" type="url" id="mi-photo" placeholder="https://images.unsplash.com/..."></div>
+      <div class="field"><label class="input-label">Tag</label><select class="select" id="mi-tag"><option value="">None</option><option>Bestseller</option><option>Popular</option><option>Veg</option><option>Chef's Pick</option></select></div>
+      <div class="field"><label class="input-label">Available</label><div class="toggle-wrap" style="margin-top:8px;"><label class="toggle"><input type="checkbox" id="mi-available" checked><span class="toggle-slider"></span></label><span class="toggle-label">Available for ordering</span></div></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
+      <button class="btn btn--ghost" onclick="closeModal('add-menu-modal')">Cancel</button>
+      <button class="btn btn--primary" onclick="saveMenuItem()">Add Item</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ADMIN_EMAIL    = 'teams@snyf.co.in';
+const ADMIN_PASSWORD = 'Snyf@1234';
+
+const VENUES_DATA = [
+  { id:1, name:'Blue Tokai Coffee Roasters', slug:'blue-tokai', zone:'Cyber Hub', category:'Café', desc:"Single-origin coffee roasted in-house. NCR's most consistent flat white.", tagline:"NCR's best specialty coffee", status:'active', created:'2026-05-01', scores:{food:8.8,ambience:9.1,service:8.2,value:7.4,wait:6.1}, visits:312, scoreSource:'Manual Override', scoreNote:'Based on personal visit + 12 early reports', scoreLocked:false, username:'blue-tokai_admin', password:'BT@secure1' },
+  { id:2, name:'Nook Café', slug:'nook-cafe', zone:'Sector 29', category:'Café', desc:'Hidden gem. Best value breakfast in Sector 29.', tagline:'Best value breakfast in Sector 29', status:'active', created:'2026-05-03', scores:{food:9.0,ambience:7.6,service:8.4,value:9.1,wait:8.2}, visits:318, scoreSource:'Manual Override', scoreNote:'Based on team visit + beta users', scoreLocked:false, username:'nook-cafe_admin', password:'NC@secure1' },
+];
+
+const REPORTS_DATA = [
+  { id:1, venue:'Blue Tokai Coffee Roasters', reviewer:'@rk_explorer', score:8.6, note:'Genuinely great flat white. Crowded on weekends.', trustLevel:'Anchor', date:'2h ago', status:'verified', flagged:false },
+  { id:2, venue:'Nook Café', reviewer:'@aditya_g', score:9.1, note:'Best croissant in NCR. No frills but worth it.', trustLevel:'Verified', date:'4h ago', status:'verified', flagged:false },
+  { id:3, venue:'Blue Tokai Coffee Roasters', reviewer:'@anon_user', score:4.2, note:null, trustLevel:'Scout', date:'6h ago', status:'unverified', flagged:true },
+  { id:4, venue:'Nook Café', reviewer:'@priya_m', score:8.8, note:'Service is fast and food is consistent.', trustLevel:'Explorer', date:'1d ago', status:'verified', flagged:false },
+  { id:5, venue:'Blue Tokai Coffee Roasters', reviewer:'@anon_user2', score:4.9, note:null, trustLevel:'Scout', date:'2d ago', status:'unverified', flagged:true },
+];
+
+const MENU_DATA = {
+  'blue-tokai': [
+    { id:'bt1', name:'Signature Flat White', category:'Coffee', price:280, tag:'Bestseller', available:true, img:'☕' },
+    { id:'bt2', name:'Single Origin Pour Over', category:'Coffee', price:320, tag:"Chef's Pick", available:true, img:'☕' },
+    { id:'bt3', name:'Avocado Toast', category:'Food', price:380, tag:'Popular', available:true, img:'🥑' },
+    { id:'bt4', name:'Cold Brew', category:'Cold Drinks', price:250, tag:null, available:true, img:'🧊' },
+    { id:'bt5', name:'Banana Bread', category:'Snacks', price:180, tag:null, available:false, img:'🍞' },
+  ],
+  'nook-cafe': [
+    { id:'nc1', name:'Butter Croissant', category:'Breakfast', price:140, tag:'Bestseller', available:true, img:'🥐' },
+    { id:'nc2', name:'Masala Chai Latte', category:'Coffee', price:160, tag:'Popular', available:true, img:'🍵' },
+    { id:'nc3', name:'Avocado Toast', category:'Breakfast', price:280, tag:'Veg', available:true, img:'🥑' },
+    { id:'nc4', name:'Filter Coffee', category:'Coffee', price:120, tag:null, available:true, img:'☕' },
+  ],
+};
+
+const WAITLIST_DATA = [
+  { id:1, name:'Rahul Sharma', email:'rahul@gmail.com', type:'user', date:'2026-05-20', status:'new' },
+  { id:2, name:'Café Bloom', email:'owner@cafebloom.in', type:'business', date:'2026-05-20', status:'new' },
+  { id:3, name:'Priya Mehta', email:'priya@outlook.com', type:'user', date:'2026-05-19', status:'contacted' },
+  { id:4, name:'The Brew House', email:'info@brewhouse.com', type:'business', date:'2026-05-19', status:'new' },
+  { id:5, name:'Aditya Gupta', email:'aditya@gmail.com', type:'user', date:'2026-05-18', status:'new' },
+  { id:6, name:'Neha K', email:'neha@yahoo.com', type:'user', date:'2026-05-17', status:'contacted' },
+];
+
+const ACTIVITY_DATA = [
+  { type:'mint',   icon:'✓', text:'Nook Café trust scores updated',               time:'2m ago' },
+  { type:'cyan',   icon:'◈', text:'New field report — Blue Tokai',                time:'14m ago' },
+  { type:'orange', icon:'⚠', text:'Anomaly flagged — anon_user review',           time:'28m ago' },
+  { type:'gold',   icon:'◈', text:'Business waitlist signup — Café Bloom',        time:'1h ago' },
+  { type:'mint',   icon:'✓', text:'Blue Tokai QR scanned · Table visit',          time:'2h ago' },
+  { type:'cyan',   icon:'◈', text:'New field report — Nook Café',                 time:'3h ago' },
+  { type:'orange', icon:'⚠', text:'Flagged report — score anomaly detected',      time:'5h ago' },
+  { type:'mint',   icon:'✓', text:'Venue created — Nook Café',                    time:'2d ago' },
+  { type:'mint',   icon:'✓', text:'Venue created — Blue Tokai',                   time:'3d ago' },
+  { type:'gold',   icon:'◈', text:'Super admin login',                             time:'3d ago' },
+];
+
+const TICKER_EVENTS_DATA = [
+  '✓ Blue Tokai, Cyber Hub — trust score updated',
+  '◈ Nook Café, Sector 29 — Snyf partner · verified',
+  '⚠ Suspicious spike detected — flagged for review',
+  '◈ New partner onboarding — DLF Phase 4 · coming soon',
+  '✓ 318 verified visits indexed — Nook Café',
+];
+
+const SCORE_HISTORY = [
+  { dim:'Food Quality', old:'8.5', new:'8.8', source:'Manual Override', date:'2026-05-01', note:'Personal visit' },
+  { dim:'Ambience',     old:'8.9', new:'9.1', source:'Manual Override', date:'2026-05-01', note:'Personal visit' },
+  { dim:'Waiting Time', old:'6.8', new:'6.1', source:'Manual Override', date:'2026-05-10', note:'Multiple reports indicate longer waits' },
+];
+
+const DIMS = [
+  { key:'food',     label:'Food Quality' },
+  { key:'ambience', label:'Ambience' },
+  { key:'service',  label:'Service Quality' },
+  { key:'value',    label:'Value for Money' },
+  { key:'wait',     label:'Waiting Time' },
+];
+
+let currentVenueId    = null;
+let avStep            = 1;
+let avScores          = { food:7.5, ambience:7.5, service:7.5, value:7.5, wait:7.5 };
+let venueStatusFilter = 'all';
+let venueZoneFilter   = 'all';
+
+// LOGIN
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-password').value;
+  const err   = document.getElementById('login-error');
+  if (email === ADMIN_EMAIL && pass === ADMIN_PASSWORD) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-app').style.display = 'flex';
+    initAdminApp();
+  } else {
+    err.style.display = 'block';
+    document.getElementById('login-password').value = '';
+    setTimeout(() => err.style.display = 'none', 3000);
+  }
+}
+
+function toggleLoginPass() {
+  const inp = document.getElementById('login-password');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function doLogout() {
+  document.getElementById('admin-app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  ['login-password','login-email'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  });
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); });
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => closeModal(m.id));
+  });
+});
+
+// INIT
+function initAdminApp() {
+  renderActivityFeed();
+  renderOverviewVenues();
+  renderVenuesTable();
+  renderAllReports();
+  renderWaitlist();
+  renderDiscoverControl();
+  renderTickerEditor();
+  initAddVenueSliders();
+}
+
+// NAV
+function navTo(section, btnEl) {
+  document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
+  const target = document.getElementById('section-' + section);
+  if (target) target.style.display = 'block';
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active-nav'));
+  if (btnEl) btnEl.classList.add('active-nav');
+  const titles = { overview:'Overview', venues:'Venues', reports:'Field Reports', qr:'QR Codes', waitlist:'Waitlist', discover:'Discover Control', analytics:'Analytics', settings:'Settings' };
+  document.getElementById('topbar-title').textContent = titles[section] || section;
+  if (section === 'venues') showVenueList();
+}
+
+// TABS
+function switchTab(panelId, btn) {
+  const container = btn.closest('.tabs').parentElement;
+  container.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+  btn.classList.add('active');
+}
+
+// HELPERS
+function calcOverall(s) {
+  return (s.food*0.3 + s.ambience*0.2 + s.service*0.2 + s.value*0.2 + s.wait*0.1).toFixed(1);
+}
+
+// OVERVIEW
+function renderActivityFeed() {
+  const feed = document.getElementById('activity-feed');
+  if (!feed) return;
+  feed.innerHTML = ACTIVITY_DATA.map(a => `
+    <div class="activity-item">
+      <div class="activity-icon activity-icon--${a.type}">${a.icon}</div>
+      <div>
+        <div class="activity-text">${a.text}</div>
+        <div class="activity-time">${a.time}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderOverviewVenues() {
+  const tbody = document.getElementById('overview-venues-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = VENUES_DATA.map(v => `
+    <tr>
+      <td style="font-weight:700;">${v.name}</td>
+      <td><span style="font-family:var(--mono);font-size:10px;color:var(--muted);">${v.zone}</span></td>
+      <td><span style="font-family:var(--mono);font-weight:700;color:var(--cyan);">${calcOverall(v.scores)}/10</span></td>
+      <td><span class="badge badge--${v.status}">${v.status}</span></td>
+      <td style="color:var(--muted);font-size:12px;">Today</td>
+      <td class="tbl-actions">
+        <button class="btn btn--xs btn--ghost" onclick="navTo('venues',document.querySelector('[data-section=venues]'));setTimeout(()=>openVenueDetail(${v.id}),50)">Edit</button>
+        <a href="../${v.slug}/index.html" target="_blank" class="btn btn--xs btn--cyan">View ↗</a>
+        <button class="btn btn--xs btn--ghost" onclick="setQRVenue('${v.slug}');navTo('qr',document.querySelector('[data-section=qr]'))">QR</button>
+      </td>
+    </tr>`).join('');
+}
+
+// VENUES TABLE
+function renderVenuesTable() {
+  const tbody  = document.getElementById('venues-tbody');
+  if (!tbody) return;
+  const search = (document.getElementById('venues-search')?.value || '').toLowerCase();
+  const filtered = VENUES_DATA.filter(v => {
+    if (venueStatusFilter !== 'all' && v.status !== venueStatusFilter) return false;
+    if (venueZoneFilter   !== 'all' && v.zone   !== venueZoneFilter)   return false;
+    if (search && !v.name.toLowerCase().includes(search) && !v.slug.includes(search)) return false;
+    return true;
+  });
+  if (!filtered.length) { tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted);">No venues match filters</td></tr>`; return; }
+  tbody.innerHTML = filtered.map((v, i) => `
+    <tr>
+      <td style="color:var(--muted);font-family:var(--mono);font-size:10px;">${String(i+1).padStart(2,'0')}</td>
+      <td style="font-weight:700;">${v.name}</td>
+      <td><span style="font-family:var(--mono);font-size:10px;color:var(--cyan);">/${v.slug}</span></td>
+      <td style="color:var(--muted);font-size:12px;">${v.zone}</td>
+      <td><span style="font-family:var(--mono);font-size:10px;color:var(--muted);">${v.category}</span></td>
+      <td><span style="font-family:var(--mono);font-weight:700;color:var(--cyan);">${calcOverall(v.scores)}/10</span></td>
+      <td><span class="badge badge--manual">${v.scoreSource}</span></td>
+      <td><span class="badge badge--${v.status}">${v.status}</span></td>
+      <td style="color:var(--muted);font-size:11px;font-family:var(--mono);">${v.created}</td>
+      <td class="tbl-actions">
+        <button class="btn btn--xs btn--ghost" onclick="openVenueDetail(${v.id})">Detail</button>
+        <a href="../${v.slug}/index.html" target="_blank" class="btn btn--xs btn--cyan">View ↗</a>
+        <button class="btn btn--xs btn--ghost" onclick="setQRVenue('${v.slug}');navTo('qr',document.querySelector('[data-section=qr]'))">QR</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterVenues() { renderVenuesTable(); }
+
+function setVenueFilter(type, val, btn) {
+  if (type === 'status') { venueStatusFilter = val; document.querySelectorAll('#venue-status-filters .filter-pill').forEach(b => b.classList.remove('active')); }
+  else                   { venueZoneFilter   = val; document.querySelectorAll('#venue-zone-filters .filter-pill').forEach(b => b.classList.remove('active')); }
+  btn.classList.add('active');
+  renderVenuesTable();
+}
+
+function showVenueList() {
+  document.getElementById('venues-list-view').style.display = 'block';
+  document.getElementById('venue-detail-view').style.display = 'none';
+  currentVenueId = null;
+}
+
+function openVenueDetail(id) {
+  const venue = VENUES_DATA.find(v => v.id === id);
+  if (!venue) return;
+  currentVenueId = id;
+  document.getElementById('venues-list-view').style.display = 'none';
+  document.getElementById('venue-detail-view').style.display = 'block';
+
+  document.getElementById('detail-venue-name').textContent = venue.name;
+  document.getElementById('detail-venue-url').textContent  = `snyf.co.in/${venue.slug}`;
+  document.getElementById('detail-view-live').href         = `../${venue.slug}/index.html`;
+  document.getElementById('dt-trust').textContent       = calcOverall(venue.scores) + '/10';
+  document.getElementById('dt-visits').textContent      = venue.visits;
+  document.getElementById('dt-menu-count').textContent  = (MENU_DATA[venue.slug] || []).length;
+  document.getElementById('dt-report-count').textContent = REPORTS_DATA.filter(r => r.venue === venue.name).length;
+
+  document.getElementById('edit-name').value     = venue.name;
+  document.getElementById('edit-slug').value     = venue.slug;
+  document.getElementById('edit-zone').value     = venue.zone;
+  document.getElementById('edit-category').value = venue.category;
+  document.getElementById('edit-desc').value     = venue.desc;
+  document.getElementById('edit-tagline').value  = venue.tagline;
+  document.getElementById('edit-active').checked = venue.status === 'active';
+
+  renderTrustSliders(venue);
+  renderMenuTable(venue);
+  renderVenueReports(venue);
+  renderCredentials(venue);
+  renderScoreHistory();
+
+  document.querySelectorAll('#venue-detail-view .tab-btn').forEach((b,i)   => b.classList.toggle('active', i===0));
+  document.querySelectorAll('#venue-detail-view .tab-panel').forEach((p,i) => p.classList.toggle('active', i===0));
+}
+
+// TRUST SLIDERS
+function renderTrustSliders(venue) {
+  const wrap = document.getElementById('trust-sliders');
+  if (!wrap) return;
+  wrap.innerHTML = DIMS.map(d => `
+    <div class="score-source-row">
+      <span style="font-size:12px;color:var(--muted);">${d.label}</span>
+      <input type="range" class="admin-slider" min="1" max="10" step="0.1" value="${venue.scores[d.key]}"
+        oninput="document.getElementById('ts-val-${d.key}').textContent=parseFloat(this.value).toFixed(1)">
+      <span id="ts-val-${d.key}" style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--cyan);text-align:right;">${venue.scores[d.key].toFixed(1)}</span>
+    </div>`).join('');
+  document.getElementById('trust-reason').value = venue.scoreNote || '';
+  document.getElementById('trust-lock').checked  = venue.scoreLocked || false;
+}
+
+function saveTrustScores() { showToast('✓ Trust scores saved', 'success'); }
+
+// MENU TABLE
+function renderMenuTable(venue) {
+  const tbody = document.getElementById('menu-tbody');
+  if (!tbody) return;
+  const items = MENU_DATA[venue.slug] || [];
+  if (!items.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted);">No menu items yet</td></tr>`; return; }
+  tbody.innerHTML = items.map(item => `
+    <tr>
+      <td style="font-size:1.2rem;">${item.img}</td>
+      <td style="font-weight:600;">${item.name}</td>
+      <td><span style="font-family:var(--mono);font-size:10px;color:var(--muted);">${item.category}</span></td>
+      <td style="font-family:var(--mono);font-weight:700;">₹${item.price}</td>
+      <td>${item.tag ? `<span class="badge badge--verified" style="font-size:8px;">${item.tag}</span>` : '<span style="color:var(--dim);font-size:11px;">—</span>'}</td>
+      <td><div class="toggle-wrap"><label class="toggle"><input type="checkbox" ${item.available?'checked':''} onchange="showToast('Item ${item.available?'disabled':'enabled'}','info')"><span class="toggle-slider"></span></label></div></td>
+      <td class="tbl-actions">
+        <button class="btn btn--xs btn--ghost" onclick="showToast('Edit coming soon','info')">Edit</button>
+        <button class="btn btn--xs btn--danger" onclick="showToast('Item deleted','success')">Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+function openAddMenuModal() { openModal('add-menu-modal'); }
+function saveMenuItem() { closeModal('add-menu-modal'); showToast('✓ Menu item added', 'success'); }
+
+// VENUE REPORTS
+function renderVenueReports(venue) {
+  const tbody = document.getElementById('venue-reports-tbody');
+  if (!tbody) return;
+  const reports = REPORTS_DATA.filter(r => r.venue === venue.name);
+  tbody.innerHTML = reports.map(r => `
+    <tr>
+      <td style="font-family:var(--mono);font-size:11px;">${r.reviewer}</td>
+      <td style="font-family:var(--mono);font-weight:700;color:var(--cyan);">${r.score}/10</td>
+      <td style="font-size:12px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.note ? `"${r.note}"` : '<span style="color:var(--dim)">—</span>'}</td>
+      <td><span class="badge badge--${r.trustLevel==='Anchor'?'verified':r.trustLevel==='Scout'?'inactive':'active'}" style="font-size:8px;">${r.trustLevel}</span></td>
+      <td style="font-size:11px;color:var(--muted);">${r.date}</td>
+      <td>${r.flagged ? '<span class="badge badge--flagged">Flagged</span>' : r.status==='verified' ? '<span class="badge badge--verified">Verified</span>' : '<span class="badge badge--inactive">Unverified</span>'}</td>
+      <td class="tbl-actions">
+        ${!r.flagged ? `<button class="btn btn--xs btn--danger" onclick="flagReport(${r.id})">Flag</button>` : `<button class="btn btn--xs btn--ghost" onclick="unflagReport(${r.id})">Unflag</button>`}
+        <button class="btn btn--xs btn--danger" onclick="deleteReport(${r.id})">Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+// CREDENTIALS
+function renderCredentials(venue) {
+  const box  = document.getElementById('venue-creds-display');
+  const urlEl = document.getElementById('cred-admin-url');
+  if (!box) return;
+  box.innerHTML = `
+    <div class="cred-row"><span class="cred-label">Admin URL</span><span class="cred-value">snyf.co.in/${venue.slug}/admin</span><button class="cred-copy" onclick="copyText('https://snyf.co.in/${venue.slug}/admin')">⧉</button></div>
+    <div class="cred-row"><span class="cred-label">Username</span><span class="cred-value">${venue.username}</span><button class="cred-copy" onclick="copyText('${venue.username}')">⧉</button></div>
+    <div class="cred-row"><span class="cred-label">Password</span><span class="cred-value">${venue.password}</span><button class="cred-copy" onclick="copyText('${venue.password}')">⧉</button></div>`;
+  if (urlEl) urlEl.textContent = `snyf.co.in/${venue.slug}/admin`;
+}
+
+// SCORE HISTORY
+function renderScoreHistory() {
+  const tbody = document.getElementById('score-history-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = SCORE_HISTORY.map(h => `
+    <tr>
+      <td style="font-size:12px;">${h.dim}</td>
+      <td style="font-family:var(--mono);color:var(--muted);">${h.old}</td>
+      <td style="font-family:var(--mono);color:var(--cyan);font-weight:700;">${h.new}</td>
+      <td><span class="badge badge--manual" style="font-size:8px;">${h.source}</span></td>
+      <td style="font-size:11px;color:var(--muted);font-family:var(--mono);">${h.date}</td>
+      <td style="font-size:12px;color:var(--muted);">${h.note}</td>
+    </tr>`).join('');
+}
+
+// ALL REPORTS
+function renderAllReports() {
+  const tbody = document.getElementById('all-reports-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = REPORTS_DATA.map((r,i) => `
+    <tr>
+      <td style="color:var(--muted);font-family:var(--mono);font-size:10px;">${String(i+1).padStart(2,'0')}</td>
+      <td style="font-size:12px;font-weight:600;">${r.venue}</td>
+      <td style="font-family:var(--mono);font-size:11px;">${r.reviewer}</td>
+      <td style="font-family:var(--mono);font-weight:700;color:${parseFloat(r.score)>=7?'var(--cyan)':'var(--orange)'};">${r.score}/10</td>
+      <td style="font-size:12px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.note?`"${r.note}"` : '—'}</td>
+      <td><span class="badge badge--${r.trustLevel==='Anchor'?'verified':r.trustLevel==='Scout'?'inactive':'active'}" style="font-size:8px;">${r.trustLevel}</span></td>
+      <td style="font-size:11px;color:var(--muted);">${r.date}</td>
+      <td>${r.flagged?'<span class="badge badge--flagged">Flagged</span>':r.status==='verified'?'<span class="badge badge--verified">Verified</span>':'<span class="badge badge--inactive">Unverified</span>'}</td>
+      <td class="tbl-actions">
+        ${!r.flagged?`<button class="btn btn--xs btn--danger" onclick="flagReport(${r.id})">Flag</button>`:`<button class="btn btn--xs btn--ghost" onclick="unflagReport(${r.id})">Unflag</button>`}
+        <button class="btn btn--xs btn--danger" onclick="deleteReport(${r.id})">Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+function flagReport(id)   { showToast('⚠ Report flagged', 'error'); }
+function unflagReport(id) { showToast('✓ Report unflagged', 'success'); }
+function deleteReport(id) { showToast('Report deleted', 'info'); }
+
+// WAITLIST
+function renderWaitlist() {
+  const tbody = document.getElementById('waitlist-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = WAITLIST_DATA.map((w,i) => `
+    <tr ${w.type==='business'?'style="background:rgba(212,168,83,0.03);"':''}>
+      <td style="color:var(--muted);font-family:var(--mono);font-size:10px;">${String(i+1).padStart(2,'0')}</td>
+      <td style="font-weight:600;">${w.name}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--muted);">${w.email}</td>
+      <td><span class="badge badge--${w.type}">${w.type==='business'?'🏢 Business':'User'}</span></td>
+      <td style="font-size:11px;color:var(--muted);font-family:var(--mono);">${w.date}</td>
+      <td><span class="badge badge--${w.status==='new'?'active':'inactive'}">${w.status}</span></td>
+      <td class="tbl-actions">
+        <button class="btn btn--xs btn--ghost" onclick="markContacted(${w.id})">Mark Contacted</button>
+        ${w.type==='business'?`<button class="btn btn--xs btn--cyan">Convert to Venue</button>`:''}
+      </td>
+    </tr>`).join('');
+}
+
+function markContacted(id) {
+  const entry = WAITLIST_DATA.find(w => w.id === id);
+  if (entry) { entry.status = 'contacted'; renderWaitlist(); }
+  showToast('✓ Marked as contacted', 'success');
+}
+
+// DISCOVER CONTROL
+function renderDiscoverControl() {
+  const list = document.getElementById('discover-order-list');
+  if (!list) return;
+  list.innerHTML = VENUES_DATA.map((v,i) => `
+    <div class="discover-item" draggable="true" data-id="${v.id}">
+      <span class="discover-drag-handle">⠿</span>
+      <div style="flex:1;"><div class="discover-item-name">${v.name}</div><div class="discover-item-zone">${v.zone} · ${v.category}</div></div>
+      <div class="toggle-wrap">
+        <label class="toggle"><input type="checkbox" checked onchange="showToast('Discover visibility updated','info')"><span class="toggle-slider"></span></label>
+        <span class="toggle-label" style="font-size:11px;">Visible</span>
+      </div>
+      <button class="btn btn--xs btn--ghost" style="margin-left:8px;" onclick="showToast('${i===0?'Already featured':'✓ Venue featured'}','${i===0?'info':'success'}')">${i===0?'★ Featured':'☆ Feature'}</button>
+    </div>`).join('');
+}
+
+// TICKER EDITOR
+function renderTickerEditor() {
+  const list = document.getElementById('ticker-events-list');
+  if (!list) return;
+  list.innerHTML = TICKER_EVENTS_DATA.map(ev => `
+    <div style="display:flex;gap:6px;align-items:center;">
+      <input class="input" type="text" value="${ev}" style="flex:1;font-size:11px;padding:7px 10px;">
+      <button class="btn btn--xs btn--danger" onclick="this.closest('div').remove()">✕</button>
+    </div>`).join('');
+}
+
+function addTickerEvent() {
+  const list = document.getElementById('ticker-events-list');
+  const div  = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:6px;align-items:center;';
+  div.innerHTML = `<input class="input" type="text" placeholder="New ticker event..." style="flex:1;font-size:11px;padding:7px 10px;"><button class="btn btn--xs btn--danger" onclick="this.closest('div').remove()">✕</button>`;
+  list.appendChild(div);
+}
+
+function saveTickerEvents() { showToast('✓ Ticker events saved', 'success'); }
+
+// ADD VENUE MODAL
+function initAddVenueSliders() {
+  const wrap = document.getElementById('av-trust-sliders');
+  if (!wrap) return;
+  wrap.innerHTML = DIMS.map(d => `
+    <div class="score-source-row">
+      <span style="font-size:12px;color:var(--muted);">${d.label}</span>
+      <input type="range" class="admin-slider" min="1" max="10" step="0.1" value="7.5"
+        oninput="document.getElementById('avs-${d.key}').textContent=parseFloat(this.value).toFixed(1);avScores['${d.key}']=parseFloat(this.value);">
+      <span id="avs-${d.key}" style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--cyan);text-align:right;min-width:32px;">7.5</span>
+    </div>`).join('');
+}
+
+function openAddVenueModal() {
+  avStep = 1;
+  document.getElementById('av-step-1').style.display = 'block';
+  document.getElementById('av-step-2').style.display = 'none';
+  document.getElementById('av-name').value = '';
+  document.getElementById('av-slug').value = '';
+  document.getElementById('av-url-preview').style.display = 'none';
+  updateStepDots(1);
+  openModal('add-venue-modal');
+}
+
+function autoSlug() {
+  const name = document.getElementById('av-name').value;
+  const slug = name.toLowerCase().trim().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-');
+  document.getElementById('av-slug').value = slug;
+  const preview = document.getElementById('av-url-preview');
+  if (slug) {
+    preview.style.display = 'block';
+    document.getElementById('av-url-text').textContent       = `snyf.co.in/${slug}`;
+    document.getElementById('av-admin-url-text').textContent = `snyf.co.in/${slug}/admin`;
+  } else { preview.style.display = 'none'; }
+}
+
+function avNextStep() {
+  const name = document.getElementById('av-name').value.trim();
+  const slug = document.getElementById('av-slug').value.trim();
+  const zone = document.getElementById('av-zone').value;
+  const cat  = document.getElementById('av-category').value;
+  if (!name || !slug || !zone || !cat) { showToast('⚠ Fill in all required fields', 'error'); return; }
+  avStep = 2;
+  document.getElementById('av-step-1').style.display = 'none';
+  document.getElementById('av-step-2').style.display = 'block';
+  updateStepDots(2);
+}
+
+function avPrevStep() {
+  avStep = 1;
+  document.getElementById('av-step-1').style.display = 'block';
+  document.getElementById('av-step-2').style.display = 'none';
+  updateStepDots(1);
+}
+
+function updateStepDots(step) {
+  document.getElementById('av-dot-1').className = `step-dot ${step > 1 ? 'done' : 'active'}`;
+  document.getElementById('av-dot-2').className = `step-dot ${step >= 2 ? 'active' : ''}`;
+}
+
+function submitNewVenue() {
+  const name   = document.getElementById('av-name').value.trim();
+  const slug   = document.getElementById('av-slug').value.trim();
+  const zone   = document.getElementById('av-zone').value;
+  const cat    = document.getElementById('av-category').value;
+  const desc   = document.getElementById('av-desc').value.trim();
+  const tag    = document.getElementById('av-tagline').value.trim();
+  const visits = parseInt(document.getElementById('av-visits').value) || 0;
+  const username = `${slug}_admin`;
+  const password = generatePassword();
+
+  const newVenue = { id: VENUES_DATA.length + 1, name, slug, zone, category:cat, desc, tagline:tag, status:'active', created: new Date().toISOString().split('T')[0], scores:{...avScores}, visits, scoreSource:'Manual Override', scoreNote:document.getElementById('av-score-note').value.trim(), scoreLocked:false, username, password };
+  VENUES_DATA.push(newVenue);
+  MENU_DATA[slug] = [];
+  closeModal('add-venue-modal');
+
+  const credsBox = document.getElementById('new-venue-creds');
+  credsBox.innerHTML = `
+    <div class="cred-row"><span class="cred-label">Venue URL</span><span class="cred-value">snyf.co.in/${slug}</span><button class="cred-copy" onclick="copyText('https://snyf.co.in/${slug}')">⧉</button></div>
+    <div class="cred-row"><span class="cred-label">Admin URL</span><span class="cred-value">snyf.co.in/${slug}/admin</span><button class="cred-copy" onclick="copyText('https://snyf.co.in/${slug}/admin')">⧉</button></div>
+    <div class="cred-row"><span class="cred-label">Username</span><span class="cred-value">${username}</span><button class="cred-copy" onclick="copyText('${username}')">⧉</button></div>
+    <div class="cred-row"><span class="cred-label">Password</span><span class="cred-value" style="color:var(--gold);">${password}</span><button class="cred-copy" onclick="copyText('${password}')">⧉</button></div>`;
+
+  openModal('venue-created-modal');
+  renderVenuesTable();
+  renderOverviewVenues();
+  renderDiscoverControl();
+
+  const sel = document.getElementById('qr-venue-select');
+  if (sel) { const opt = document.createElement('option'); opt.value = slug; opt.textContent = name; sel.appendChild(opt); }
+  showToast(`✓ ${name} created successfully`, 'success');
+}
+
+function generatePassword() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#';
+  let pass = '';
+  for (let i = 0; i < 10; i++) pass += chars[Math.floor(Math.random() * chars.length)];
+  return pass;
+}
+
+// QR CODES
+function setQRVenue(slug) {
+  const sel = document.getElementById('qr-venue-select');
+  if (sel) { sel.value = slug; updateQRPreview(); }
+}
+
+function updateQRPreview() {
+  const slug     = document.getElementById('qr-venue-select').value;
+  const urlPrev  = document.getElementById('qr-url-preview');
+  const mockDisp = document.getElementById('qr-mock-display');
+  const label    = document.getElementById('qr-venue-label-display');
+  const hint     = document.getElementById('qr-hint-display');
+  if (!slug) {
+    urlPrev.style.display = 'none'; mockDisp.textContent = 'Select a venue to preview QR code';
+    label.style.display = 'none'; hint.style.display = 'none'; return;
+  }
+  const venue = VENUES_DATA.find(v => v.slug === slug);
+  urlPrev.style.display = 'block';
+  urlPrev.textContent   = `https://snyf.co.in/${slug}`;
+  label.style.display   = 'block';
+  hint.style.display    = 'block';
+  label.textContent     = venue ? venue.name.toUpperCase() : slug.toUpperCase();
+  mockDisp.innerHTML    = `<div style="font-size:28px;margin-bottom:8px;">▦</div><div style="font-size:8px;line-height:1.5;">QR → snyf.co.in/${slug}<br><br>Integrate qrcode.js<br>for real output</div>`;
+}
+
+function openQRForVenue() {
+  const venue = VENUES_DATA.find(v => v.id === currentVenueId);
+  if (venue) { setQRVenue(venue.slug); navTo('qr', document.querySelector('[data-section=qr]')); }
+}
+
+function downloadQR(format) {
+  const slug = document.getElementById('qr-venue-select').value;
+  if (!slug) { showToast('⚠ Select a venue first', 'error'); return; }
+  showToast(`↓ QR download triggered (${format.toUpperCase()}) — integrate qrcode.js for real output`, 'info');
+}
+
+// VENUE DETAIL ACTIONS
+function saveVenueInfo() { showToast('✓ Venue info saved', 'success'); }
+
+function resetCredentials() {
+  const newPass = generatePassword();
+  showToast(`✓ Credentials reset — new password: ${newPass}`, 'success');
+}
+
+function deactivateVenue() {
+  const venue = VENUES_DATA.find(v => v.id === currentVenueId);
+  if (venue) { venue.status = 'inactive'; renderVenuesTable(); renderOverviewVenues(); }
+  showToast('Venue deactivated', 'info');
+}
+
+function deleteVenueConfirm() {
+  const venue = VENUES_DATA.find(v => v.id === currentVenueId);
+  if (!venue) return;
+  const confirm = window.prompt(`Type the venue name to confirm deletion:\n"${venue.name}"`);
+  if (confirm === venue.name) {
+    VENUES_DATA.splice(VENUES_DATA.indexOf(venue), 1);
+    renderVenuesTable(); renderOverviewVenues(); showVenueList();
+    showToast('Venue deleted', 'error');
+  } else if (confirm !== null) {
+    showToast('⚠ Name did not match — deletion cancelled', 'error');
+  }
+}
+
+// MODAL HELPERS
+function openModal(id)  { document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
+
+// TOAST
+let toastTimeout;
+function showToast(msg, type = 'info') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = `toast toast--${type} show`;
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// CLIPBOARD
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('✓ Copied to clipboard', 'success')).catch(() => showToast('Copy failed — try manually', 'error'));
+}
+</script>
+</body>
+</html>
