@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="../supabase.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Snyf Admin</title>
@@ -800,12 +802,12 @@
 const ADMIN_EMAIL    = 'teams@snyf.co.in';
 const ADMIN_PASSWORD = 'Snyf@1234';
 
-const VENUES_DATA = [
+let VENUES_DATA = [
   { id:1, name:'Blue Tokai Coffee Roasters', slug:'blue-tokai', zone:'Cyber Hub', category:'Café', desc:"Single-origin coffee roasted in-house. NCR's most consistent flat white.", tagline:"NCR's best specialty coffee", status:'active', created:'2026-05-01', scores:{food:8.8,ambience:9.1,service:8.2,value:7.4,wait:6.1}, visits:312, scoreSource:'Manual Override', scoreNote:'Based on personal visit + 12 early reports', scoreLocked:false, username:'blue-tokai_admin', password:'BT@secure1' },
   { id:2, name:'Nook Café', slug:'nook-cafe', zone:'Sector 29', category:'Café', desc:'Hidden gem. Best value breakfast in Sector 29.', tagline:'Best value breakfast in Sector 29', status:'active', created:'2026-05-03', scores:{food:9.0,ambience:7.6,service:8.4,value:9.1,wait:8.2}, visits:318, scoreSource:'Manual Override', scoreNote:'Based on team visit + beta users', scoreLocked:false, username:'nook-cafe_admin', password:'NC@secure1' },
 ];
 
-const REPORTS_DATA = [
+let REPORTS_DATA = [
   { id:1, venue:'Blue Tokai Coffee Roasters', reviewer:'@rk_explorer', score:8.6, note:'Genuinely great flat white. Crowded on weekends.', trustLevel:'Anchor', date:'2h ago', status:'verified', flagged:false },
   { id:2, venue:'Nook Café', reviewer:'@aditya_g', score:9.1, note:'Best croissant in NCR. No frills but worth it.', trustLevel:'Verified', date:'4h ago', status:'verified', flagged:false },
   { id:3, venue:'Blue Tokai Coffee Roasters', reviewer:'@anon_user', score:4.2, note:null, trustLevel:'Scout', date:'6h ago', status:'unverified', flagged:true },
@@ -813,7 +815,7 @@ const REPORTS_DATA = [
   { id:5, venue:'Blue Tokai Coffee Roasters', reviewer:'@anon_user2', score:4.9, note:null, trustLevel:'Scout', date:'2d ago', status:'unverified', flagged:true },
 ];
 
-const MENU_DATA = {
+let MENU_DATA = {
   'blue-tokai': [
     { id:'bt1', name:'Signature Flat White', category:'Coffee', price:280, tag:'Bestseller', available:true, img:'☕' },
     { id:'bt2', name:'Single Origin Pour Over', category:'Coffee', price:320, tag:"Chef's Pick", available:true, img:'☕' },
@@ -829,7 +831,7 @@ const MENU_DATA = {
   ],
 };
 
-const WAITLIST_DATA = [
+let WAITLIST_DATA = [
   { id:1, name:'Rahul Sharma', email:'rahul@gmail.com', type:'user', date:'2026-05-20', status:'new' },
   { id:2, name:'Café Bloom', email:'owner@cafebloom.in', type:'business', date:'2026-05-20', status:'new' },
   { id:3, name:'Priya Mehta', email:'priya@outlook.com', type:'user', date:'2026-05-19', status:'contacted' },
@@ -838,7 +840,7 @@ const WAITLIST_DATA = [
   { id:6, name:'Neha K', email:'neha@yahoo.com', type:'user', date:'2026-05-17', status:'contacted' },
 ];
 
-const ACTIVITY_DATA = [
+let ACTIVITY_DATA = [
   { type:'mint',   icon:'✓', text:'Nook Café trust scores updated',               time:'2m ago' },
   { type:'cyan',   icon:'◈', text:'New field report — Blue Tokai',                time:'14m ago' },
   { type:'orange', icon:'⚠', text:'Anomaly flagged — anon_user review',           time:'28m ago' },
@@ -851,7 +853,7 @@ const ACTIVITY_DATA = [
   { type:'gold',   icon:'◈', text:'Super admin login',                             time:'3d ago' },
 ];
 
-const TICKER_EVENTS_DATA = [
+let TICKER_EVENTS_DATA = [
   '✓ Blue Tokai, Cyber Hub — trust score updated',
   '◈ Nook Café, Sector 29 — Snyf partner · verified',
   '⚠ Suspicious spike detected — flagged for review',
@@ -859,7 +861,7 @@ const TICKER_EVENTS_DATA = [
   '✓ 318 verified visits indexed — Nook Café',
 ];
 
-const SCORE_HISTORY = [
+let SCORE_HISTORY = [
   { dim:'Food Quality', old:'8.5', new:'8.8', source:'Manual Override', date:'2026-05-01', note:'Personal visit' },
   { dim:'Ambience',     old:'8.9', new:'9.1', source:'Manual Override', date:'2026-05-01', note:'Personal visit' },
   { dim:'Waiting Time', old:'6.8', new:'6.1', source:'Manual Override', date:'2026-05-10', note:'Multiple reports indicate longer waits' },
@@ -872,6 +874,116 @@ const DIMS = [
   { key:'value',    label:'Value for Money' },
   { key:'wait',     label:'Waiting Time' },
 ];
+
+function mapVenueFromRow(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    zone: row.zone,
+    category: row.category,
+    desc: row.description || '',
+    tagline: row.tagline || '',
+    status: row.status || 'active',
+    created: row.created_at ? row.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+    scores: {
+      food: parseFloat(row.score_food) || 5.0,
+      ambience: parseFloat(row.score_ambience) || 5.0,
+      service: parseFloat(row.score_service) || 5.0,
+      value: parseFloat(row.score_value) || 5.0,
+      wait: parseFloat(row.score_wait) || 5.0
+    },
+    visits: parseInt(row.verified_count) || 0,
+    scoreSource: row.score_source || 'Algorithm',
+    scoreNote: row.score_note || '',
+    scoreLocked: row.score_locked || false,
+    username: row.username || `${row.slug}_admin`,
+    password: row.password || 'password123'
+  };
+}
+
+function mapReportFromRow(row) {
+  const overall = (
+    ((row.food||5)*0.3) + ((row.ambience||5)*0.2) +
+    ((row.service||5)*0.2) + ((row.value||5)*0.2) + ((row.wait_time||5)*0.1)
+  );
+  return {
+    id: row.id,
+    venue: row.venue_name || 'Unknown Venue',
+    reviewer: row.reviewer || '@anonymous',
+    score: parseFloat(overall.toFixed(1)),
+    note: row.note || '',
+    trustLevel: row.trust_level || 'Scout',
+    date: row.created_at ? snyfTimeAgo(row.created_at) : 'recently',
+    status: row.verified ? 'verified' : 'unverified',
+    flagged: row.flagged || false
+  };
+}
+
+function mapWaitlistFromRow(row) {
+  return {
+    id: row.id,
+    name: row.name || 'Anonymous',
+    email: row.email,
+    type: row.type || 'user',
+    date: row.created_at ? row.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+    status: row.status || 'new'
+  };
+}
+
+function generateActivityFeedFromData() {
+  const feed = [];
+  
+  // Add waitlist signups
+  WAITLIST_DATA.slice(0, 5).forEach(w => {
+    feed.push({
+      type: 'gold',
+      icon: '◈',
+      text: `${w.type === 'business' ? 'Business' : 'User'} waitlist signup — ${w.email.split('@')[0]}`,
+      timestamp: w.date ? new Date(w.date) : new Date(),
+      timeStr: w.date ? formatTimeAgo(w.date) : 'recently'
+    });
+  });
+
+  // Add field reports
+  REPORTS_DATA.slice(0, 5).forEach(r => {
+    feed.push({
+      type: 'cyan',
+      icon: '◈',
+      text: `New field report — ${r.venue} (${r.reviewer})`,
+      timestamp: r.date ? new Date(r.date) : new Date(),
+      timeStr: r.date ? formatTimeAgo(r.date) : 'recently'
+    });
+  });
+
+  // Sort by timestamp desc and map to ACTIVITY_DATA
+  feed.sort((a, b) => b.timestamp - a.timestamp);
+  if (feed.length > 0) {
+    ACTIVITY_DATA = feed.slice(0, 10).map(item => ({
+      type: item.type,
+      icon: item.icon,
+      text: item.text,
+      time: item.timeStr
+    }));
+  }
+}
+
+function formatTimeAgo(dateStr) {
+  const date = new Date(dateStr);
+  const seconds = Math.floor((new Date() - date) / 1000);
+  if (isNaN(seconds)) return 'recently';
+  let interval = Math.floor(seconds / 31536000);
+  if (interval >= 1) return interval + 'y ago';
+  interval = Math.floor(seconds / 2592000);
+  if (interval >= 1) return interval + 'mo ago';
+  interval = Math.floor(seconds / 86400);
+  if (interval >= 1) return interval + 'd ago';
+  interval = Math.floor(seconds / 3600);
+  if (interval >= 1) return interval + 'h ago';
+  interval = Math.floor(seconds / 60);
+  if (interval >= 1) return interval + 'm ago';
+  return 'just now';
+}
 
 let currentVenueId    = null;
 let avStep            = 1;
@@ -920,7 +1032,90 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // INIT
-function initAdminApp() {
+async function initAdminApp() {
+  showToast('Loading data from Supabase...', 'info');
+  try {
+    // 1. Fetch Venues
+    const { data: dbVenues, error: venuesErr } = await db
+      .from('venues')
+      .select('*');
+    
+    if (venuesErr) throw venuesErr;
+    if (dbVenues && dbVenues.length > 0) {
+      VENUES_DATA = dbVenues.map(mapVenueFromRow);
+      // Initialize menu lists
+      VENUES_DATA.forEach(v => {
+        if (!MENU_DATA[v.slug]) MENU_DATA[v.slug] = [];
+      });
+    }
+
+    // 2. Fetch Menu Items
+    try {
+      const { data: dbMenuItems, error: menuErr } = await db
+        .from('menu_items')
+        .select('*');
+      if (!menuErr && dbMenuItems && dbMenuItems.length > 0) {
+        // Clear dynamic menus for venues we loaded
+        VENUES_DATA.forEach(v => {
+          MENU_DATA[v.slug] = [];
+        });
+        dbMenuItems.forEach(item => {
+          const venue = VENUES_DATA.find(v => v.id === item.venue_id);
+          if (venue) {
+            MENU_DATA[venue.slug].push({
+              id: item.id,
+              name: item.name,
+              category: item.category,
+              price: parseFloat(item.price) || 0,
+              tag: item.tag || null,
+              available: item.available !== false,
+              img: item.img || item.image_url || '☕'
+            });
+          }
+        });
+      }
+    } catch (menuErr) {
+      console.warn('menu_items table fetch skipped or failed:', menuErr);
+    }
+
+    // 3. Fetch Reports
+    try {
+      const { data: dbReports, error: reportsErr } = await db
+        .from('field_reports')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (!reportsErr && dbReports && dbReports.length > 0) {
+        REPORTS_DATA = dbReports.map(mapReportFromRow);
+      }
+    } catch (reportsErr) {
+      console.warn('field_reports fetch failed:', reportsErr);
+    }
+
+    // 4. Fetch Waitlist
+    try {
+      const { data: dbWaitlist, error: waitlistErr } = await db
+        .from('waitlist')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (!waitlistErr && dbWaitlist && dbWaitlist.length > 0) {
+        WAITLIST_DATA = dbWaitlist.map(mapWaitlistFromRow);
+      }
+    } catch (waitlistErr) {
+      console.warn('waitlist fetch failed:', waitlistErr);
+    }
+
+    // 5. Generate Activity Feed
+    generateActivityFeedFromData();
+
+    showToast('✓ Data synchronized with Supabase', 'success');
+  } catch (err) {
+    console.error('Supabase initialization failed, using mock data:', err);
+    showToast('⚠ Using offline mock data', 'warning');
+  }
+
+  // Render UIs
   renderActivityFeed();
   renderOverviewVenues();
   renderVenuesTable();
@@ -1083,7 +1278,54 @@ function renderTrustSliders(venue) {
   document.getElementById('trust-lock').checked  = venue.scoreLocked || false;
 }
 
-function saveTrustScores() { showToast('✓ Trust scores saved', 'success'); }
+async function saveTrustScores() {
+  const venue = VENUES_DATA.find(v => v.id === currentVenueId);
+  if (!venue) {
+    showToast('⚠ No active venue selected', 'error');
+    return;
+  }
+
+  // Read the new scores from the sliders
+  const updatedScores = {};
+  DIMS.forEach(d => {
+    const slider = document.querySelector(`#trust-sliders input[oninput*="ts-val-${d.key}"]`);
+    if (slider) {
+      updatedScores[d.key] = parseFloat(slider.value);
+    } else {
+      updatedScores[d.key] = venue.scores[d.key];
+    }
+  });
+
+  const scoreNote = document.getElementById('trust-reason').value.trim();
+  const scoreLocked = document.getElementById('trust-lock').checked;
+
+  try {
+    const { error } = await db
+      .from('venues')
+      .update({
+        score_food: updatedScores.food,
+        score_ambience: updatedScores.ambience,
+        score_service: updatedScores.service,
+        score_value: updatedScores.value,
+        score_wait: updatedScores.wait,
+        score_note: scoreNote,
+        score_locked: scoreLocked
+      })
+      .eq('id', currentVenueId);
+
+    if (error) throw error;
+
+    // Update locally
+    venue.scores = updatedScores;
+    venue.scoreNote = scoreNote;
+    venue.scoreLocked = scoreLocked;
+
+    showToast('✓ Trust scores saved', 'success');
+  } catch (err) {
+    dbError('saveTrustScores', err);
+    showToast('⚠ Failed to save trust scores', 'error');
+  }
+}
 
 // MENU TABLE
 function renderMenuTable(venue) {
@@ -1098,16 +1340,106 @@ function renderMenuTable(venue) {
       <td><span style="font-family:var(--mono);font-size:10px;color:var(--muted);">${item.category}</span></td>
       <td style="font-family:var(--mono);font-weight:700;">₹${item.price}</td>
       <td>${item.tag ? `<span class="badge badge--verified" style="font-size:8px;">${item.tag}</span>` : '<span style="color:var(--dim);font-size:11px;">—</span>'}</td>
-      <td><div class="toggle-wrap"><label class="toggle"><input type="checkbox" ${item.available?'checked':''} onchange="showToast('Item ${item.available?'disabled':'enabled'}','info')"><span class="toggle-slider"></span></label></div></td>
+      <td><div class="toggle-wrap"><label class="toggle"><input type="checkbox" ${item.available?'checked':''} onchange="toggleMenuItemAvailability('${item.id}', this.checked)"><span class="toggle-slider"></span></label></div></td>
       <td class="tbl-actions">
         <button class="btn btn--xs btn--ghost" onclick="showToast('Edit coming soon','info')">Edit</button>
-        <button class="btn btn--xs btn--danger" onclick="showToast('Item deleted','success')">Delete</button>
+        <button class="btn btn--xs btn--danger" onclick="deleteMenuItem('${item.id}', '${venue.slug}')">Delete</button>
       </td>
     </tr>`).join('');
 }
 
 function openAddMenuModal() { openModal('add-menu-modal'); }
-function saveMenuItem() { closeModal('add-menu-modal'); showToast('✓ Menu item added', 'success'); }
+
+async function saveMenuItem() {
+  const name = document.getElementById('mi-name').value.trim();
+  const desc = document.getElementById('mi-desc').value.trim();
+  const price = parseFloat(document.getElementById('mi-price').value) || 0;
+  const category = document.getElementById('mi-category').value;
+  const photo = document.getElementById('mi-photo').value.trim();
+  const tag = document.getElementById('mi-tag').value || null;
+  const available = document.getElementById('mi-available').checked;
+
+  const venue = VENUES_DATA.find(v => v.id === currentVenueId);
+  if (!venue) {
+    showToast('⚠ No active venue selected', 'error');
+    return;
+  }
+
+  try {
+    const newItem = {
+      venue_id: currentVenueId,
+      name,
+      description: desc,
+      price,
+      category,
+      image_url: photo,
+      tag,
+      available
+    };
+
+    const { data, error } = await db
+      .from('menu_items')
+      .insert(newItem)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    if (!MENU_DATA[venue.slug]) MENU_DATA[venue.slug] = [];
+    MENU_DATA[venue.slug].push({
+      id: data.id,
+      name,
+      category,
+      price,
+      tag,
+      available,
+      img: photo || '☕'
+    });
+
+    closeModal('add-menu-modal');
+    renderMenuTable(venue);
+    showToast('✓ Menu item added', 'success');
+  } catch (err) {
+    dbError('saveMenuItem', err);
+    showToast('⚠ Failed to add menu item', 'error');
+  }
+}
+
+async function toggleMenuItemAvailability(itemId, available) {
+  try {
+    const { error } = await db
+      .from('menu_items')
+      .update({ available })
+      .eq('id', itemId);
+
+    if (error) throw error;
+    showToast(`Item ${available ? 'enabled' : 'disabled'}`, 'info');
+  } catch (err) {
+    dbError('toggleMenuItemAvailability', err);
+    showToast('⚠ Failed to update availability', 'error');
+  }
+}
+
+async function deleteMenuItem(itemId, venueSlug) {
+  try {
+    const { error } = await db
+      .from('menu_items')
+      .delete()
+      .eq('id', itemId);
+
+    if (error) throw error;
+
+    if (MENU_DATA[venueSlug]) {
+      MENU_DATA[venueSlug] = MENU_DATA[venueSlug].filter(item => item.id !== itemId);
+    }
+    const venue = VENUES_DATA.find(v => v.slug === venueSlug);
+    if (venue) renderMenuTable(venue);
+    showToast('Item deleted', 'success');
+  } catch (err) {
+    dbError('deleteMenuItem', err);
+    showToast('⚠ Failed to delete item', 'error');
+  }
+}
 
 // VENUE REPORTS
 function renderVenueReports(venue) {
@@ -1177,9 +1509,56 @@ function renderAllReports() {
     </tr>`).join('');
 }
 
-function flagReport(id)   { showToast('⚠ Report flagged', 'error'); }
-function unflagReport(id) { showToast('✓ Report unflagged', 'success'); }
-function deleteReport(id) { showToast('Report deleted', 'info'); }
+async function flagReport(id) {
+  try {
+    const { error } = await db
+      .from('field_reports')
+      .update({ flagged: true })
+      .eq('id', id);
+    if (error) throw error;
+    const r = REPORTS_DATA.find(x => x.id === id);
+    if (r) { r.flagged = true; }
+    renderAllReports();
+    showToast('⚠ Report flagged', 'error');
+  } catch (err) {
+    dbError('flagReport', err);
+    showToast('⚠ Failed to flag report', 'error');
+  }
+}
+
+async function unflagReport(id) {
+  try {
+    const { error } = await db
+      .from('field_reports')
+      .update({ flagged: false })
+      .eq('id', id);
+    if (error) throw error;
+    const r = REPORTS_DATA.find(x => x.id === id);
+    if (r) { r.flagged = false; }
+    renderAllReports();
+    showToast('✓ Report unflagged', 'success');
+  } catch (err) {
+    dbError('unflagReport', err);
+    showToast('⚠ Failed to unflag report', 'error');
+  }
+}
+
+async function deleteReport(id) {
+  try {
+    const { error } = await db
+      .from('field_reports')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    const idx = REPORTS_DATA.findIndex(x => x.id === id);
+    if (idx !== -1) { REPORTS_DATA.splice(idx, 1); }
+    renderAllReports();
+    showToast('Report deleted', 'info');
+  } catch (err) {
+    dbError('deleteReport', err);
+    showToast('⚠ Failed to delete report', 'error');
+  }
+}
 
 // WAITLIST
 function renderWaitlist() {
@@ -1200,10 +1579,22 @@ function renderWaitlist() {
     </tr>`).join('');
 }
 
-function markContacted(id) {
-  const entry = WAITLIST_DATA.find(w => w.id === id);
-  if (entry) { entry.status = 'contacted'; renderWaitlist(); }
-  showToast('✓ Marked as contacted', 'success');
+async function markContacted(id) {
+  try {
+    const { error } = await db
+      .from('waitlist')
+      .update({ status: 'contacted' })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    const entry = WAITLIST_DATA.find(w => w.id === id);
+    if (entry) { entry.status = 'contacted'; renderWaitlist(); }
+    showToast('✓ Marked as contacted', 'success');
+  } catch (err) {
+    dbError('markContacted', err);
+    showToast('⚠ Failed to update status', 'error');
+  }
 }
 
 // DISCOVER CONTROL
@@ -1303,7 +1694,7 @@ function updateStepDots(step) {
   document.getElementById('av-dot-2').className = `step-dot ${step >= 2 ? 'active' : ''}`;
 }
 
-function submitNewVenue() {
+async function submitNewVenue() {
   const name   = document.getElementById('av-name').value.trim();
   const slug   = document.getElementById('av-slug').value.trim();
   const zone   = document.getElementById('av-zone').value;
@@ -1314,26 +1705,60 @@ function submitNewVenue() {
   const username = `${slug}_admin`;
   const password = generatePassword();
 
-  const newVenue = { id: VENUES_DATA.length + 1, name, slug, zone, category:cat, desc, tagline:tag, status:'active', created: new Date().toISOString().split('T')[0], scores:{...avScores}, visits, scoreSource:'Manual Override', scoreNote:document.getElementById('av-score-note').value.trim(), scoreLocked:false, username, password };
-  VENUES_DATA.push(newVenue);
-  MENU_DATA[slug] = [];
-  closeModal('add-venue-modal');
+  const newVenueDb = {
+    name,
+    slug,
+    zone,
+    category: cat,
+    description: desc,
+    tagline: tag,
+    status: 'active',
+    score_food: avScores.food,
+    score_ambience: avScores.ambience,
+    score_service: avScores.service,
+    score_value: avScores.value,
+    score_wait: avScores.wait,
+    verified_count: visits,
+    score_source: 'Manual Override',
+    score_note: document.getElementById('av-score-note').value.trim() || '',
+    score_locked: false,
+    username,
+    password
+  };
 
-  const credsBox = document.getElementById('new-venue-creds');
-  credsBox.innerHTML = `
-    <div class="cred-row"><span class="cred-label">Venue URL</span><span class="cred-value">snyf.co.in/${slug}</span><button class="cred-copy" onclick="copyText('https://snyf.co.in/${slug}')">⧉</button></div>
-    <div class="cred-row"><span class="cred-label">Admin URL</span><span class="cred-value">snyf.co.in/${slug}/admin</span><button class="cred-copy" onclick="copyText('https://snyf.co.in/${slug}/admin')">⧉</button></div>
-    <div class="cred-row"><span class="cred-label">Username</span><span class="cred-value">${username}</span><button class="cred-copy" onclick="copyText('${username}')">⧉</button></div>
-    <div class="cred-row"><span class="cred-label">Password</span><span class="cred-value" style="color:var(--gold);">${password}</span><button class="cred-copy" onclick="copyText('${password}')">⧉</button></div>`;
+  try {
+    const { data: inserted, error } = await db
+      .from('venues')
+      .insert(newVenueDb)
+      .select()
+      .single();
 
-  openModal('venue-created-modal');
-  renderVenuesTable();
-  renderOverviewVenues();
-  renderDiscoverControl();
+    if (error) throw error;
 
-  const sel = document.getElementById('qr-venue-select');
-  if (sel) { const opt = document.createElement('option'); opt.value = slug; opt.textContent = name; sel.appendChild(opt); }
-  showToast(`✓ ${name} created successfully`, 'success');
+    const mapped = mapVenueFromRow(inserted);
+    VENUES_DATA.push(mapped);
+    MENU_DATA[slug] = [];
+    closeModal('add-venue-modal');
+
+    const credsBox = document.getElementById('new-venue-creds');
+    credsBox.innerHTML = `
+      <div class="cred-row"><span class="cred-label">Venue URL</span><span class="cred-value">snyf.co.in/${slug}</span><button class="cred-copy" onclick="copyText('https://snyf.co.in/${slug}')">⧉</button></div>
+      <div class="cred-row"><span class="cred-label">Admin URL</span><span class="cred-value">snyf.co.in/${slug}/admin</span><button class="cred-copy" onclick="copyText('https://snyf.co.in/${slug}/admin')">⧉</button></div>
+      <div class="cred-row"><span class="cred-label">Username</span><span class="cred-value">${username}</span><button class="cred-copy" onclick="copyText('${username}')">⧉</button></div>
+      <div class="cred-row"><span class="cred-label">Password</span><span class="cred-value" style="color:var(--gold);">${password}</span><button class="cred-copy" onclick="copyText('${password}')">⧉</button></div>`;
+
+    openModal('venue-created-modal');
+    renderVenuesTable();
+    renderOverviewVenues();
+    renderDiscoverControl();
+
+    const sel = document.getElementById('qr-venue-select');
+    if (sel) { const opt = document.createElement('option'); opt.value = slug; opt.textContent = name; sel.appendChild(opt); }
+    showToast(`✓ ${name} created successfully`, 'success');
+  } catch (err) {
+    dbError('submitNewVenue', err);
+    showToast('Failed to save venue to database', 'error');
+  }
 }
 
 function generatePassword() {

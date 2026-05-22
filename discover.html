@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="supabase.js"></script>
   <!-- Google tag (gtag.js) GA4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-6BGX89GGJK"></script>
   <script>
@@ -575,56 +577,61 @@
 
   <script>
   // ── VENUE DATA ────────────────────────────────────────────────
-  const VENUES = [
-    {
-      slug:     'blue-tokai',
-      name:     'Blue Tokai Coffee Roasters',
-      zone:     'Cyber Hub',
-      category: 'Café',
-      desc:     'Specialty single-origin coffee roasted in-house. NCR\'s most consistent flat white. Minimal interiors, serious beans, zero pretension.',
-      vibes:    ['Specialty Coffee', 'Work-friendly', 'Minimal', 'Morning spot'],
-      hours:    'Open · 8AM – 10PM',
-      isOpen:   true,
-      scores: {
-        food:     8.8,
-        ambience: 9.1,
-        service:  8.2,
-        value:    7.4,
-        wait:     6.1,
-      },
-      images: [
-        'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&q=80',
-        'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=80',
-        'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80',
-        'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=600&q=80',
-      ],
-      page: 'blue-tokai/index.html',
-    },
-    {
-      slug:     'nook-cafe',
-      name:     'Nook Café',
-      zone:     'Sector 29',
-      category: 'Café',
-      desc:     'Hidden gem tucked behind the main strip. Exceptional croissants, the best value breakfast in Sector 29, and a space that actually lets you think.',
-      vibes:    ['Hidden gem', 'Best value', 'Quiet', 'Breakfast'],
-      hours:    'Open · 9AM – 9PM',
-      isOpen:   true,
-      scores: {
-        food:     9.0,
-        ambience: 7.6,
-        service:  8.4,
-        value:    9.1,
-        wait:     8.2,
-      },
-      images: [
-        'https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?w=600&q=80',
-        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80',
-        'https://images.unsplash.com/photo-1521017432531-fbd92d768814?w=600&q=80',
-        'https://images.unsplash.com/photo-1525193612562-0ec53b0e5d7c?w=600&q=80',
-      ],
-      page: 'nook-cafe/index.html',
-    },
-  ];
+  let VENUES = [];
+
+  async function loadVenues() {
+    try {
+      const { data, error } = await db
+        .from('venues')
+        .select(`
+          id, slug, name, zone, category, description, tagline,
+          show_on_discover, featured, sort_order, hours,
+          score_food, score_ambience, score_service, score_value, score_wait,
+          venue_photos ( url, sort_order, alt_text )
+        `)
+        .eq('status', 'active')
+        .eq('show_on_discover', true)
+        .order('sort_order', { ascending: true });
+
+      if (error) throw error;
+
+      VENUES = (data || []).map(v => ({
+        slug:     v.slug,
+        name:     v.name,
+        zone:     v.zone     || '',
+        category: v.category || '',
+        desc:     v.description || '',
+        tagline:  v.tagline  || '',
+        isOpen:   true,
+        hours:    v.hours    || 'Check venue for hours',
+        vibes:    [],
+        scores:   { 
+          food: parseFloat(v.score_food) || 5.0, 
+          ambience: parseFloat(v.score_ambience) || 5.0, 
+          service: parseFloat(v.score_service) || 5.0, 
+          value: parseFloat(v.score_value) || 5.0, 
+          wait: parseFloat(v.score_wait) || 5.0 
+        },
+        images:   (v.venue_photos || [])
+                    .sort((a, b) => a.sort_order - b.sort_order)
+                    .map(p => p.url)
+                    .filter(Boolean),
+        page:     `${v.slug}/index.html`,
+        featured: v.featured || false,
+      }));
+
+      const statEl = document.getElementById('stat-venues');
+      const verEl  = document.getElementById('stat-verified-venues');
+      if (statEl) statEl.textContent = VENUES.length;
+      if (verEl)  verEl.textContent  = VENUES.length;
+
+      renderGrid();
+
+    } catch (err) {
+      dbError('loadVenues', err);
+      dbFallback('dv-grid', 'Could not load venues. Check your connection.');
+    }
+  }
 
   // ── STATE ─────────────────────────────────────────────────────
   let activeCategory = 'all';
@@ -888,23 +895,20 @@
     const ticker = document.getElementById('dv-ticker');
     if (!ticker) return;
 
+    // Static ticker — update manually or connect to ticker_events table later
     const events = [
-      '✓ Blue Tokai, Cyber Hub — Snyf partner · verified',
-      '◈ Nook Café, Sector 29 — Snyf partner · verified',
-      '✓ Trust scores updated — Blue Tokai · 8.6/10',
-      '◈ New partner onboarding — DLF Phase 4 · coming soon',
-      '✓ Nook Café — 318 verified visits indexed',
-      '◈ QR scans active — all partner tables',
-      '✓ Snyf intelligence layer — all venues verified',
-      '◈ Partner network growing — 2 venues live',
+      { text: '✓ Snyf partner venues — NCR · Gurugram',   type: 'ok'  },
+      { text: '◈ New venue onboarding underway',           type: 'new' },
+      { text: '✓ Trust intelligence layer — active',       type: 'ok'  },
+      { text: '◈ Field reports — community powered',       type: 'new' },
+      { text: '✓ QR scanning active at partner venues',    type: 'ok'  },
     ];
 
     const doubled = [...events, ...events];
-    ticker.innerHTML = doubled.map(e => {
-      const isNew = e.startsWith('◈');
-      return `<span class="ch-tick-item ${isNew ? 'ch-tick--new' : 'ch-tick--ok'}">${e}</span>
-              <span class="ch-tick-sep">·</span>`;
-    }).join('');
+    ticker.innerHTML = doubled.map(e =>
+      `<span class="ch-tick-item ch-tick--${e.type}">${e.text}</span>
+       <span class="ch-tick-sep">·</span>`
+    ).join('');
   }
 
   // ── FILTER BINDINGS ───────────────────────────────────────────
@@ -945,7 +949,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     sessionStorage.setItem('snyf_visited', 'true');
     initTicker();
-    renderGrid();
+    loadVenues();
 
     // ── Custom Cybernetic Cursor Tracking ───────────────────────────
     (function () {

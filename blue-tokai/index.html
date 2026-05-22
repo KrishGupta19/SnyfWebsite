@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="../supabase.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1486,92 +1488,181 @@
   // ══════════════════════════════════════════
   // VENUE DATA — Change this block per venue
   // ══════════════════════════════════════════
-  const VENUE_DATA = {
-    name:     'Blue Tokai Coffee Roasters',
-    logoLetter: 'B',
-    tags:     'Specialty Coffee · Cyber Hub · Café',
-    desc:     'Single-origin coffee roasted in-house. NCR\'s most consistent flat white. Minimal interiors, serious beans, zero pretension.',
-    heroImg:  'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&q=80',
-    scores: {
-      food:     8.8,
-      ambience: 9.1,
-      service:  8.2,
-      value:    7.4,
-      wait:     6.1,
+  // ══════════════════════════════════════════
+  // VENUE DATA — Dynamic loader + hardcoded fallbacks
+  // ══════════════════════════════════════════
+  const HARDCODED_FALLBACK_CATEGORIES = ['Recommended', 'Coffee', 'Food', 'Snacks', 'Cold Drinks'];
+  const HARDCODED_FALLBACK_MENU = [
+    {
+      id: 'bt1',
+      name: 'Signature Flat White',
+      desc: 'Double ristretto with steamed whole milk. Our most ordered drink.',
+      price: 280,
+      category: 'Coffee',
+      tag: 'Bestseller',
+      img: 'https://images.unsplash.com/photo-1504630083234-14187a9df0f5?w=600&q=80',
     },
-    verifiedCount: '312 verified visits',
-    categories: ['Recommended', 'Coffee', 'Food', 'Snacks', 'Cold Drinks'],
-    menu: [
-      {
-        id: 'bt1',
-        name: 'Signature Flat White',
-        desc: 'Double ristretto with steamed whole milk. Our most ordered drink.',
-        price: 280,
-        category: 'Coffee',
-        tag: 'Bestseller',
-        img: 'https://images.unsplash.com/photo-1504630083234-14187a9df0f5?w=600&q=80',
-      },
-      {
-        id: 'bt2',
-        name: 'Single Origin Pour Over',
-        desc: 'Rotating single-origin beans, brewed to order. Ask your barista.',
-        price: 320,
-        category: 'Coffee',
-        tag: "Chef's Pick",
-        img: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80',
-      },
-      {
-        id: 'bt3',
-        name: 'Cold Brew',
-        desc: '16-hour slow cold brew. Smooth, chocolatey, zero bitterness.',
-        price: 250,
-        category: 'Cold Drinks',
-        img: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=600&q=80',
-      },
-      {
-        id: 'bt4',
-        name: 'Avocado Toast',
-        desc: 'Sourdough, smashed avocado, poached egg, chilli flakes.',
-        price: 380,
-        category: 'Food',
-        tag: 'Popular',
-        img: 'https://images.unsplash.com/photo-1541519227354-08fa5d50c820?w=600&q=80',
-      },
-      {
-        id: 'bt5',
-        name: 'Banana Bread',
-        desc: 'House-baked. Served warm with butter.',
-        price: 180,
-        category: 'Snacks',
-        img: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=600&q=80',
-      },
-      {
-        id: 'bt6',
-        name: 'Classic Cappuccino',
-        desc: 'Espresso, steamed milk, velvety microfoam.',
-        price: 240,
-        category: 'Coffee',
-        img: 'https://images.unsplash.com/photo-1534778101976-62847782c213?w=600&q=80',
-      },
-      {
-        id: 'bt7',
-        name: 'Croissant',
-        desc: 'Imported butter, 72-hour lamination. Served fresh.',
-        price: 160,
-        category: 'Snacks',
-        tag: 'Veg',
-        img: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&q=80',
-      },
-      {
-        id: 'bt8',
-        name: 'Iced Latte',
-        desc: 'Double shot espresso over ice, oat milk on the side.',
-        price: 290,
-        category: 'Cold Drinks',
-        img: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&q=80',
-      },
-    ],
-  };
+    {
+      id: 'bt2',
+      name: 'Single Origin Pour Over',
+      desc: 'Rotating single-origin beans, brewed to order. Ask your barista.',
+      price: 320,
+      category: 'Coffee',
+      tag: "Chef's Pick",
+      img: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80',
+    },
+    {
+      id: 'bt3',
+      name: 'Cold Brew',
+      desc: '16-hour slow cold brew. Smooth, chocolatey, zero bitterness.',
+      price: 250,
+      category: 'Cold Drinks',
+      img: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=600&q=80',
+    },
+    {
+      id: 'bt4',
+      name: 'Avocado Toast',
+      desc: 'Sourdough, smashed avocado, poached egg, chilli flakes.',
+      price: 380,
+      category: 'Food',
+      tag: 'Popular',
+      img: 'https://images.unsplash.com/photo-1541519227354-08fa5d50c820?w=600&q=80',
+    },
+    {
+      id: 'bt5',
+      name: 'Banana Bread',
+      desc: 'House-baked. Served warm with butter.',
+      price: 180,
+      category: 'Snacks',
+      img: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=600&q=80',
+    },
+    {
+      id: 'bt6',
+      name: 'Classic Cappuccino',
+      desc: 'Espresso, steamed milk, velvety microfoam.',
+      price: 240,
+      category: 'Coffee',
+      img: 'https://images.unsplash.com/photo-1534778101976-62847782c213?w=600&q=80',
+    },
+    {
+      id: 'bt7',
+      name: 'Croissant',
+      desc: 'Imported butter, 72-hour lamination. Served fresh.',
+      price: 160,
+      category: 'Snacks',
+      tag: 'Veg',
+      img: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&q=80',
+    },
+    {
+      id: 'bt8',
+      name: 'Iced Latte',
+      desc: 'Double shot espresso over ice, oat milk on the side.',
+      price: 290,
+      category: 'Cold Drinks',
+      img: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&q=80',
+    },
+  ];
+
+  let VENUE_DATA = null;
+
+  async function loadVenueDetails() {
+    const slug = window.location.pathname.split('/').filter(Boolean).pop() || 'blue-tokai';
+    try {
+      const { data: row, error } = await db
+        .from('venues')
+        .select('*')
+        .eq('slug', slug)
+        .eq('status', 'active')
+        .single();
+      if (error) throw error;
+      if (!row) throw new Error('No active venue found with slug: ' + slug);
+
+      VENUE_DATA = {
+        id: row.id,
+        name: row.name,
+        logoLetter: row.logo_letter || row.name.charAt(0),
+        tags: row.tags || (row.category + ' · ' + row.zone),
+        desc: row.description || row.tagline || '',
+        heroImg: row.hero_img || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&q=80',
+        scores: {
+          food: parseFloat(row.score_food) || 5.0,
+          ambience: parseFloat(row.score_ambience) || 5.0,
+          service: parseFloat(row.score_service) || 5.0,
+          value: parseFloat(row.score_value) || 5.0,
+          wait: parseFloat(row.score_wait) || 5.0,
+        },
+        verifiedCount: `${row.verified_count || 0} verified visits`,
+        categories: HARDCODED_FALLBACK_CATEGORIES,
+        menu: []
+      };
+
+      // Try fetching menu items
+      try {
+        const { data: menuRows, error: menuErr } = await db
+          .from('menu_items')
+          .select('*')
+          .eq('venue_id', row.id);
+        if (!menuErr && menuRows && menuRows.length > 0) {
+          VENUE_DATA.menu = menuRows.map(m => ({
+            id: m.id,
+            name: m.name,
+            desc: m.description || m.desc || '',
+            price: parseFloat(m.price) || 0,
+            category: m.category || 'Coffee',
+            tag: m.tag || null,
+            img: m.image_url || m.img || '☕',
+            available: m.available !== false
+          }));
+          const cats = new Set(['Recommended']);
+          menuRows.forEach(m => { if (m.category) cats.add(m.category); });
+          VENUE_DATA.categories = Array.from(cats);
+        }
+      } catch (me) {
+        console.warn('Failed to load menu items:', me);
+      }
+
+      if (!VENUE_DATA.menu || VENUE_DATA.menu.length === 0) {
+        VENUE_DATA.menu = HARDCODED_FALLBACK_MENU;
+        VENUE_DATA.categories = HARDCODED_FALLBACK_CATEGORIES;
+      }
+    } catch (err) {
+      console.warn('Supabase load failed, using local fallback:', err);
+      VENUE_DATA = {
+        name: 'Blue Tokai Coffee Roasters',
+        logoLetter: 'B',
+        tags: 'Specialty Coffee · Cyber Hub · Café',
+        desc: "Single-origin coffee roasted in-house. NCR's most consistent flat white. Minimal interiors, serious beans, zero pretension.",
+        heroImg: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&q=80',
+        scores: { food: 8.8, ambience: 9.1, service: 8.2, value: 7.4, wait: 6.1 },
+        verifiedCount: '312 verified visits',
+        categories: HARDCODED_FALLBACK_CATEGORIES,
+        menu: HARDCODED_FALLBACK_MENU
+      };
+    }
+    populateUI();
+  }
+
+  function populateUI() {
+    // Populate hero
+    document.getElementById('hero-img').src = VENUE_DATA.heroImg;
+    document.getElementById('hero-img').alt = VENUE_DATA.name;
+    document.getElementById('venue-logo-placeholder').textContent = VENUE_DATA.logoLetter;
+    document.getElementById('venue-name').textContent = VENUE_DATA.name;
+    document.getElementById('venue-tags').textContent = VENUE_DATA.tags;
+    document.getElementById('venue-desc').textContent = VENUE_DATA.desc;
+
+    // Trust score
+    const overall = calcOverall(VENUE_DATA.scores);
+    document.getElementById('trust-score').textContent = overall.toFixed(1);
+    document.getElementById('trust-count').textContent = VENUE_DATA.verifiedCount;
+    renderTrustDims();
+
+    // Category tabs
+    renderCats();
+
+    // Dishes
+    renderDishes();
+  }
 
   // ══════════════════════════════════════════
   // STATE
@@ -1606,28 +1697,11 @@
     const params = new URLSearchParams(window.location.search);
     tableNum = params.get('table');
 
-    // Populate hero
-    document.getElementById('hero-img').src = VENUE_DATA.heroImg;
-    document.getElementById('hero-img').alt = VENUE_DATA.name;
-    document.getElementById('venue-logo-placeholder').textContent = VENUE_DATA.logoLetter;
-    document.getElementById('venue-name').textContent = VENUE_DATA.name;
-    document.getElementById('venue-tags').textContent = VENUE_DATA.tags;
-    document.getElementById('venue-desc').textContent = VENUE_DATA.desc;
-
-    // Trust score
-    const overall = calcOverall(VENUE_DATA.scores);
-    document.getElementById('trust-score').textContent = overall.toFixed(1);
-    document.getElementById('trust-count').textContent = VENUE_DATA.verifiedCount;
-    renderTrustDims();
-
-    // Category tabs
-    renderCats();
-
-    // Dishes
-    renderDishes();
-
     // Ambient track dots (pre-generate)
     renderTrackDots();
+
+    // Load dynamic venue details from Supabase
+    loadVenueDetails();
   });
 
   // ══════════════════════════════════════════
@@ -1941,13 +2015,67 @@
   // ══════════════════════════════════════════
   // ORDER CONFIRMATION + TRACKING
   // ══════════════════════════════════════════
-  function confirmOrder() {
-    // Clear cart
+  async function confirmOrder() {
+    const orderItems = Object.values(cart).map(({ item, qty }) => ({
+      id:    item.id,
+      name:  item.name,
+      price: item.price,
+      qty,
+    }));
+
+    const subtotal = cartTotal();
+    const gst      = Math.round(subtotal * 0.05);
+    const sc       = Math.round(subtotal * 0.05);
+    const total    = subtotal + gst + sc;
+    const instrEl  = document.getElementById('cart-custom-input');
+
+    // Get venue ID from URL slug
+    const slug = window.location.pathname.split('/').filter(Boolean)[0];
+
+    try {
+      const { data: venueRow } = await db
+        .from('venues')
+        .select('id')
+        .eq('slug', slug)
+        .eq('status', 'active')
+        .single();
+
+      if (venueRow?.id) {
+        await db.from('orders').insert({
+          venue_id:             venueRow.id,
+          table_num:            null,
+          items: orderItems,
+          subtotal,
+          gst,
+          service_charge:       sc,
+          total,
+          special_instructions: instrEl?.value?.trim() || null,
+          status:               'received',
+          session_id:           snyfSessionId(),
+          source:               'snyf',
+        });
+
+        // Log visit if not already logged this session
+        if (!sessionStorage.getItem(`snyf_visit_${slug}`)) {
+          await db.from('visits').insert({
+            venue_id:   venueRow.id,
+            session_id: snyfSessionId(),
+            source:     new URLSearchParams(window.location.search).get('src') || 'direct',
+            device:     window.innerWidth <= 768 ? 'mobile' : 'desktop',
+            referrer:   document.referrer || null,
+          });
+          sessionStorage.setItem(`snyf_visit_${slug}`, '1');
+        }
+      }
+    } catch (err) {
+      dbError('confirmOrder', err);
+      // Continue to tracking screen even if save fails
+    }
+
+    // Clear cart and show tracking (existing logic unchanged)
     cart = {};
     updateOrderBar();
     renderDishes();
-
-    // Show tracking screen
     showScreen('screen-track');
     startTracking();
   }

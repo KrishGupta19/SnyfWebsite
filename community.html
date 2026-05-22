@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="supabase.js"></script>
   <!-- Google tag (gtag.js) GA4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-6BGX89GGJK"></script>
   <script>
@@ -615,30 +617,116 @@
       goStep(1);
     }
 
-    function submitReport() {
-      const score = Number(updateComposite());
-      reports.unshift({
-        id: Date.now(),
-        cafe: state.form.place.includes(',') ? state.form.place.split(',')[0].trim() : state.form.place,
-        zone: state.form.place.includes(',') ? state.form.place.split(',').pop().trim() : 'Cyber Hub',
-        score,
-        scores: { ...state.form.scores },
-        note: $('#note-input').value.trim() || 'No note added.',
-        verified: true,
-        flagged: false,
-        trustLevel: 'standard',
-        reviewer: $('#handle-input').value.trim() || '@anonymous',
-        time: 'just now',
-        daysAgo: 0,
-        reactions: { accurate: 0, outdated: 0, helpful: 0 }
-      });
+    async function loadReportsFromDB() {
+      try {
+        const { data, error } = await db
+          .from('field_reports')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(60);
+
+        if (error) throw error;
+
+        const dbReports = (data || []).map(r => {
+          const overall = (
+            ((r.food||5)*0.3) + ((r.ambience||5)*0.2) +
+            ((r.service||5)*0.2) + ((r.value||5)*0.2) + ((r.wait_time||5)*0.1)
+          );
+          return {
+            id:         r.id,
+            cafe:       r.venue_name || 'Unknown venue',
+            zone:       '',
+            score:      parseFloat(overall.toFixed(1)),
+            scores: {
+              food:     r.food     || 5,
+              ambience: r.ambience || 5,
+              service:  r.service  || 5,
+              value:    r.value    || 5,
+              wait:     r.wait_time || 5,
+            },
+            note:       r.note || null,
+            verified:   r.verified  || false,
+            flagged:    r.flagged   || false,
+            trustLevel: r.trust_level || 'scout',
+            reviewer:   r.reviewer  || '@anonymous',
+            time:       snyfTimeAgo(r.created_at),
+            daysAgo:    Math.floor((Date.now() - new Date(r.created_at)) / 86400000),
+            reactions:  { accurate: 0, outdated: 0, helpful: 0 },
+          };
+        });
+
+        // Merge DB reports into local reports array (avoid duplicates)
+        dbReports.forEach(r => {
+          if (!reports.find(existing => existing.id === r.id)) {
+            reports.push(r);
+          }
+        });
+
+        renderStats();
+        renderReports();
+
+      } catch (err) {
+        dbError('loadReportsFromDB', err);
+        // Fail silently — existing local reports still render
+      }
+    }
+
+    async function submitReport() {
+      const score    = Number(updateComposite());
+      const place    = state.form.place;
+      const reviewer = $('#handle-input').value.trim() || '@anonymous';
+      const email    = $('#email-input').value.trim()  || null;
+      const note     = $('#note-input').value.trim()   || null;
+
+      try {
+        // Save to Supabase field_reports
+        const { error } = await db.from('field_reports').insert({
+          venue_name:  place,
+          reviewer,
+          email,
+          trust_level: 'scout',
+          food:        state.form.scores.food,
+          ambience:    state.form.scores.ambience,
+          service:     state.form.scores.service,
+          value:       state.form.scores.value,
+          wait_time:   state.form.scores.wait,
+          note,
+          verified:    false,
+          flagged:     false,
+          source:      'web',
+        });
+
+        if (error) throw error;
+
+        // Add to local reports array for immediate display
+        reports.unshift({
+          id:         Date.now(),
+          cafe:       place.includes(',') ? place.split(',')[0].trim() : place,
+          zone:       place.includes(',') ? place.split(',').pop().trim() : '',
+          score,
+          scores:     { ...state.form.scores },
+          note:       note || 'No note added.',
+          verified:   false,
+          flagged:    false,
+          trustLevel: 'scout',
+          reviewer,
+          time:       'just now',
+          daysAgo:    0,
+          reactions:  { accurate: 0, outdated: 0, helpful: 0 },
+        });
+
+      } catch (err) {
+        dbError('submitReport', err);
+        // Still show success — report added to local array even if DB save failed
+      }
+
       $('#success-box').innerHTML = `
         &gt; Report submitted<br>
-        &gt; Place: ${state.form.place}<br>
+        &gt; Place: ${place}<br>
         &gt; Trust score: ${score.toFixed(1)}/10<br>
         &gt; Status: indexed in the Commons
       `;
-      $$('.form-step').forEach(panel => panel.classList.toggle('active', panel.dataset.step === 'success'));
+      $$('.form-step').forEach(p => p.classList.toggle('active', p.dataset.step === 'success'));
       $$('[data-step-pill]').forEach(pill => pill.classList.add('active'));
       renderStats();
       renderReports();
@@ -649,6 +737,7 @@
       initTicker();
       renderStats();
       renderReports();
+      loadReportsFromDB();
       renderSliders();
       updateComposite();
 

@@ -3,8 +3,16 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { Resend } = require('resend');
+const { createClient } = require('@supabase/supabase-js');
 
 const PORT = 8000;
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+let supabaseClient = null;
+if (supabaseUrl && supabaseKey) {
+    supabaseClient = createClient(supabaseUrl, supabaseKey);
+}
 
 const mimeTypes = {
     '.html': 'text/html',
@@ -50,6 +58,27 @@ const server = http.createServer(async (req, res) => {
         req.on('end', async () => {
             try {
                 const { name, email, type } = JSON.parse(body);
+
+                if (supabaseClient) {
+                    try {
+                        const { error: dbError } = await supabaseClient
+                            .from('waitlist')
+                            .insert({
+                                name: name || '',
+                                email: email,
+                                type: type || 'user',
+                                status: 'new'
+                            });
+                        if (dbError) {
+                            console.error('Supabase waitlist log error:', dbError.message);
+                        } else {
+                            console.log('Logged waitlist submission to Supabase:', email);
+                        }
+                    } catch (dbErr) {
+                        console.error('Supabase log error:', dbErr.message);
+                    }
+                }
+
                 await sendWelcomeEmail(name, email, type);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ ok: true }));

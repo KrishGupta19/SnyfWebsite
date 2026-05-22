@@ -1,4 +1,9 @@
+const { createClient } = require('@supabase/supabase-js');
 const { Resend } = require('resend');
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -11,13 +16,32 @@ exports.handler = async (event) => {
         const { name, email, type } = JSON.parse(event.body);
         const typeLabel = type === 'business' ? 'business partner' : 'early user';
 
+        // Insert into Supabase waitlist table
+        if (supabaseUrl && supabaseKey) {
+            try {
+                const { error: dbError } = await supabase
+                    .from('waitlist')
+                    .insert({
+                        name: name || '',
+                        email: email,
+                        type: type || 'user',
+                        status: 'new'
+                    });
+                if (dbError) {
+                    console.error('Supabase waitlist error:', dbError.message);
+                }
+            } catch (dbErr) {
+                console.error('Supabase connection/execution error:', dbErr.message);
+            }
+        }
+
         const { data, error } = await resend.emails.send({
             from: `Snyf <${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}>`,
             to: email,
             subject: "You're on the Snyf waitlist!",
             html: `
             <div style="font-family: sans-serif; max-width: 560px; margin: auto; color: #1a1a1a;">
-                <h2 style="color: #7c3aed;">Hey ${name}, you're in! 🎉</h2>
+                <h2 style="color: #7c3aed;">Hey ${name || 'there'}, you're in! 🎉</h2>
                 <p>Thanks for joining the Snyf waitlist as a <strong>${typeLabel}</strong>.</p>
                 <p>We're building AI-powered hyperlocal reviews where trust is earned, not bought — and you'll be among the first to experience it.</p>
                 <p>We'll reach out as soon as your spot is ready.</p>
