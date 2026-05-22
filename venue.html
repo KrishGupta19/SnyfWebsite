@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="../supabase.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#F6F5F2">
-  <title>Blue Tokai Coffee Roasters — Snyf</title>
-  <meta name="description" content="Order from Blue Tokai Coffee Roasters on Snyf. Verified trust scores. Real menu. Scan and order.">
-  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <title>Snyf — Venue</title>
+  <meta name="description" content="Order from Snyf-verified venues in NCR.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Oswald:wght@700;900&display=swap" rel="stylesheet">
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="supabase.js"></script>
+
   <style>
+
     /* ── Reset + Base ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1306,10 +1310,11 @@
     .cart-body {
       -webkit-overflow-scrolling: touch;
     }
+  
   </style>
 </head>
-
 <body>
+
   <div class="vp-root">
 
     <!-- Toast notification -->
@@ -1324,7 +1329,7 @@
       <div class="menu-hero">
         <img class="menu-hero-img" id="hero-img" src="" alt="" loading="eager">
         <div class="menu-topbar">
-          <a href="../discover.html" class="menu-back-btn" aria-label="Back to Discover">←</a>
+          <a href="discover.html" class="menu-back-btn" aria-label="Back to Discover">←</a>
           <div class="menu-snyf-badge">✓ Snyf Verified</div>
         </div>
       </div>
@@ -1478,193 +1483,181 @@
 
       <!-- Snyf footer -->
       <div class="vp-footer">
-        Powered by <a href="../index.html">Snyf</a> · Trust Intelligence
+        Powered by <a href="index.html">Snyf</a> · Trust Intelligence
       </div>
     </div>
 
   </div>
 
+  
   <script>
-  // ══════════════════════════════════════════
-  // VENUE DATA — Change this block per venue
-  // ══════════════════════════════════════════
-  // ══════════════════════════════════════════
-  // VENUE DATA — Dynamic loader + hardcoded fallbacks
-  // ══════════════════════════════════════════
-  const HARDCODED_FALLBACK_CATEGORIES = ['Recommended', 'Coffee', 'Food', 'Snacks', 'Cold Drinks'];
-  const HARDCODED_FALLBACK_MENU = [
-    {
-      id: 'bt1',
-      name: 'Signature Flat White',
-      desc: 'Double ristretto with steamed whole milk. Our most ordered drink.',
-      price: 280,
-      category: 'Coffee',
-      tag: 'Bestseller',
-      img: 'https://images.unsplash.com/photo-1504630083234-14187a9df0f5?w=600&q=80',
-    },
-    {
-      id: 'bt2',
-      name: 'Single Origin Pour Over',
-      desc: 'Rotating single-origin beans, brewed to order. Ask your barista.',
-      price: 320,
-      category: 'Coffee',
-      tag: "Chef's Pick",
-      img: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80',
-    },
-    {
-      id: 'bt3',
-      name: 'Cold Brew',
-      desc: '16-hour slow cold brew. Smooth, chocolatey, zero bitterness.',
-      price: 250,
-      category: 'Cold Drinks',
-      img: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=600&q=80',
-    },
-    {
-      id: 'bt4',
-      name: 'Avocado Toast',
-      desc: 'Sourdough, smashed avocado, poached egg, chilli flakes.',
-      price: 380,
-      category: 'Food',
-      tag: 'Popular',
-      img: 'https://images.unsplash.com/photo-1541519227354-08fa5d50c820?w=600&q=80',
-    },
-    {
-      id: 'bt5',
-      name: 'Banana Bread',
-      desc: 'House-baked. Served warm with butter.',
-      price: 180,
-      category: 'Snacks',
-      img: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=600&q=80',
-    },
-    {
-      id: 'bt6',
-      name: 'Classic Cappuccino',
-      desc: 'Espresso, steamed milk, velvety microfoam.',
-      price: 240,
-      category: 'Coffee',
-      img: 'https://images.unsplash.com/photo-1534778101976-62847782c213?w=600&q=80',
-    },
-    {
-      id: 'bt7',
-      name: 'Croissant',
-      desc: 'Imported butter, 72-hour lamination. Served fresh.',
-      price: 160,
-      category: 'Snacks',
-      tag: 'Veg',
-      img: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&q=80',
-    },
-    {
-      id: 'bt8',
-      name: 'Iced Latte',
-      desc: 'Double shot espresso over ice, oat milk on the side.',
-      price: 290,
-      category: 'Cold Drinks',
-      img: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&q=80',
-    },
-  ];
-
+  // ══════════════════════════════════════════════════════════════
+  // VENUE DATA — loaded from Supabase dynamically
+  // slug read from URL: snyf.co.in/blue-tokai → slug = 'blue-tokai'
+  // ══════════════════════════════════════════════════════════════
   let VENUE_DATA = null;
 
-  async function loadVenueDetails() {
-    const slug = window.location.pathname.split('/').filter(Boolean).pop() || 'blue-tokai';
+  // Read slug from URL query param (set by netlify.toml redirect)
+  const VENUE_SLUG = new URLSearchParams(window.location.search).get('slug') || '';
+
+  async function loadVenueData() {
+    if (!VENUE_SLUG) {
+      showVenueError('No venue specified.');
+      return;
+    }
+
     try {
-      const { data: row, error } = await db
+      // Fetch venue + photos + menu items in one query
+      const { data: venue, error } = await db
         .from('venues')
-        .select('*')
-        .eq('slug', slug)
+        .select(`
+          *,
+          venue_photos ( * ),
+          menu_items ( * )
+        `)
+        .eq('slug', VENUE_SLUG)
         .eq('status', 'active')
         .single();
-      if (error) throw error;
-      if (!row) throw new Error('No active venue found with slug: ' + slug);
 
+      if (error || !venue) {
+        showVenueError('This venue is not available.');
+        return;
+      }
+
+      // Sort photos and menu items
+      const photos  = (venue.venue_photos || [])
+                        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      const items   = (venue.menu_items   || [])
+                        .filter(i => i.available !== false)
+                        .sort((a, b)   => (a.sort_order || 0) - (b.sort_order || 0));
+
+      // Build unique category list from menu items
+      const cats = [...new Set(items.map(i => i.category).filter(Boolean))];
+
+      // Build VENUE_DATA in the same shape the existing JS expects
       VENUE_DATA = {
-        id: row.id,
-        name: row.name,
-        logoLetter: row.logo_letter || row.name.charAt(0),
-        tags: row.tags || (row.category + ' · ' + row.zone),
-        desc: row.description || row.tagline || '',
-        heroImg: row.hero_img || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&q=80',
+        id:            venue.id,
+        name:          venue.name,
+        logoLetter:    venue.name ? venue.name[0].toUpperCase() : 'S',
+        tags:          [venue.category, venue.zone].filter(Boolean).join(' · '),
+        desc:          venue.description || '',
+        heroImg:       photos[0]?.url || '',
         scores: {
-          food: parseFloat(row.score_food) || 5.0,
-          ambience: parseFloat(row.score_ambience) || 5.0,
-          service: parseFloat(row.score_service) || 5.0,
-          value: parseFloat(row.score_value) || 5.0,
-          wait: parseFloat(row.score_wait) || 5.0,
+          food:     parseFloat(venue.score_food) || 5.0,
+          ambience: parseFloat(venue.score_ambience) || 5.0,
+          service:  parseFloat(venue.score_service) || 5.0,
+          value:    parseFloat(venue.score_value) || 5.0,
+          wait:     parseFloat(venue.score_wait) || 5.0,
         },
-        verifiedCount: `${row.verified_count || 0} verified visits`,
-        categories: HARDCODED_FALLBACK_CATEGORIES,
-        menu: []
+        verifiedCount: `${venue.verified_count || 0} verified visits`,
+        categories:    ['Recommended', ...cats],
+        menu: items.map(item => ({
+          id:       item.id,
+          name:     item.name,
+          desc:     item.description || item.desc || '',
+          price:    parseFloat(item.price),
+          category: item.category,
+          tag:      item.tag   || null,
+          img:      item.image_url || item.photo_url || item.img || '',
+        })),
       };
 
-      // Try fetching menu items
-      try {
-        const { data: menuRows, error: menuErr } = await db
-          .from('menu_items')
-          .select('*')
-          .eq('venue_id', row.id);
-        if (!menuErr && menuRows && menuRows.length > 0) {
-          VENUE_DATA.menu = menuRows.map(m => ({
-            id: m.id,
-            name: m.name,
-            desc: m.description || m.desc || '',
-            price: parseFloat(m.price) || 0,
-            category: m.category || 'Coffee',
-            tag: m.tag || null,
-            img: m.image_url || m.img || '☕',
-            available: m.available !== false
-          }));
-          const cats = new Set(['Recommended']);
-          menuRows.forEach(m => { if (m.category) cats.add(m.category); });
-          VENUE_DATA.categories = Array.from(cats);
-        }
-      } catch (me) {
-        console.warn('Failed to load menu items:', me);
-      }
+      // Update page title and meta
+      document.title = `${venue.name} — Snyf`;
 
-      if (!VENUE_DATA.menu || VENUE_DATA.menu.length === 0) {
-        VENUE_DATA.menu = HARDCODED_FALLBACK_MENU;
-        VENUE_DATA.categories = HARDCODED_FALLBACK_CATEGORIES;
-      }
+      // Initialise page with real data
+      initVenuePage();
+
+      // Log visit silently (Phase 4 analytics)
+      logVisit(venue.id);
+
     } catch (err) {
-      console.warn('Supabase load failed, using local fallback:', err);
-      VENUE_DATA = {
-        name: 'Blue Tokai Coffee Roasters',
-        logoLetter: 'B',
-        tags: 'Specialty Coffee · Cyber Hub · Café',
-        desc: "Single-origin coffee roasted in-house. NCR's most consistent flat white. Minimal interiors, serious beans, zero pretension.",
-        heroImg: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&q=80',
-        scores: { food: 8.8, ambience: 9.1, service: 8.2, value: 7.4, wait: 6.1 },
-        verifiedCount: '312 verified visits',
-        categories: HARDCODED_FALLBACK_CATEGORIES,
-        menu: HARDCODED_FALLBACK_MENU
-      };
+      dbError('loadVenueData', err);
+      showVenueError('Could not load venue. Check your connection.');
     }
-    populateUI();
   }
 
-  function populateUI() {
-    // Populate hero
-    document.getElementById('hero-img').src = VENUE_DATA.heroImg;
-    document.getElementById('hero-img').alt = VENUE_DATA.name;
-    document.getElementById('venue-logo-placeholder').textContent = VENUE_DATA.logoLetter;
-    document.getElementById('venue-name').textContent = VENUE_DATA.name;
-    document.getElementById('venue-tags').textContent = VENUE_DATA.tags;
-    document.getElementById('venue-desc').textContent = VENUE_DATA.desc;
+  function showVenueError(msg) {
+    document.body.innerHTML = `
+      <div style="
+        display:flex;align-items:center;justify-content:center;
+        min-height:100vh;font-family:sans-serif;
+        text-align:center;padding:40px;
+        background:#F6F5F2;color:#1E1E1B;
+      ">
+        <div>
+          <div style="font-family:'Oswald',sans-serif;font-size:3rem;font-weight:900;margin-bottom:16px;">Snyf</div>
+          <div style="font-size:1rem;font-weight:700;margin-bottom:8px;">◈ ${msg}</div>
+          <div style="font-size:13px;color:#6E6A64;margin-bottom:24px;">
+            This venue may have moved or is temporarily unavailable.
+          </div>
+          <a href="discover.html"
+            style="display:inline-block;padding:12px 24px;
+            background:#1E1E1B;color:#F6F5F2;
+            border-radius:10px;text-decoration:none;
+            font-size:14px;font-weight:700;">
+            ← Browse All Venues
+          </a>
+        </div>
+      </div>`;
+  }
+
+  function initVenuePage() {
+    if (!VENUE_DATA) return;
+
+    // Populate hero image
+    const heroImg = document.getElementById('hero-img');
+    if (heroImg) {
+      heroImg.src = VENUE_DATA.heroImg;
+      heroImg.alt = VENUE_DATA.name;
+    }
+
+    // Populate profile card
+    const logoEl = document.getElementById('venue-logo-placeholder');
+    const nameEl = document.getElementById('venue-name');
+    const tagsEl = document.getElementById('venue-tags');
+    const descEl = document.getElementById('venue-desc');
+    if (logoEl) logoEl.textContent = VENUE_DATA.logoLetter;
+    if (nameEl) nameEl.textContent = VENUE_DATA.name;
+    if (tagsEl) tagsEl.textContent = VENUE_DATA.tags;
+    if (descEl) descEl.textContent = VENUE_DATA.desc;
 
     // Trust score
     const overall = calcOverall(VENUE_DATA.scores);
-    document.getElementById('trust-score').textContent = overall.toFixed(1);
-    document.getElementById('trust-count').textContent = VENUE_DATA.verifiedCount;
+    const scoreEl = document.getElementById('trust-score');
+    const countEl = document.getElementById('trust-count');
+    if (scoreEl) scoreEl.textContent = overall > 0 ? overall.toFixed(1) : '—';
+    if (countEl) countEl.textContent = VENUE_DATA.verifiedCount;
     renderTrustDims();
 
-    // Category tabs
+    // Category tabs + dishes
     renderCats();
-
-    // Dishes
     renderDishes();
+
+    // Tracking screen ambient dots
+    renderTrackDots();
   }
 
-  // ══════════════════════════════════════════
+  async function logVisit(venueId) {
+    // Only log once per session per venue
+    const key = `snyf_visit_${VENUE_SLUG}`;
+    if (sessionStorage.getItem(key)) return;
+
+    try {
+      await db.from('visits').insert({
+        venue_id:   venueId,
+        session_id: snyfSessionId(),
+        source:     new URLSearchParams(window.location.search).get('src') || 'direct',
+        device:     window.innerWidth <= 768 ? 'mobile' : 'desktop',
+        referrer:   document.referrer || null,
+      });
+      sessionStorage.setItem(key, '1');
+    } catch (err) {
+      // Silent fail — visits are analytics only
+    }
+  }
+
+// ══════════════════════════════════════════
   // STATE
   // ══════════════════════════════════════════
   let cart = {}; // { id: { item, qty } }
@@ -1701,7 +1694,11 @@
     renderTrackDots();
 
     // Load dynamic venue details from Supabase
-    loadVenueDetails();
+    // Back link - goes to discover page
+    const backBtn = document.querySelector('.menu-back-btn');
+    if (backBtn) backBtn.href = 'discover.html';
+
+    loadVenueData();
   });
 
   // ══════════════════════════════════════════
@@ -2015,7 +2012,7 @@
   // ══════════════════════════════════════════
   // ORDER CONFIRMATION + TRACKING
   // ══════════════════════════════════════════
-  async function confirmOrder() {
+    async function confirmOrder() {
     const orderItems = Object.values(cart).map(({ item, qty }) => ({
       id:    item.id,
       name:  item.name,
@@ -2029,22 +2026,12 @@
     const total    = subtotal + gst + sc;
     const instrEl  = document.getElementById('cart-custom-input');
 
-    // Get venue ID from URL slug
-    const slug = window.location.pathname.split('/').filter(Boolean)[0];
-
     try {
-      const { data: venueRow } = await db
-        .from('venues')
-        .select('id')
-        .eq('slug', slug)
-        .eq('status', 'active')
-        .single();
-
-      if (venueRow?.id) {
+      if (VENUE_DATA?.id) {
         await db.from('orders').insert({
-          venue_id:             venueRow.id,
+          venue_id:             VENUE_DATA.id,
           table_num:            null,
-          items: orderItems,
+          items:                orderItems,
           subtotal,
           gst,
           service_charge:       sc,
@@ -2054,25 +2041,13 @@
           session_id:           snyfSessionId(),
           source:               'snyf',
         });
-
-        // Log visit if not already logged this session
-        if (!sessionStorage.getItem(`snyf_visit_${slug}`)) {
-          await db.from('visits').insert({
-            venue_id:   venueRow.id,
-            session_id: snyfSessionId(),
-            source:     new URLSearchParams(window.location.search).get('src') || 'direct',
-            device:     window.innerWidth <= 768 ? 'mobile' : 'desktop',
-            referrer:   document.referrer || null,
-          });
-          sessionStorage.setItem(`snyf_visit_${slug}`, '1');
-        }
       }
     } catch (err) {
       dbError('confirmOrder', err);
-      // Continue to tracking screen even if save fails
+      // Continue to tracking screen regardless
     }
 
-    // Clear cart and show tracking (existing logic unchanged)
+    // Clear cart + show tracking screen (existing logic unchanged)
     cart = {};
     updateOrderBar();
     renderDishes();
@@ -2165,6 +2140,8 @@
     }).join('');
     wrap.innerHTML = dots;
   }
+
+
   </script>
 </body>
 </html>

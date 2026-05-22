@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snyf Café OS — Coming Soon</title>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #1E1E1B;
+      color: #F6F5F2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      text-align: center;
+      padding: 40px;
+    }
+    .wrap { max-width: 400px; }
+    .logo {
+      font-family: 'Oswald', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 900;
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+      color: #6FB7D6;
+    }
+    .sub {
+      font-size: 13px;
+      color: rgba(246,245,242,0.45);
+      letter-spacing: 0.1em;
+      font-family: monospace;
+      margin-bottom: 32px;
+      text-transform: uppercase;
+    }
+    .msg {
+      font-size: 15px;
+      color: rgba(246,245,242,0.7);
+      line-height: 1.65;
+      margin-bottom: 24px;
+    }
+    .slug-badge {
+      display: inline-block;
+      background: rgba(111,183,214,0.1);
+      border: 1px solid rgba(111,183,214,0.25);
+      color: #6FB7D6;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      margin-bottom: 28px;
+    }
+    a {
+      display: inline-block;
+      background: #F6F5F2;
+      color: #1E1E1B;
+      padding: 12px 24px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo">Snyf</div>
+    <div class="sub">Café OS · Venue Admin</div>
+    <div class="slug-badge" id="slug-display">Loading...</div>
+    <div class="msg">
+      The venue admin panel is being set up.<br>
+      It will be available here shortly.
+    </div>
+    <a href="/discover">← Back to Discover</a>
+  </div>
+  <script>
+    const slug = new URLSearchParams(window.location.search).get('slug') || '—';
+    document.getElementById('slug-display').textContent = `venue: ${slug}`;
+    document.title = `${slug} · Snyf Café OS`;
+  </script>
+</body>
+</html>

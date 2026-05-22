@@ -1,45 +1,61 @@
 [build]
-  publish = "."
-  command = "npm install"
+  publish  = "."
+  command  = "npm install"
   functions = "netlify/functions"
 
+# ── HTTPS redirect ────────────────────────────────────────────
 [[redirects]]
-  from = "http://snyf.co.in/*"
-  to = "https://snyf.co.in/:splat"
+  from   = "http://snyf.co.in/*"
+  to     = "https://snyf.co.in/:splat"
   status = 301
-  force = true
+  force  = true
 
 [[redirects]]
-  from = "http://www.snyf.co.in/*"
-  to = "https://snyf.co.in/:splat"
+  from   = "http://www.snyf.co.in/*"
+  to     = "https://snyf.co.in/:splat"
   status = 301
-  force = true
+  force  = true
 
+# ── Known static pages — must come BEFORE catch-all ──────────
 [[redirects]]
-  from = "/blue-tokai"
-  to = "/blue-tokai/index.html"
+  from   = "/community"
+  to     = "/community.html"
   status = 200
 
 [[redirects]]
-  from = "/blue-tokai/admin"
-  to = "/blue-tokai/admin/index.html"
+  from   = "/discover"
+  to     = "/discover.html"
   status = 200
 
 [[redirects]]
-  from = "/nook-cafe"
-  to = "/nook-cafe/index.html"
+  from   = "/admin"
+  to     = "/admin/index.html"
   status = 200
 
+# ── Venue admin catch-all → Café OS React app ─────────────────
+# Handles EVERY venue admin URL automatically
+# snyf.co.in/blue-tokai/admin → cafe-os/index.html?slug=blue-tokai
+# snyf.co.in/ivy-and-bean/admin → cafe-os/index.html?slug=ivy-and-bean
 [[redirects]]
-  from = "/nook-cafe/admin"
-  to = "/nook-cafe/admin/index.html"
+  from   = "/:slug/admin"
+  to     = "/cafe-os/index.html?slug=:slug"
   status = 200
 
+# ── Venue page catch-all → universal venue template ───────────
+# Handles EVERY venue URL automatically
+# snyf.co.in/blue-tokai → venue.html?slug=blue-tokai
+# snyf.co.in/ivy-and-bean → venue.html?slug=ivy-and-bean
+[[redirects]]
+  from   = "/:slug"
+  to     = "/venue.html?slug=:slug"
+  status = 200
+
+# ── Security headers ──────────────────────────────────────────
 [[headers]]
   for = "/*"
   [headers.values]
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    X-XSS-Protection = "1; mode=block"
+    X-Frame-Options            = "DENY"
+    X-Content-Type-Options     = "nosniff"
+    Referrer-Policy            = "strict-origin-when-cross-origin"
+    X-XSS-Protection           = "1; mode=block"

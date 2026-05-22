@@ -579,59 +579,54 @@
   // ── VENUE DATA ────────────────────────────────────────────────
   let VENUES = [];
 
-  async function loadVenues() {
-    try {
-      const { data, error } = await db
-        .from('venues')
-        .select(`
-          id, slug, name, zone, category, description, tagline,
-          show_on_discover, featured, sort_order, hours,
-          score_food, score_ambience, score_service, score_value, score_wait,
-          venue_photos ( url, sort_order, alt_text )
-        `)
-        .eq('status', 'active')
-        .eq('show_on_discover', true)
-        .order('sort_order', { ascending: true });
+async function loadVenues() {
+  try {
+    const { data, error } = await db
+      .from('venues')
+      .select(`
+        id, slug, name, zone, category,
+        description, tagline, show_on_discover,
+        featured, sort_order, hours,
+        venue_photos ( url, sort_order, alt_text )
+      `)
+      .eq('status', 'active')
+      .eq('show_on_discover', true)
+      .order('sort_order', { ascending: true });
 
-      if (error) throw error;
+    if (error) throw error;
 
-      VENUES = (data || []).map(v => ({
-        slug:     v.slug,
-        name:     v.name,
-        zone:     v.zone     || '',
-        category: v.category || '',
-        desc:     v.description || '',
-        tagline:  v.tagline  || '',
-        isOpen:   true,
-        hours:    v.hours    || 'Check venue for hours',
-        vibes:    [],
-        scores:   { 
-          food: parseFloat(v.score_food) || 5.0, 
-          ambience: parseFloat(v.score_ambience) || 5.0, 
-          service: parseFloat(v.score_service) || 5.0, 
-          value: parseFloat(v.score_value) || 5.0, 
-          wait: parseFloat(v.score_wait) || 5.0 
-        },
-        images:   (v.venue_photos || [])
-                    .sort((a, b) => a.sort_order - b.sort_order)
-                    .map(p => p.url)
-                    .filter(Boolean),
-        page:     `${v.slug}/index.html`,
-        featured: v.featured || false,
-      }));
+    VENUES = (data || []).map(v => ({
+      slug:     v.slug,
+      name:     v.name,
+      zone:     v.zone     || '',
+      category: v.category || '',
+      desc:     v.description || '',
+      tagline:  v.tagline  || '',
+      isOpen:   true,
+      hours:    v.hours    || 'Check venue for hours',
+      vibes:    [],
+      scores:   { food: 0, ambience: 0, service: 0, value: 0, wait: 0 },
+      images:   (v.venue_photos || [])
+                  .sort((a, b) => a.sort_order - b.sort_order)
+                  .map(p => p.url)
+                  .filter(Boolean),
+      page:     `${v.slug}`,
+      featured: v.featured || false,
+    }));
 
-      const statEl = document.getElementById('stat-venues');
-      const verEl  = document.getElementById('stat-verified-venues');
-      if (statEl) statEl.textContent = VENUES.length;
-      if (verEl)  verEl.textContent  = VENUES.length;
+    // Update hero stat counters
+    const statEl = document.getElementById('stat-venues');
+    const verEl  = document.getElementById('stat-verified-venues');
+    if (statEl) statEl.textContent = VENUES.length;
+    if (verEl)  verEl.textContent  = VENUES.length;
 
-      renderGrid();
+    renderGrid();
 
-    } catch (err) {
-      dbError('loadVenues', err);
-      dbFallback('dv-grid', 'Could not load venues. Check your connection.');
-    }
+  } catch (err) {
+    dbError('loadVenues', err);
+    dbFallback('dv-grid', 'Could not load venues. Check your connection.');
   }
+}
 
   // ── STATE ─────────────────────────────────────────────────────
   let activeCategory = 'all';
@@ -764,7 +759,7 @@
             <span class="dv-hours-dot ${venue.isOpen ? '' : 'dv-hours-dot--closed'}"></span>
             ${venue.hours}
           </div>
-          <a href="${venue.page}" class="dv-know-more" target="_blank" rel="noopener">
+          <a href="${venue.slug}" class="dv-know-more" target="_blank" rel="noopener">
             Know More
             <span class="dv-know-more-arrow">→</span>
           </a>
