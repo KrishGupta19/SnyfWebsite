@@ -235,35 +235,19 @@
       border-radius: 4px;
     }
 
-    /* Trust score badge — top right of info panel */
-    .dv-score-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      flex-shrink: 0;
-      gap: 2px;
-    }
 
-    .dv-score {
-      font-family: var(--display);
-      font-size: 2rem;
-      font-weight: 900;
-      line-height: 1;
-      letter-spacing: -1px;
-      color: var(--cyan);
-    }
-
-    .dv-score-label {
-      font-family: var(--mono);
-      font-size: 8px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
+    /* Tagline — shown prominently below venue name + zone */
+    .dv-venue-tagline {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 4px;
+      line-height: 1.4;
     }
 
     /* Description */
     .dv-venue-desc {
-      font-size: 13px;
+      font-size: 12.5px;
       color: var(--muted);
       line-height: 1.65;
       flex: 1;
@@ -285,50 +269,6 @@
       padding: 4px 10px;
     }
 
-    /* Dimension mini bars */
-    .dv-dims {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4px 16px;
-    }
-
-    .dv-dim-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .dv-dim-label {
-      font-size: 10px;
-      color: var(--muted);
-      width: 52px;
-      flex-shrink: 0;
-    }
-
-    .dv-dim-track {
-      flex: 1;
-      height: 3px;
-      background: rgba(30,30,27,0.07);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-
-    .dv-dim-fill {
-      height: 100%;
-      background: var(--cyan);
-      border-radius: 2px;
-      transition: width 0.8s cubic-bezier(0.22,1,0.36,1);
-    }
-
-    .dv-dim-fill--bad { background: var(--orange); }
-
-    .dv-dim-val {
-      font-family: var(--mono);
-      font-size: 9px;
-      color: var(--ink);
-      width: 22px;
-      text-align: right;
-    }
 
     /* Card footer */
     .dv-card-foot {
@@ -665,7 +605,7 @@ async function loadVenues() {
   // ── STATE ─────────────────────────────────────────────────────
   let activeCategory = 'all';
   let activeZone     = 'all';
-  let activeSort     = 'score';
+  let activeSort     = 'newest';
   let searchQuery    = '';
 
   // Per-card carousel state
@@ -699,13 +639,6 @@ async function loadVenues() {
     return s.food*0.3 + s.ambience*0.2 + s.service*0.2 + s.value*0.2 + s.wait*0.1;
   }
 
-  // ── RENDER CARD ───────────────────────────────────────────────
-  function renderDimRow(label, score) {
-    const isBad = score < 5.0;
-    const pct = (score / 10 * 100).toFixed(0);
-    return `
-    <div class="dv-dim-row">
-      <span class="dv-dim-label">${label}</span>
       <div class="dv-dim-track">
         <div class="dv-dim-fill ${isBad ? 'dv-dim-fill--bad' : ''}" style="width:0%" data-target="${pct}"></div>
       </div>
@@ -713,8 +646,8 @@ async function loadVenues() {
     </div>`;
   }
 
+  // ── RENDER CARD ─────────────────────────────────────────────
   function renderCard(venue, idx) {
-    const overall = overallScore(venue).toFixed(1);
     const imgCount = venue.images.length;
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.port !== '';
     const targetUrl = isLocal ? `/venue.html?slug=${venue.slug}` : `/${venue.slug}`;
@@ -725,7 +658,7 @@ async function loadVenues() {
       <!-- LEFT — image carousel -->
       <div class="dv-card-images" id="imgs-${venue.slug}">
         <div class="dv-img-track" id="track-${venue.slug}">
-          ${venue.images.map((src, i) => `
+          ${venue.images.length > 0 ? venue.images.map((src, i) => `
             <img
               class="dv-img"
               src="${src}"
@@ -734,7 +667,7 @@ async function loadVenues() {
               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
             >
             <div class="dv-img-placeholder" style="display:none">${venue.name[0]}</div>
-          `).join('')}
+          `).join('') : `<div class="dv-img-placeholder">${venue.name[0]}</div>`}
         </div>
 
         <!-- Prev/Next buttons -->
@@ -749,7 +682,7 @@ async function loadVenues() {
         </div>
 
         <!-- Counter -->
-        <div class="dv-img-counter" id="counter-${venue.slug}">1 / ${imgCount}</div>
+        <div class="dv-img-counter" id="counter-${venue.slug}">1 / ${imgCount || 1}</div>
 
         <!-- Partner badge -->
         <div class="dv-partner-badge">✓ Snyf Partner</div>
@@ -769,25 +702,13 @@ async function loadVenues() {
               <span class="dv-cat-tag">${venue.category}</span>
             </div>
           </div>
-          <div class="dv-score-wrap">
-            <div class="dv-score">${overall}</div>
-            <div class="dv-score-label">trust score</div>
-          </div>
         </div>
 
-        <p class="dv-venue-desc">${venue.desc}</p>
+        ${venue.tagline ? `<p class="dv-venue-tagline">${venue.tagline}</p>` : ''}
+        ${venue.desc ? `<p class="dv-venue-desc">${venue.desc}</p>` : ''}
 
         <div class="dv-vibes">
           ${venue.vibes.map(v => `<span class="dv-vibe">${v}</span>`).join('')}
-        </div>
-
-        <!-- Mini dimension bars -->
-        <div class="dv-dims">
-          ${renderDimRow('Food', venue.scores.food)}
-          ${renderDimRow('Ambience', venue.scores.ambience)}
-          ${renderDimRow('Service', venue.scores.service)}
-          ${renderDimRow('Value', venue.scores.value)}
-          ${renderDimRow('Wait', venue.scores.wait)}
         </div>
 
         <div class="dv-card-foot">
