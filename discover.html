@@ -639,13 +639,6 @@ async function loadVenues() {
     return s.food*0.3 + s.ambience*0.2 + s.service*0.2 + s.value*0.2 + s.wait*0.1;
   }
 
-      <div class="dv-dim-track">
-        <div class="dv-dim-fill ${isBad ? 'dv-dim-fill--bad' : ''}" style="width:0%" data-target="${pct}"></div>
-      </div>
-      <span class="dv-dim-val">${score.toFixed(1)}</span>
-    </div>`;
-  }
-
   // ── RENDER CARD ─────────────────────────────────────────────
   function renderCard(venue, idx) {
     const imgCount = venue.images.length;
