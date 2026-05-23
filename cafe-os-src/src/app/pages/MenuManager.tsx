@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
 import { MenuItem } from '../../lib/types';
+import { ImageUploader } from '../components/ImageUploader';
 
 export function MenuManager() {
   const { venue }               = useVenue();
@@ -180,15 +181,14 @@ export function MenuManager() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Photo URL</label>
-                <input
-                  value={form.photo_url}
-                  onChange={e => setForm({...form, photo_url: e.target.value})}
-                  className="w-full px-4 py-3 bg-input-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  placeholder="https://..."
-                />
-              </div>
+              <ImageUploader
+                compact
+                bucket="venue-images"
+                folder={`${venue?.id ?? 'menu'}/items`}
+                label="Item Photo"
+                currentUrl={form.photo_url}
+                onUpload={url => setForm({ ...form, photo_url: url })}
+              />
 
               <div>
                 <label className="block text-sm font-medium mb-2">Tag</label>

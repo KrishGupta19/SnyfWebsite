@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Save, Plus, Trash2, GripVertical } from 'lucide-react';
+import { Save, Trash2, GripVertical } from 'lucide-react';
 import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
 import { VenuePhoto } from '../../lib/types';
+import { ImageUploader } from '../components/ImageUploader';
 
 export function VenueInfo() {
   const { venue, slug }          = useVenue();
   const [saving,   setSaving]    = useState(false);
   const [saved,    setSaved]     = useState(false);
   const [photos,   setPhotos]    = useState<VenuePhoto[]>([]);
-  const [newPhoto, setNewPhoto]  = useState('');
 
   const [form, setForm] = useState({
     name: '', description: '', tagline: '',
@@ -59,19 +59,19 @@ export function VenueInfo() {
     setTimeout(() => setSaved(false), 3000);
   }
 
-  async function addPhoto() {
-    if (!venue?.id || !newPhoto.trim()) return;
+  /** Called by ImageUploader with the final public URL */
+  async function handlePhotoUploaded(url: string) {
+    if (!venue?.id || !url) return;
     if (photos.length >= 4) {
       alert('Maximum 4 photos allowed. Delete one first.');
       return;
     }
     await db.from('venue_photos').insert({
       venue_id:   venue.id,
-      url:        newPhoto.trim(),
+      url,
       sort_order: photos.length,
       alt_text:   form.name,
     });
-    setNewPhoto('');
     fetchPhotos();
   }
 
@@ -185,62 +185,58 @@ export function VenueInfo() {
       {/* Photos */}
       <div className="bg-card rounded-2xl border border-border p-6 space-y-5">
         <div className="flex items-center justify-between">
-          <h3>
-            Photos
-            <span className="text-sm text-muted-foreground ml-2">({photos.length}/4)</span>
-          </h3>
-          <span className="text-xs text-muted-foreground">First photo = hero image on venue page</span>
+          <div>
+            <h3>
+              Venue Photos
+              <span className="text-sm text-muted-foreground ml-2">({photos.length}/4)</span>
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              First photo = hero image on your venue page &amp; discover card
+            </p>
+          </div>
         </div>
 
         {/* Existing photos */}
-        <div className="space-y-3">
-          {photos.map((photo, i) => (
-            <div key={photo.id} className="flex items-center gap-3 p-3 bg-accent/30 rounded-xl">
-              <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              <img
-                src={photo.url}
-                alt=""
-                className="w-16 h-12 object-cover rounded-lg flex-shrink-0 bg-accent"
-                onError={e => (e.currentTarget.style.display = 'none')}
-              />
-              <p className="text-xs text-muted-foreground flex-1 truncate">{photo.url}</p>
-              <span className="text-xs font-mono text-muted-foreground flex-shrink-0">
-                {i === 0 ? 'Hero' : `#${i + 1}`}
-              </span>
-              <button
-                onClick={() => deletePhoto(photo.id)}
-                className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors flex-shrink-0"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-        </div>
+        {photos.length > 0 && (
+          <div className="space-y-3">
+            {photos.map((photo, i) => (
+              <div key={photo.id} className="flex items-center gap-3 p-3 bg-accent/30 rounded-xl">
+                <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <img
+                  src={photo.url}
+                  alt=""
+                  className="w-16 h-12 object-cover rounded-lg flex-shrink-0 bg-accent"
+                  onError={e => (e.currentTarget.style.display = 'none')}
+                />
+                <p className="text-xs text-muted-foreground flex-1 truncate">{photo.url}</p>
+                <span className="text-xs font-mono text-muted-foreground flex-shrink-0 px-2 py-0.5 bg-accent rounded-full">
+                  {i === 0 ? '★ Hero' : `#${i + 1}`}
+                </span>
+                <button
+                  onClick={() => deletePhoto(photo.id)}
+                  className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors flex-shrink-0"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {photos.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-4">
-            No photos yet. Add up to 4 photos for your venue page and discover card.
+            No photos yet. Upload up to 4 photos for your venue page and discover card.
           </p>
         )}
 
-        {/* Add photo */}
+        {/* Upload widget */}
         {photos.length < 4 && (
-          <div className="flex gap-3">
-            <input
-              value={newPhoto}
-              onChange={e => setNewPhoto(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addPhoto()}
-              className="flex-1 px-4 py-3 bg-input-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-              placeholder="Paste image URL and press Enter or click Add..."
-            />
-            <button
-              onClick={addPhoto}
-              className="flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity flex-shrink-0"
-            >
-              <Plus className="w-4 h-4" />
-              Add
-            </button>
-          </div>
+          <ImageUploader
+            bucket="venue-images"
+            folder={slug || 'venues'}
+            onUpload={handlePhotoUploaded}
+            label={`Add Photo ${photos.length + 1} of 4`}
+          />
         )}
       </div>
     </div>
