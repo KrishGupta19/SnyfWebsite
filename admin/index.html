@@ -802,6 +802,11 @@
 const ADMIN_EMAIL    = 'teams@snyf.co.in';
 const ADMIN_PASSWORD = 'Snyf@1234';
 
+function getVenueUrl(slug) {
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.port !== '';
+  return isLocal ? `/venue.html?slug=${slug}` : `/${slug}`;
+}
+
 let VENUES_DATA = [
   { id:1, name:'Blue Tokai Coffee Roasters', slug:'blue-tokai', zone:'Cyber Hub', category:'Café', desc:"Single-origin coffee roasted in-house. NCR's most consistent flat white.", tagline:"NCR's best specialty coffee", status:'active', created:'2026-05-01', scores:{food:8.8,ambience:9.1,service:8.2,value:7.4,wait:6.1}, visits:312, scoreSource:'Manual Override', scoreNote:'Based on personal visit + 12 early reports', scoreLocked:false, username:'blue-tokai_admin', password:'BT@secure1' },
   { id:2, name:'Nook Café', slug:'nook-cafe', zone:'Sector 29', category:'Café', desc:'Hidden gem. Best value breakfast in Sector 29.', tagline:'Best value breakfast in Sector 29', status:'active', created:'2026-05-03', scores:{food:9.0,ambience:7.6,service:8.4,value:9.1,wait:8.2}, visits:318, scoreSource:'Manual Override', scoreNote:'Based on team visit + beta users', scoreLocked:false, username:'nook-cafe_admin', password:'NC@secure1' },
@@ -1230,8 +1235,8 @@ function renderOverviewVenues() {
       <td><span class="badge badge--${v.status}">${v.status}</span></td>
       <td style="color:var(--muted);font-size:12px;">Today</td>
       <td class="tbl-actions">
-        <button class="btn btn--xs btn--ghost" onclick="navTo('venues',document.querySelector('[data-section=venues]'));setTimeout(()=>openVenueDetail(${v.id}),50)">Edit</button>
-        <a href="../${v.slug}/index.html" target="_blank" class="btn btn--xs btn--cyan">View ↗</a>
+        <button class="btn btn--xs btn--ghost" onclick="navTo('venues',document.querySelector('[data-section=venues]'));setTimeout(()=>openVenueDetail('${v.id}'),50)">Edit</button>
+        <a href="${getVenueUrl(v.slug)}" target="_blank" class="btn btn--xs btn--cyan">View ↗</a>
         <button class="btn btn--xs btn--ghost" onclick="setQRVenue('${v.slug}');navTo('qr',document.querySelector('[data-section=qr]'))">QR</button>
       </td>
     </tr>`).join('');
@@ -1261,8 +1266,8 @@ function renderVenuesTable() {
       <td><span class="badge badge--${v.status}">${v.status}</span></td>
       <td style="color:var(--muted);font-size:11px;font-family:var(--mono);">${v.created}</td>
       <td class="tbl-actions">
-        <button class="btn btn--xs btn--ghost" onclick="openVenueDetail(${v.id})">Detail</button>
-        <a href="../${v.slug}/index.html" target="_blank" class="btn btn--xs btn--cyan">View ↗</a>
+        <button class="btn btn--xs btn--ghost" onclick="openVenueDetail('${v.id}')">Detail</button>
+        <a href="${getVenueUrl(v.slug)}" target="_blank" class="btn btn--xs btn--cyan">View ↗</a>
         <button class="btn btn--xs btn--ghost" onclick="setQRVenue('${v.slug}');navTo('qr',document.querySelector('[data-section=qr]'))">QR</button>
       </td>
     </tr>`).join('');
@@ -1284,7 +1289,7 @@ function showVenueList() {
 }
 
 function openVenueDetail(id) {
-  const venue = VENUES_DATA.find(v => v.id === id);
+  const venue = VENUES_DATA.find(v => String(v.id) === String(id));
   if (!venue) return;
   currentVenueId = id;
   document.getElementById('venues-list-view').style.display = 'none';
@@ -1292,7 +1297,7 @@ function openVenueDetail(id) {
 
   document.getElementById('detail-venue-name').textContent = venue.name;
   document.getElementById('detail-venue-url').textContent  = `snyf.co.in/${venue.slug}`;
-  document.getElementById('detail-view-live').href         = `../${venue.slug}/index.html`;
+  document.getElementById('detail-view-live').href         = getVenueUrl(venue.slug);
   document.getElementById('dt-trust').textContent       = calcOverall(venue.scores) + '/10';
   document.getElementById('dt-visits').textContent      = venue.visits;
   document.getElementById('dt-menu-count').textContent  = (MENU_DATA[venue.slug] || []).length;
@@ -1332,7 +1337,7 @@ function renderTrustSliders(venue) {
 }
 
 async function saveTrustScores() {
-  const venue = VENUES_DATA.find(v => v.id === currentVenueId);
+  const venue = VENUES_DATA.find(v => String(v.id) === String(currentVenueId));
   if (!venue) {
     showToast('⚠ No active venue selected', 'error');
     return;
@@ -1919,7 +1924,7 @@ function updateQRPreview() {
 }
 
 function openQRForVenue() {
-  const venue = VENUES_DATA.find(v => v.id === currentVenueId);
+  const venue = VENUES_DATA.find(v => String(v.id) === String(currentVenueId));
   if (venue) { setQRVenue(venue.slug); navTo('qr', document.querySelector('[data-section=qr]')); }
 }
 
@@ -1931,7 +1936,7 @@ function downloadQR(format) {
 
 // VENUE DETAIL ACTIONS
 async function saveVenueInfo() {
-  const venue = VENUES_DATA.find(v => v.id === currentVenueId);
+  const venue = VENUES_DATA.find(v => String(v.id) === String(currentVenueId));
   if (!venue) return;
   
   const name = document.getElementById('edit-name').value.trim();
@@ -1978,7 +1983,7 @@ async function saveVenueInfo() {
 }
 
 async function resetCredentials() {
-  const venue = VENUES_DATA.find(v => v.id === currentVenueId);
+  const venue = VENUES_DATA.find(v => String(v.id) === String(currentVenueId));
   if (!venue) return;
   const newPass = generatePassword();
   try {
@@ -2003,7 +2008,7 @@ async function resetCredentials() {
 }
 
 async function deactivateVenue() {
-  const venue = VENUES_DATA.find(v => v.id === currentVenueId);
+  const venue = VENUES_DATA.find(v => String(v.id) === String(currentVenueId));
   if (!venue) return;
   try {
     const { error } = await db
@@ -2025,7 +2030,7 @@ async function deactivateVenue() {
 }
 
 async function deleteVenueConfirm() {
-  const venue = VENUES_DATA.find(v => v.id === currentVenueId);
+  const venue = VENUES_DATA.find(v => String(v.id) === String(currentVenueId));
   if (!venue) return;
   const confirm = window.prompt(`Type the venue name to confirm deletion:\n"${venue.name}"`);
   if (confirm === venue.name) {
