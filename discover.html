@@ -716,6 +716,8 @@ async function loadVenues() {
   function renderCard(venue, idx) {
     const overall = overallScore(venue).toFixed(1);
     const imgCount = venue.images.length;
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.port !== '';
+    const targetUrl = isLocal ? `/venue.html?slug=${venue.slug}` : `/${venue.slug}`;
 
     return `
     <div class="dv-card" data-idx="${idx}" data-slug="${venue.slug}">
@@ -793,13 +795,10 @@ async function loadVenues() {
             <span class="dv-hours-dot ${venue.isOpen ? '' : 'dv-hours-dot--closed'}"></span>
             ${venue.hours}
           </div>
-          const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.port !== '';
-          const targetUrl = isLocal ? `/venue.html?slug=${venue.slug}` : `/${venue.slug}`;
-          return `
           <a href="${targetUrl}" class="dv-know-more" target="_blank" rel="noopener">
             Know More
             <span class="dv-know-more-arrow">→</span>
-          </a>`;
+          </a>
         </div>
 
       </div>
