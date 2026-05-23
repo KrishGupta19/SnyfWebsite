@@ -3,6 +3,7 @@
 <head>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="../supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Snyf Admin</title>
@@ -1182,6 +1183,7 @@ async function initAdminApp() {
   renderDiscoverControl();
   renderTickerEditor();
   initAddVenueSliders();
+  populateQRVenues();
 }
 
 // NAV
@@ -1882,8 +1884,7 @@ async function submitNewVenue() {
     renderOverviewVenues();
     renderDiscoverControl();
 
-    const sel = document.getElementById('qr-venue-select');
-    if (sel) { const opt = document.createElement('option'); opt.value = slug; opt.textContent = name; sel.appendChild(opt); }
+    populateQRVenues();
     showToast(`✓ ${name} created successfully`, 'success');
   } catch (err) {
     dbError('submitNewVenue', err);
@@ -1904,6 +1905,20 @@ function setQRVenue(slug) {
   if (sel) { sel.value = slug; updateQRPreview(); }
 }
 
+function populateQRVenues() {
+  const sel = document.getElementById('qr-venue-select');
+  if (!sel) return;
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="">— Select a venue —</option>' + 
+    VENUES_DATA.map(v => `<option value="${v.slug}">${v.name}</option>`).join('');
+  if (VENUES_DATA.some(v => v.slug === currentVal)) {
+    sel.value = currentVal;
+  } else {
+    sel.value = '';
+    updateQRPreview();
+  }
+}
+
 function updateQRPreview() {
   const slug     = document.getElementById('qr-venue-select').value;
   const urlPrev  = document.getElementById('qr-url-preview');
@@ -1920,7 +1935,19 @@ function updateQRPreview() {
   label.style.display   = 'block';
   hint.style.display    = 'block';
   label.textContent     = venue ? venue.name.toUpperCase() : slug.toUpperCase();
-  mockDisp.innerHTML    = `<div style="font-size:28px;margin-bottom:8px;">▦</div><div style="font-size:8px;line-height:1.5;">QR → snyf.co.in/${slug}<br><br>Integrate qrcode.js<br>for real output</div>`;
+  
+  mockDisp.innerHTML    = `<canvas id="qr-preview-canvas" style="width: 100%; height: 100%; display: block; border-radius: 4px;"></canvas>`;
+  const canvas = document.getElementById('qr-preview-canvas');
+  QRCode.toCanvas(canvas, `https://snyf.co.in/${slug}`, {
+    width: 180,
+    margin: 2,
+    color: {
+      dark: '#1E1E1B',
+      light: '#FFFFFF'
+    }
+  }, function (error) {
+    if (error) console.error('[QR Generator] Error rendering preview:', error);
+  });
 }
 
 function openQRForVenue() {
@@ -1931,7 +1958,57 @@ function openQRForVenue() {
 function downloadQR(format) {
   const slug = document.getElementById('qr-venue-select').value;
   if (!slug) { showToast('⚠ Select a venue first', 'error'); return; }
-  showToast(`↓ QR download triggered (${format.toUpperCase()}) — integrate qrcode.js for real output`, 'info');
+  
+  const url = `https://snyf.co.in/${slug}`;
+  const filename = `snyf-qr-${slug}`;
+  
+  if (format === 'png') {
+    QRCode.toDataURL(url, {
+      width: 1000,
+      margin: 2,
+      color: {
+        dark: '#1E1E1B',
+        light: '#FFFFFF'
+      }
+    }, function (err, dataUrl) {
+      if (err) {
+        showToast('⚠ Failed to generate PNG', 'error');
+        return;
+      }
+      const link = document.createElement('a');
+      link.download = `${filename}.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('✓ PNG QR Code downloaded', 'success');
+    });
+  } else if (format === 'svg') {
+    QRCode.toString(url, {
+      type: 'svg',
+      width: 1000,
+      margin: 2,
+      color: {
+        dark: '#1E1E1B',
+        light: '#FFFFFF'
+      }
+    }, function (err, svgString) {
+      if (err) {
+        showToast('⚠ Failed to generate SVG', 'error');
+        return;
+      }
+      const blob = new Blob([svgString], { type: 'image/svg+xml' });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `${filename}.svg`;
+      link.href = downloadUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+      showToast('✓ SVG QR Code downloaded', 'success');
+    });
+  }
 }
 
 // VENUE DETAIL ACTIONS
@@ -1975,6 +2052,7 @@ async function saveVenueInfo() {
     
     renderVenuesTable();
     renderOverviewVenues();
+    populateQRVenues();
     showToast('✓ Venue info saved', 'success');
   } catch (err) {
     dbError('saveVenueInfo', err);
@@ -2051,6 +2129,7 @@ async function deleteVenueConfirm() {
       VENUES_DATA.splice(VENUES_DATA.indexOf(venue), 1);
       renderVenuesTable();
       renderOverviewVenues();
+      populateQRVenues();
       showVenueList();
       showToast('Venue deleted', 'error');
     } catch (err) {
