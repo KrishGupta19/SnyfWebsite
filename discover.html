@@ -605,14 +605,48 @@ async function loadVenues() {
       isOpen:   true,
       hours:    v.hours    || 'Check venue for hours',
       vibes:    [],
-      scores:   { food: 0, ambience: 0, service: 0, value: 0, wait: 0 },
+      scores:   { food: 5.0, ambience: 5.0, service: 5.0, value: 5.0, wait: 5.0 },
       images:   (v.venue_photos || [])
                   .sort((a, b) => a.sort_order - b.sort_order)
                   .map(p => p.url)
                   .filter(Boolean),
       page:     `${v.slug}`,
       featured: v.featured || false,
+      id:       v.id,
     }));
+
+    try {
+      const { data: reports, error: reportsErr } = await db
+        .from('field_reports')
+        .select('venue_id, food, ambience, service, value, wait_time')
+        .eq('verified', true)
+        .eq('flagged', false);
+
+      if (!reportsErr && reports) {
+        VENUES.forEach(v => {
+          const vReports = reports.filter(r => r.venue_id === v.id);
+          if (vReports.length > 0) {
+            const sums = vReports.reduce((acc, curr) => ({
+              food: acc.food + (curr.food || 5),
+              ambience: acc.ambience + (curr.ambience || 5),
+              service: acc.service + (curr.service || 5),
+              value: acc.value + (curr.value || 5),
+              wait: acc.wait + (curr.wait_time || 5)
+            }), { food: 0, ambience: 0, service: 0, value: 0, wait: 0 });
+
+            v.scores = {
+              food: sums.food / vReports.length,
+              ambience: sums.ambience / vReports.length,
+              service: sums.service / vReports.length,
+              value: sums.value / vReports.length,
+              wait: sums.wait / vReports.length
+            };
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to load trust scores from field reports:', e);
+    }
 
     // Update hero stat counters
     const statEl = document.getElementById('stat-venues');

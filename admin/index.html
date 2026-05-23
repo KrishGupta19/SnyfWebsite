@@ -1049,6 +1049,19 @@ async function initAdminApp() {
       });
     }
 
+    // 1b. Fetch Credentials
+    let credentials = [];
+    try {
+      const { data: dbCreds, error: credsErr } = await db
+        .from('venue_credentials')
+        .select('*');
+      if (!credsErr && dbCreds) {
+        credentials = dbCreds;
+      }
+    } catch (e) {
+      console.warn('venue_credentials fetch failed:', e);
+    }
+
     // 2. Fetch Menu Items
     try {
       const { data: dbMenuItems, error: menuErr } = await db
@@ -1079,18 +1092,58 @@ async function initAdminApp() {
     }
 
     // 3. Fetch Reports
+    let dbReports = [];
     try {
-      const { data: dbReports, error: reportsErr } = await db
+      const { data, error: reportsErr } = await db
         .from('field_reports')
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (!reportsErr && dbReports && dbReports.length > 0) {
+      if (!reportsErr && data && data.length > 0) {
+        dbReports = data;
         REPORTS_DATA = dbReports.map(mapReportFromRow);
       }
     } catch (reportsErr) {
       console.warn('field_reports fetch failed:', reportsErr);
     }
+
+    // Merge credentials and trust scores/reports into VENUES_DATA
+    VENUES_DATA.forEach(v => {
+      // Find credentials
+      const cred = credentials.find(c => c.venue_id === v.id);
+      if (cred) {
+        v.username = cred.username;
+        v.password = cred.password_hash;
+      }
+      
+      // Calculate scores from field reports
+      const vReports = dbReports ? dbReports.filter(r => r.venue_id === v.id || r.venue_name === v.name) : [];
+      if (vReports.length > 0) {
+        const verifiedReports = vReports.filter(r => r.verified && !r.flagged);
+        const reportSource = verifiedReports.length > 0 ? verifiedReports : vReports;
+        const sums = reportSource.reduce((acc, curr) => ({
+          food: acc.food + (curr.food || 5),
+          ambience: acc.ambience + (curr.ambience || 5),
+          service: acc.service + (curr.service || 5),
+          value: acc.value + (curr.value || 5),
+          wait: acc.wait + (curr.wait_time || 5)
+        }), { food: 0, ambience: 0, service: 0, value: 0, wait: 0 });
+
+        v.scores = {
+          food: sums.food / reportSource.length,
+          ambience: sums.ambience / reportSource.length,
+          service: sums.service / reportSource.length,
+          value: sums.value / reportSource.length,
+          wait: sums.wait / reportSource.length
+        };
+        
+        // Find anchor report if any for note/source
+        const anchorReport = reportSource.find(r => r.trust_level === 'anchor') || reportSource[0];
+        v.scoreSource = anchorReport.reviewer === '@snyf_intelligence' ? 'Manual Override' : 'Algorithm';
+        v.scoreNote = anchorReport.note || '';
+        v.visits = reportSource.length;
+      }
+    });
 
     // 4. Fetch Waitlist
     try {
@@ -1300,26 +1353,63 @@ async function saveTrustScores() {
   const scoreLocked = document.getElementById('trust-lock').checked;
 
   try {
-    const { error } = await db
-      .from('venues')
-      .update({
-        score_food: updatedScores.food,
-        score_ambience: updatedScores.ambience,
-        score_service: updatedScores.service,
-        score_value: updatedScores.value,
-        score_wait: updatedScores.wait,
-        score_note: scoreNote,
-        score_locked: scoreLocked
-      })
-      .eq('id', currentVenueId);
+    // Check if there is an existing anchor report by snyf_intelligence
+    const { data: existingReports, error: findError } = await db
+      .from('field_reports')
+      .select('id')
+      .eq('venue_id', currentVenueId)
+      .eq('trust_level', 'anchor')
+      .eq('reviewer', '@snyf_intelligence')
+      .limit(1);
 
-    if (error) throw error;
+    if (findError) throw findError;
+
+    if (existingReports && existingReports.length > 0) {
+      // Update existing anchor report
+      const { error: updateErr } = await db
+        .from('field_reports')
+        .update({
+          food: updatedScores.food,
+          ambience: updatedScores.ambience,
+          service: updatedScores.service,
+          value: updatedScores.value,
+          wait_time: updatedScores.wait,
+          note: scoreNote,
+          verified: true
+        })
+        .eq('id', existingReports[0].id);
+
+      if (updateErr) throw updateErr;
+    } else {
+      // Insert a new anchor report
+      const { error: insertErr } = await db
+        .from('field_reports')
+        .insert({
+          venue_id: currentVenueId,
+          venue_name: venue.name,
+          reviewer: '@snyf_intelligence',
+          trust_level: 'anchor',
+          food: updatedScores.food,
+          ambience: updatedScores.ambience,
+          service: updatedScores.service,
+          value: updatedScores.value,
+          wait_time: updatedScores.wait,
+          note: scoreNote,
+          verified: true,
+          flagged: false,
+          source: 'manual'
+        });
+
+      if (insertErr) throw insertErr;
+    }
 
     // Update locally
     venue.scores = updatedScores;
     venue.scoreNote = scoreNote;
     venue.scoreLocked = scoreLocked;
 
+    renderOverviewVenues();
+    renderVenuesTable();
     showToast('✓ Trust scores saved', 'success');
   } catch (err) {
     dbError('saveTrustScores', err);
@@ -1713,20 +1803,15 @@ async function submitNewVenue() {
     description: desc,
     tagline: tag,
     status: 'active',
-    score_food: avScores.food,
-    score_ambience: avScores.ambience,
-    score_service: avScores.service,
-    score_value: avScores.value,
-    score_wait: avScores.wait,
-    verified_count: visits,
-    score_source: 'Manual Override',
-    score_note: document.getElementById('av-score-note').value.trim() || '',
-    score_locked: false,
-    username,
-    password
+    show_on_discover: true,
+    featured: false,
+    sort_order: VENUES_DATA.length + 1,
+    hours: '9AM – 11PM · Mon–Sun',
+    location: zone + ', NCR'
   };
 
   try {
+    // 1. Insert venue
     const { data: inserted, error } = await db
       .from('venues')
       .insert(newVenueDb)
@@ -1735,7 +1820,47 @@ async function submitNewVenue() {
 
     if (error) throw error;
 
+    // 2. Insert credential
+    const { error: credsError } = await db
+      .from('venue_credentials')
+      .insert({
+        venue_id: inserted.id,
+        username: username,
+        password_hash: password,
+        changed_by: 'super_admin'
+      });
+
+    if (credsError) throw credsError;
+
+    // 3. Insert initial score report
+    const { error: reportError } = await db
+      .from('field_reports')
+      .insert({
+        venue_id: inserted.id,
+        venue_name: name,
+        reviewer: '@snyf_intelligence',
+        trust_level: 'anchor',
+        food: avScores.food,
+        ambience: avScores.ambience,
+        service: avScores.service,
+        value: avScores.value,
+        wait_time: avScores.wait,
+        note: document.getElementById('av-score-note').value.trim() || 'Initial override trust profile',
+        verified: true,
+        flagged: false,
+        source: 'manual'
+      });
+
+    if (reportError) throw reportError;
+
     const mapped = mapVenueFromRow(inserted);
+    mapped.username = username;
+    mapped.password = password;
+    mapped.scores = { ...avScores };
+    mapped.visits = 1;
+    mapped.scoreSource = 'Manual Override';
+    mapped.scoreNote = document.getElementById('av-score-note').value.trim() || 'Initial override trust profile';
+
     VENUES_DATA.push(mapped);
     MENU_DATA[slug] = [];
     closeModal('add-venue-modal');
@@ -1805,27 +1930,128 @@ function downloadQR(format) {
 }
 
 // VENUE DETAIL ACTIONS
-function saveVenueInfo() { showToast('✓ Venue info saved', 'success'); }
-
-function resetCredentials() {
-  const newPass = generatePassword();
-  showToast(`✓ Credentials reset — new password: ${newPass}`, 'success');
-}
-
-function deactivateVenue() {
+async function saveVenueInfo() {
   const venue = VENUES_DATA.find(v => v.id === currentVenueId);
-  if (venue) { venue.status = 'inactive'; renderVenuesTable(); renderOverviewVenues(); }
-  showToast('Venue deactivated', 'info');
+  if (!venue) return;
+  
+  const name = document.getElementById('edit-name').value.trim();
+  const slug = document.getElementById('edit-slug').value.trim();
+  const zone = document.getElementById('edit-zone').value;
+  const cat  = document.getElementById('edit-category').value;
+  const desc = document.getElementById('edit-desc').value.trim();
+  const tag  = document.getElementById('edit-tagline').value.trim();
+  const active = document.getElementById('edit-active').checked;
+  
+  try {
+    const { error } = await db
+      .from('venues')
+      .update({
+        name,
+        slug,
+        zone,
+        category: cat,
+        description: desc,
+        tagline: tag,
+        status: active ? 'active' : 'inactive',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', currentVenueId);
+      
+    if (error) throw error;
+    
+    // Update locally
+    venue.name = name;
+    venue.slug = slug;
+    venue.zone = zone;
+    venue.category = cat;
+    venue.desc = desc;
+    venue.tagline = tag;
+    venue.status = active ? 'active' : 'inactive';
+    
+    renderVenuesTable();
+    renderOverviewVenues();
+    showToast('✓ Venue info saved', 'success');
+  } catch (err) {
+    dbError('saveVenueInfo', err);
+    showToast('⚠ Failed to save venue info', 'error');
+  }
 }
 
-function deleteVenueConfirm() {
+async function resetCredentials() {
+  const venue = VENUES_DATA.find(v => v.id === currentVenueId);
+  if (!venue) return;
+  const newPass = generatePassword();
+  try {
+    const { error } = await db
+      .from('venue_credentials')
+      .update({
+        password_hash: newPass,
+        last_changed: new Date().toISOString(),
+        changed_by: 'super_admin'
+      })
+      .eq('venue_id', currentVenueId);
+      
+    if (error) throw error;
+    
+    venue.password = newPass;
+    renderCredentials(venue);
+    showToast(`✓ Credentials reset — new password: ${newPass}`, 'success');
+  } catch (err) {
+    dbError('resetCredentials', err);
+    showToast('⚠ Failed to reset credentials', 'error');
+  }
+}
+
+async function deactivateVenue() {
+  const venue = VENUES_DATA.find(v => v.id === currentVenueId);
+  if (!venue) return;
+  try {
+    const { error } = await db
+      .from('venues')
+      .update({ status: 'inactive' })
+      .eq('id', currentVenueId);
+      
+    if (error) throw error;
+    
+    venue.status = 'inactive';
+    document.getElementById('edit-active').checked = false;
+    renderVenuesTable();
+    renderOverviewVenues();
+    showToast('Venue deactivated', 'info');
+  } catch (err) {
+    dbError('deactivateVenue', err);
+    showToast('⚠ Failed to deactivate venue', 'error');
+  }
+}
+
+async function deleteVenueConfirm() {
   const venue = VENUES_DATA.find(v => v.id === currentVenueId);
   if (!venue) return;
   const confirm = window.prompt(`Type the venue name to confirm deletion:\n"${venue.name}"`);
   if (confirm === venue.name) {
-    VENUES_DATA.splice(VENUES_DATA.indexOf(venue), 1);
-    renderVenuesTable(); renderOverviewVenues(); showVenueList();
-    showToast('Venue deleted', 'error');
+    try {
+      // Delete credentials, photos, menu items, field reports first (in case cascade isn't set)
+      await db.from('venue_credentials').delete().eq('venue_id', currentVenueId);
+      await db.from('venue_photos').delete().eq('venue_id', currentVenueId);
+      await db.from('menu_items').delete().eq('venue_id', currentVenueId);
+      await db.from('field_reports').delete().eq('venue_id', currentVenueId);
+      
+      const { error } = await db
+        .from('venues')
+        .delete()
+        .eq('id', currentVenueId);
+        
+      if (error) throw error;
+      
+      VENUES_DATA.splice(VENUES_DATA.indexOf(venue), 1);
+      renderVenuesTable();
+      renderOverviewVenues();
+      showVenueList();
+      showToast('Venue deleted', 'error');
+    } catch (err) {
+      dbError('deleteVenueConfirm', err);
+      showToast('⚠ Failed to delete venue', 'error');
+    }
   } else if (confirm !== null) {
     showToast('⚠ Name did not match — deletion cancelled', 'error');
   }
