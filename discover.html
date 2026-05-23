@@ -525,12 +525,11 @@ async function loadVenues() {
       .from('venues')
       .select(`
         id, slug, name, zone, category,
-        description, tagline, show_on_discover,
+        description, tagline,
         featured, sort_order, hours,
         venue_photos ( url, sort_order, alt_text )
       `)
       .eq('status', 'active')
-      .eq('show_on_discover', true)
       .order('sort_order', { ascending: true });
 
     if (error) throw error;
