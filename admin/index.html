@@ -3,7 +3,7 @@
 <head>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="../supabase.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/lib/browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Snyf Admin</title>
@@ -334,12 +334,12 @@
         <!-- OVERVIEW -->
         <div id="section-overview" class="admin-section">
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px;">
-            <div class="stat-card"><div class="stat-label">Total Venues</div><div class="stat-value" style="color:var(--cyan);">2</div><div class="stat-delta">↑ 2 this month</div></div>
-            <div class="stat-card"><div class="stat-label">Active Venues</div><div class="stat-value" style="color:var(--mint);">2</div><div class="stat-delta">100% uptime</div></div>
-            <div class="stat-card"><div class="stat-label">Field Reports</div><div class="stat-value" style="color:var(--text);">847</div><div class="stat-delta">↑ 47 this week</div></div>
+            <div class="stat-card"><div class="stat-label">Total Venues</div><div class="stat-value" id="stat-total-venues" style="color:var(--cyan);">—</div><div class="stat-delta">↑ 2 this month</div></div>
+            <div class="stat-card"><div class="stat-label">Active Venues</div><div class="stat-value" id="stat-active-venues" style="color:var(--mint);">—</div><div class="stat-delta">100% uptime</div></div>
+            <div class="stat-card"><div class="stat-label">Field Reports</div><div class="stat-value" id="stat-total-reports" style="color:var(--text);">—</div><div class="stat-delta">↑ 47 this week</div></div>
             <div class="stat-card"><div class="stat-label">QR Scans</div><div class="stat-value" style="color:var(--gold);">312</div><div class="stat-delta">↑ 28 today</div></div>
-            <div class="stat-card"><div class="stat-label">Waitlist</div><div class="stat-value" style="color:var(--violet);">1,247</div><div class="stat-delta">↑ 12 today</div></div>
-            <div class="stat-card"><div class="stat-label">Avg Trust Score</div><div class="stat-value" style="color:var(--cyan);">8.5</div><div class="stat-delta">Across 2 venues</div></div>
+            <div class="stat-card"><div class="stat-label">Waitlist</div><div class="stat-value" id="stat-waitlist" style="color:var(--violet);">—</div><div class="stat-delta">↑ 12 today</div></div>
+            <div class="stat-card"><div class="stat-label">Avg Trust Score</div><div class="stat-value" id="stat-avg-trust" style="color:var(--cyan);">—</div><div class="stat-delta" id="stat-avg-trust-delta">Across 0 venues</div></div>
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;">
@@ -993,7 +993,7 @@ function formatTimeAgo(dateStr) {
 
 let currentVenueId    = null;
 let avStep            = 1;
-let avScores          = { food:7.5, ambience:7.5, service:7.5, value:7.5, wait:7.5 };
+let avScores          = { food:5.0, ambience:5.0, service:5.0, value:5.0, wait:5.0 };
 let venueStatusFilter = 'all';
 let venueZoneFilter   = 'all';
 
@@ -1167,6 +1167,7 @@ async function initAdminApp() {
 
     // 5. Generate Activity Feed
     generateActivityFeedFromData();
+    updateOverviewStats();
 
     showToast('✓ Data synchronized with Supabase', 'success');
   } catch (err) {
@@ -1212,6 +1213,33 @@ function calcOverall(s) {
   return (s.food*0.3 + s.ambience*0.2 + s.service*0.2 + s.value*0.2 + s.wait*0.1).toFixed(1);
 }
 
+function updateOverviewStats() {
+  const total = VENUES_DATA.length;
+  const active = VENUES_DATA.filter(v => v.status === 'active').length;
+  const reports = REPORTS_DATA.length;
+  const waitlist = WAITLIST_DATA.length;
+  
+  let avgTrust = 0;
+  if (total > 0) {
+    const sum = VENUES_DATA.reduce((acc, v) => acc + parseFloat(calcOverall(v.scores)), 0);
+    avgTrust = (sum / total).toFixed(1);
+  }
+  
+  const elTotal = document.getElementById('stat-total-venues');
+  const elActive = document.getElementById('stat-active-venues');
+  const elReports = document.getElementById('stat-total-reports');
+  const elWaitlist = document.getElementById('stat-waitlist');
+  const elAvg = document.getElementById('stat-avg-trust');
+  const elAvgDelta = document.getElementById('stat-avg-trust-delta');
+  
+  if (elTotal) elTotal.textContent = total;
+  if (elActive) elActive.textContent = active;
+  if (elReports) elReports.textContent = reports;
+  if (elWaitlist) elWaitlist.textContent = waitlist;
+  if (elAvg) elAvg.textContent = avgTrust + '/7';
+  if (elAvgDelta) elAvgDelta.textContent = `Across ${total} venue${total !== 1 ? 's' : ''}`;
+}
+
 // OVERVIEW
 function renderActivityFeed() {
   const feed = document.getElementById('activity-feed');
@@ -1233,7 +1261,7 @@ function renderOverviewVenues() {
     <tr>
       <td style="font-weight:700;">${v.name}</td>
       <td><span style="font-family:var(--mono);font-size:10px;color:var(--muted);">${v.zone}</span></td>
-      <td><span style="font-family:var(--mono);font-weight:700;color:var(--cyan);">${calcOverall(v.scores)}/10</span></td>
+      <td><span style="font-family:var(--mono);font-weight:700;color:var(--cyan);">${calcOverall(v.scores)}/7</span></td>
       <td><span class="badge badge--${v.status}">${v.status}</span></td>
       <td style="color:var(--muted);font-size:12px;">Today</td>
       <td class="tbl-actions">
@@ -1263,7 +1291,7 @@ function renderVenuesTable() {
       <td><span style="font-family:var(--mono);font-size:10px;color:var(--cyan);">/${v.slug}</span></td>
       <td style="color:var(--muted);font-size:12px;">${v.zone}</td>
       <td><span style="font-family:var(--mono);font-size:10px;color:var(--muted);">${v.category}</span></td>
-      <td><span style="font-family:var(--mono);font-weight:700;color:var(--cyan);">${calcOverall(v.scores)}/10</span></td>
+      <td><span style="font-family:var(--mono);font-weight:700;color:var(--cyan);">${calcOverall(v.scores)}/7</span></td>
       <td><span class="badge badge--manual">${v.scoreSource}</span></td>
       <td><span class="badge badge--${v.status}">${v.status}</span></td>
       <td style="color:var(--muted);font-size:11px;font-family:var(--mono);">${v.created}</td>
@@ -1300,7 +1328,7 @@ function openVenueDetail(id) {
   document.getElementById('detail-venue-name').textContent = venue.name;
   document.getElementById('detail-venue-url').textContent  = `snyf.co.in/${venue.slug}`;
   document.getElementById('detail-view-live').href         = getVenueUrl(venue.slug);
-  document.getElementById('dt-trust').textContent       = calcOverall(venue.scores) + '/10';
+  document.getElementById('dt-trust').textContent       = calcOverall(venue.scores) + '/7';
   document.getElementById('dt-visits').textContent      = venue.visits;
   document.getElementById('dt-menu-count').textContent  = (MENU_DATA[venue.slug] || []).length;
   document.getElementById('dt-report-count').textContent = REPORTS_DATA.filter(r => r.venue === venue.name).length;
@@ -1330,7 +1358,7 @@ function renderTrustSliders(venue) {
   wrap.innerHTML = DIMS.map(d => `
     <div class="score-source-row">
       <span style="font-size:12px;color:var(--muted);">${d.label}</span>
-      <input type="range" class="admin-slider" min="1" max="10" step="0.1" value="${venue.scores[d.key]}"
+      <input type="range" class="admin-slider" min="1" max="7" step="0.5" value="${venue.scores[d.key]}"
         oninput="document.getElementById('ts-val-${d.key}').textContent=parseFloat(this.value).toFixed(1)">
       <span id="ts-val-${d.key}" style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--cyan);text-align:right;">${venue.scores[d.key].toFixed(1)}</span>
     </div>`).join('');
@@ -1417,6 +1445,7 @@ async function saveTrustScores() {
 
     renderOverviewVenues();
     renderVenuesTable();
+    updateOverviewStats();
     showToast('✓ Trust scores saved', 'success');
   } catch (err) {
     dbError('saveTrustScores', err);
@@ -1738,9 +1767,9 @@ function initAddVenueSliders() {
   wrap.innerHTML = DIMS.map(d => `
     <div class="score-source-row">
       <span style="font-size:12px;color:var(--muted);">${d.label}</span>
-      <input type="range" class="admin-slider" min="1" max="10" step="0.1" value="7.5"
+      <input type="range" class="admin-slider" min="1" max="7" step="0.5" value="5.0"
         oninput="document.getElementById('avs-${d.key}').textContent=parseFloat(this.value).toFixed(1);avScores['${d.key}']=parseFloat(this.value);">
-      <span id="avs-${d.key}" style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--cyan);text-align:right;min-width:32px;">7.5</span>
+      <span id="avs-${d.key}" style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--cyan);text-align:right;min-width:32px;">5.0</span>
     </div>`).join('');
 }
 
@@ -1883,6 +1912,7 @@ async function submitNewVenue() {
     renderVenuesTable();
     renderOverviewVenues();
     renderDiscoverControl();
+    updateOverviewStats();
 
     populateQRVenues();
     showToast(`✓ ${name} created successfully`, 'success');
@@ -2052,6 +2082,7 @@ async function saveVenueInfo() {
     
     renderVenuesTable();
     renderOverviewVenues();
+    updateOverviewStats();
     populateQRVenues();
     showToast('✓ Venue info saved', 'success');
   } catch (err) {
@@ -2100,6 +2131,7 @@ async function deactivateVenue() {
     document.getElementById('edit-active').checked = false;
     renderVenuesTable();
     renderOverviewVenues();
+    updateOverviewStats();
     showToast('Venue deactivated', 'info');
   } catch (err) {
     dbError('deactivateVenue', err);
@@ -2129,6 +2161,7 @@ async function deleteVenueConfirm() {
       VENUES_DATA.splice(VENUES_DATA.indexOf(venue), 1);
       renderVenuesTable();
       renderOverviewVenues();
+      updateOverviewStats();
       populateQRVenues();
       showVenueList();
       showToast('Venue deleted', 'error');

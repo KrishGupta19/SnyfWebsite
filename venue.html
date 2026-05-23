@@ -1356,7 +1356,7 @@
         <div class="menu-trust-footer">
           <div class="menu-trust-overall">
             <span class="menu-trust-score" id="trust-score"></span>
-            <span class="menu-trust-denom">/10</span>
+            <span class="menu-trust-denom">/7</span>
           </div>
           <span class="menu-trust-count" id="trust-count"></span>
         </div>
@@ -1443,36 +1443,36 @@
           <div class="track-slider-row">
             <div class="track-slider-meta">
               <span class="track-slider-label">Food Quality</span>
-              <span class="track-slider-val" id="sl-food-val">5.0</span>
+              <span class="track-slider-val" id="sl-food-val">4.0</span>
             </div>
-            <input type="range" class="track-slider" min="1" max="10" step="0.1" value="5"
+            <input type="range" class="track-slider" min="1" max="7" step="0.5" value="4"
               id="sl-food" oninput="updateSlider('food', this.value)">
           </div>
 
           <div class="track-slider-row">
             <div class="track-slider-meta">
               <span class="track-slider-label">Ambience</span>
-              <span class="track-slider-val" id="sl-ambience-val">5.0</span>
+              <span class="track-slider-val" id="sl-ambience-val">4.0</span>
             </div>
-            <input type="range" class="track-slider" min="1" max="10" step="0.1" value="5"
+            <input type="range" class="track-slider" min="1" max="7" step="0.5" value="4"
               id="sl-ambience" oninput="updateSlider('ambience', this.value)">
           </div>
 
           <div class="track-slider-row">
             <div class="track-slider-meta">
               <span class="track-slider-label">Service</span>
-              <span class="track-slider-val" id="sl-service-val">5.0</span>
+              <span class="track-slider-val" id="sl-service-val">4.0</span>
             </div>
-            <input type="range" class="track-slider" min="1" max="10" step="0.1" value="5"
+            <input type="range" class="track-slider" min="1" max="7" step="0.5" value="4"
               id="sl-service" oninput="updateSlider('service', this.value)">
           </div>
 
           <div class="track-slider-row">
             <div class="track-slider-meta">
               <span class="track-slider-label">Value for Money</span>
-              <span class="track-slider-val" id="sl-value-val">5.0</span>
+              <span class="track-slider-val" id="sl-value-val">4.0</span>
             </div>
-            <input type="range" class="track-slider" min="1" max="10" step="0.1" value="5"
+            <input type="range" class="track-slider" min="1" max="7" step="0.5" value="4"
               id="sl-value" oninput="updateSlider('value', this.value)">
           </div>
 
@@ -1781,8 +1781,8 @@
     const wrap = document.getElementById('trust-dims');
     wrap.innerHTML = dims.map(d => {
       const score = VENUE_DATA.scores[d.key];
-      const pct   = (score / 10 * 100).toFixed(0);
-      const isBad = score < 5.0;
+      const pct   = (score / 7 * 100).toFixed(0);
+      const isBad = score < 3.5;
       return `
       <div class="menu-trust-dim">
         <span class="menu-trust-dim-label">${d.label}</span>
