@@ -1497,8 +1497,21 @@
   // ══════════════════════════════════════════════════════════════
   let VENUE_DATA = null;
 
-  // Read slug from URL query param (set by netlify.toml redirect)
-  const VENUE_SLUG = new URLSearchParams(window.location.search).get('slug') || '';
+  // Read slug from URL query param (local dev) or pathname (production rewrite)
+  const getVenueSlug = () => {
+    const searchSlug = new URLSearchParams(window.location.search).get('slug');
+    if (searchSlug) return searchSlug;
+    
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    if (parts.length > 0) {
+      const lastPart = parts[parts.length - 1];
+      if (lastPart !== 'venue.html' && lastPart !== 'discover.html' && lastPart !== 'admin' && lastPart !== 'index.html') {
+        return lastPart;
+      }
+    }
+    return '';
+  };
+  const VENUE_SLUG = getVenueSlug();
 
   async function loadVenueData() {
     if (!VENUE_SLUG) {
