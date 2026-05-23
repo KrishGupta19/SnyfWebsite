@@ -793,10 +793,13 @@ async function loadVenues() {
             <span class="dv-hours-dot ${venue.isOpen ? '' : 'dv-hours-dot--closed'}"></span>
             ${venue.hours}
           </div>
-          <a href="${venue.slug}" class="dv-know-more" target="_blank" rel="noopener">
+          const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.port !== '';
+          const targetUrl = isLocal ? `/venue.html?slug=${venue.slug}` : `/${venue.slug}`;
+          return `
+          <a href="${targetUrl}" class="dv-know-more" target="_blank" rel="noopener">
             Know More
             <span class="dv-know-more-arrow">→</span>
-          </a>
+          </a>`;
         </div>
 
       </div>

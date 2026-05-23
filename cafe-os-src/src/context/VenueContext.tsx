@@ -17,7 +17,17 @@ export function VenueProvider({ children }: { children: ReactNode }) {
   const [venue,    setVenue]    = useState<Venue | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  const slug = new URLSearchParams(window.location.search).get('slug') || '';
+  const getSlugFromUrl = () => {
+    const searchSlug = new URLSearchParams(window.location.search).get('slug');
+    if (searchSlug) return searchSlug;
+    
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    if (parts.length >= 2 && parts[parts.length - 1] === 'admin') {
+      return parts[parts.length - 2];
+    }
+    return '';
+  };
+  const slug = getSlugFromUrl();
 
   useEffect(() => {
     const sessionKey = `snyf_admin_${slug}`;
