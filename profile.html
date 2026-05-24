@@ -626,6 +626,249 @@
     .pf-handle-input:focus {
       box-shadow: 0 0 0 3px rgba(111,183,214,0.12);
     }
+
+    /* ── Edit Profile Button & Modal ── */
+    .pf-edit-profile-btn {
+      background: transparent;
+      border: 1px solid var(--border, #D8D5CF);
+      border-radius: 8px;
+      padding: 9px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink, #1E1E1B);
+      cursor: pointer;
+      transition: all 0.18s;
+      white-space: nowrap;
+      text-align: center;
+      font-family: inherit;
+    }
+
+    .pf-edit-profile-btn:hover {
+      border-color: var(--cyan, #6FB7D6);
+      background: rgba(111,183,214,0.06);
+    }
+
+    .pf-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(30, 30, 27, 0.4);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: pf-fade-in 0.25s ease;
+    }
+
+    .pf-modal-card {
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid var(--border, #D8D5CF);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 20px 40px rgba(30, 30, 27, 0.15);
+      overflow: hidden;
+      animation: pf-slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes pf-fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes pf-slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .pf-modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border, #D8D5CF);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .pf-modal-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--ink, #1E1E1B);
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .pf-modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--muted, #6E6A64);
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .pf-modal-body {
+      padding: 24px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .pf-edit-avatar-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .pf-edit-avatar-preview {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2px solid var(--border, #D8D5CF);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--ink, #1E1E1B);
+      background: rgba(246,245,242,0.9);
+      overflow: hidden;
+    }
+
+    .pf-avatar-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .pf-avatar-upload-btn, .pf-avatar-preset-btn, .pf-avatar-remove-btn {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid var(--border, #D8D5CF);
+      font-family: inherit;
+    }
+
+    .pf-avatar-upload-btn {
+      color: white;
+      background: var(--ink, #1E1E1B);
+      border-color: var(--ink, #1E1E1B);
+    }
+    .pf-avatar-upload-btn:hover {
+      background: #333;
+    }
+
+    .pf-avatar-preset-btn {
+      color: var(--ink, #1E1E1B);
+      background: rgba(246,245,242,0.9);
+    }
+    .pf-avatar-preset-btn:hover {
+      background: #eee;
+    }
+
+    .pf-avatar-remove-btn {
+      color: var(--orange, #D97A4A);
+      background: rgba(217,122,74,0.06);
+      border-color: rgba(217,122,74,0.2);
+    }
+    .pf-avatar-remove-btn:hover {
+      background: rgba(217,122,74,0.12);
+    }
+
+    .pf-presets-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+      justify-items: center;
+      animation: pf-slide-up 0.2s ease;
+    }
+
+    .pf-preset-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+
+    .pf-preset-circle:hover {
+      transform: scale(1.1);
+      border-color: var(--cyan, #6FB7D6);
+    }
+
+    .pf-modal-field {
+      margin-bottom: 16px;
+    }
+
+    .pf-modal-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted, #6E6A64);
+      margin-bottom: 6px;
+    }
+
+    .pf-modal-input {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink, #1E1E1B);
+      background: rgba(246,245,242,0.9);
+      border: 1.5px solid var(--border, #D8D5CF);
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .pf-modal-input:focus {
+      border-color: var(--cyan, #6FB7D6);
+      box-shadow: 0 0 0 3px rgba(111,183,214,0.12);
+    }
+
+    .pf-modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border, #D8D5CF);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .pf-modal-cancel {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted, #6E6A64);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px 16px;
+      font-family: inherit;
+    }
+
+    .pf-modal-save {
+      font-size: 13px;
+      font-weight: 600;
+      color: white;
+      background: var(--ink, #1E1E1B);
+      border: none;
+      border-radius: 8px;
+      padding: 8px 20px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+
+    .pf-modal-save:hover {
+      background: #333;
+    }
+
+    .pf-modal-save:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 
@@ -792,6 +1035,7 @@
             ">click to edit</div>
           </div>
           <div class="pf-user-email" id="pf-user-email">—</div>
+          <div class="pf-user-phone" id="pf-user-phone" style="display:none;font-size:11px;font-family:var(--mono,monospace);color:var(--muted,#6E6A64);margin-top:2px;">—</div>
           <div class="pf-user-since" id="pf-user-since">—</div>
           <div id="pf-handle-wrap" style="margin-top:8px;">
             <span
@@ -813,7 +1057,10 @@
             >+ Set handle</span>
           </div>
         </div>
-        <button class="pf-signout-btn" onclick="handleSignOut()">Sign Out</button>
+        <div class="pf-header-actions" style="display:flex;flex-direction:column;gap:8px;align-self:center;margin-left:auto;">
+          <button class="pf-edit-profile-btn" onclick="openProfileModal()">Edit Profile</button>
+          <button class="pf-signout-btn" onclick="handleSignOut()">Sign Out</button>
+        </div>
       </div>
 
       <!-- Stats row -->
@@ -860,6 +1107,72 @@
   <!-- ── LOADING SCREEN (initial auth check) ── -->
   <div id="pf-loading-screen" class="pf-auth-wrap">
     <div class="pf-spinner"></div>
+  </div>
+
+  <!-- Edit Profile Modal -->
+  <div id="pf-edit-modal" class="pf-modal-overlay" style="display:none;">
+    <div class="pf-modal-card">
+      <div class="pf-modal-header">
+        <h3 class="pf-modal-title">Edit Profile</h3>
+        <button class="pf-modal-close" onclick="closeProfileModal()">×</button>
+      </div>
+      
+      <div class="pf-modal-body">
+        <!-- Avatar selection -->
+        <div class="pf-edit-avatar-section">
+          <div class="pf-edit-avatar-preview" id="pf-modal-avatar-preview">S</div>
+          <div class="pf-avatar-actions">
+            <label class="pf-avatar-upload-btn">
+              Upload Image
+              <input type="file" id="pf-avatar-file-input" accept="image/*" style="display:none;" onchange="handleAvatarUpload(event)">
+            </label>
+            <button class="pf-avatar-preset-btn" onclick="togglePresetAvatars()">Presets</button>
+            <button class="pf-avatar-remove-btn" onclick="removeAvatar()">Remove</button>
+          </div>
+        </div>
+
+        <!-- Preset Avatars Grid (Collapsible) -->
+        <div id="pf-presets-grid" class="pf-presets-grid" style="display:none;">
+          <div class="pf-preset-circle" style="background:linear-gradient(135deg, #6FB7D6, #7BC6A4)" onclick="selectPresetGradient('linear-gradient(135deg, #6FB7D6, #7BC6A4)')"></div>
+          <div class="pf-preset-circle" style="background:linear-gradient(135deg, #FF9F43, #FF5252)" onclick="selectPresetGradient('linear-gradient(135deg, #FF9F43, #FF5252)')"></div>
+          <div class="pf-preset-circle" style="background:linear-gradient(135deg, #BDC3C7, #2C3E50)" onclick="selectPresetGradient('linear-gradient(135deg, #BDC3C7, #2C3E50)')"></div>
+          <div class="pf-preset-circle" style="background:linear-gradient(135deg, #E0C3FC, #8EC5FC)" onclick="selectPresetGradient('linear-gradient(135deg, #E0C3FC, #8EC5FC)')"></div>
+          <div class="pf-preset-circle" style="background:linear-gradient(135deg, #FAD961, #F76B1C)" onclick="selectPresetGradient('linear-gradient(135deg, #FAD961, #F76B1C)')"></div>
+          <div class="pf-preset-circle" style="background:linear-gradient(135deg, #f093fb, #f5576c)" onclick="selectPresetGradient('linear-gradient(135deg, #f093fb, #f5576c)')"></div>
+        </div>
+
+        <div style="font-size:11px;color:var(--muted,#6E6A64);text-align:center;margin-bottom:12px;">
+          Or paste an image URL below:
+        </div>
+        <div style="margin-bottom:20px;">
+          <input type="text" class="pf-modal-input" id="pf-avatar-url-input" placeholder="https://example.com/avatar.jpg" oninput="handleAvatarUrlInput(event)">
+        </div>
+
+        <!-- Form fields -->
+        <div class="pf-modal-field">
+          <label class="pf-modal-label">Name</label>
+          <input type="text" class="pf-modal-input" id="pf-modal-name" placeholder="Your Name" maxlength="40">
+        </div>
+
+        <div class="pf-modal-field">
+          <label class="pf-modal-label">Handle</label>
+          <div style="position:relative;">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-family:monospace;color:var(--muted,#6E6A64);font-weight:700;">@</span>
+            <input type="text" class="pf-modal-input" id="pf-modal-handle" placeholder="username" maxlength="30" style="padding-left:26px;">
+          </div>
+        </div>
+
+        <div class="pf-modal-field">
+          <label class="pf-modal-label">Mobile Number</label>
+          <input type="text" class="pf-modal-input" id="pf-modal-phone" placeholder="9876543210" maxlength="15">
+        </div>
+      </div>
+
+      <div class="pf-modal-footer">
+        <button class="pf-modal-cancel" onclick="closeProfileModal()">Cancel</button>
+        <button class="pf-modal-save" id="pf-modal-save-btn" onclick="saveProfileModal()">Save Changes</button>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -1165,9 +1478,36 @@ async function loadProfile(user) {
     month: 'long', year: 'numeric',
   });
 
-  document.getElementById('pf-avatar').textContent     = initial;
+  const avatarUrl = user.user_metadata?.avatar_url || '';
+  const avatarEl  = document.getElementById('pf-avatar');
+  avatarEl.style.background = '';
+  avatarEl.innerHTML = '';
+  
+  if (avatarUrl) {
+    if (avatarUrl.startsWith('gradient:')) {
+      avatarEl.style.background = avatarUrl.replace('gradient:', '');
+      avatarEl.textContent = initial;
+      avatarEl.style.color = '#fff';
+    } else {
+      avatarEl.innerHTML = `<img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+    }
+  } else {
+    avatarEl.textContent = initial;
+    avatarEl.style.color = 'var(--ink, #1E1E1B)';
+  }
+
   document.getElementById('pf-user-name').textContent  = name;
   document.getElementById('pf-user-email').textContent = user.email || '—';
+  
+  // Mobile display
+  const phoneEl = document.getElementById('pf-user-phone');
+  if (profile?.phone) {
+    phoneEl.textContent = profile.phone;
+    phoneEl.style.display = 'block';
+  } else {
+    phoneEl.style.display = 'none';
+  }
+
   document.getElementById('pf-user-since').textContent = `Member since ${sinceStr}`;
 
   // Load existing handle
@@ -1602,6 +1942,161 @@ function renderHandle(handle) {
         "
         title="Click to set your handle"
       >+ Set handle</span>`;
+  }
+}
+
+// ── EDIT PROFILE MODAL LOGIC ──────────────────────────────────
+let tempAvatarUrl = '';
+
+function openProfileModal() {
+  if (!currentUser) return;
+  
+  // Populate form fields
+  document.getElementById('pf-modal-name').value  = currentProfile?.name || '';
+  document.getElementById('pf-modal-handle').value = currentProfile?.handle || '';
+  document.getElementById('pf-modal-phone').value  = currentProfile?.phone || '';
+  
+  // Reset border colors
+  document.getElementById('pf-modal-handle').style.borderColor = '';
+  document.getElementById('pf-modal-phone').style.borderColor = '';
+  
+  // Populate avatar preview
+  tempAvatarUrl = currentUser.user_metadata?.avatar_url || '';
+  document.getElementById('pf-avatar-url-input').value = tempAvatarUrl.startsWith('data:') ? '' : tempAvatarUrl;
+  
+  updateModalAvatarPreview();
+  
+  // Hide presets grid initially
+  document.getElementById('pf-presets-grid').style.display = 'none';
+  
+  // Show modal
+  document.getElementById('pf-edit-modal').style.display = 'flex';
+}
+
+function closeProfileModal() {
+  document.getElementById('pf-edit-modal').style.display = 'none';
+}
+
+function updateModalAvatarPreview() {
+  const previewEl = document.getElementById('pf-modal-avatar-preview');
+  const nameVal = document.getElementById('pf-modal-name').value.trim() || 'S';
+  const initial = nameVal[0].toUpperCase();
+  
+  previewEl.style.background = '';
+  previewEl.innerHTML = '';
+  
+  if (tempAvatarUrl) {
+    if (tempAvatarUrl.startsWith('gradient:')) {
+      previewEl.style.background = tempAvatarUrl.replace('gradient:', '');
+      previewEl.textContent = initial;
+      previewEl.style.color = '#fff';
+    } else {
+      previewEl.innerHTML = `<img src="${tempAvatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+    }
+  } else {
+    previewEl.textContent = initial;
+    previewEl.style.color = 'var(--ink, #1E1E1B)';
+  }
+}
+
+function handleAvatarUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // Limit to 2MB for base64 storage
+  if (file.size > 2 * 1024 * 1024) {
+    alert('Image size must be less than 2MB');
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    tempAvatarUrl = e.target.result;
+    document.getElementById('pf-avatar-url-input').value = '';
+    updateModalAvatarPreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+function togglePresetAvatars() {
+  const grid = document.getElementById('pf-presets-grid');
+  grid.style.display = grid.style.display === 'none' ? 'grid' : 'none';
+}
+
+function selectPresetGradient(gradient) {
+  tempAvatarUrl = 'gradient:' + gradient;
+  updateModalAvatarPreview();
+}
+
+function removeAvatar() {
+  tempAvatarUrl = '';
+  document.getElementById('pf-avatar-url-input').value = '';
+  updateModalAvatarPreview();
+}
+
+function handleAvatarUrlInput(event) {
+  tempAvatarUrl = event.target.value.trim();
+  updateModalAvatarPreview();
+}
+
+async function saveProfileModal() {
+  if (!currentUser) return;
+  
+  const name   = document.getElementById('pf-modal-name').value.trim();
+  const handle = document.getElementById('pf-modal-handle').value.trim().toLowerCase();
+  const phone  = document.getElementById('pf-modal-phone').value.trim();
+  const saveBtn = document.getElementById('pf-modal-save-btn');
+  
+  // Simple validation
+  if (handle && !/^[a-z0-9_]{1,30}$/.test(handle)) {
+    const handleInp = document.getElementById('pf-modal-handle');
+    handleInp.style.borderColor = 'var(--orange,#D97A4A)';
+    handleInp.focus();
+    return;
+  }
+  
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving...';
+  
+  try {
+    // 1. Update public.users details
+    const { error: dbErr } = await db.from('users').update({ name, handle, phone }).eq('id', currentUser.id);
+    if (dbErr) throw dbErr;
+    
+    // 2. Update auth.users metadata for avatar URL
+    const { data: { user }, error: authErr } = await db.auth.updateUser({
+      data: { avatar_url: tempAvatarUrl }
+    });
+    if (authErr) throw authErr;
+    
+    if (user) currentUser = user;
+    
+    // 3. Update active session user profiles locally
+    currentProfile.name = name;
+    currentProfile.handle = handle;
+    currentProfile.phone = phone;
+    
+    // 4. Re-run loadProfile to refresh layout elements
+    await loadProfile(currentUser);
+    
+    // Close modal
+    closeProfileModal();
+    
+  } catch (err) {
+    dbError('saveProfileModal', err);
+    
+    // Check if unique constraint error on handle
+    if (err.message && err.message.toLowerCase().includes('unique')) {
+      const handleInp = document.getElementById('pf-modal-handle');
+      handleInp.style.borderColor = 'var(--orange,#D97A4A)';
+      handleInp.value = '';
+      handleInp.placeholder = 'Handle already taken';
+    } else {
+      alert('Error saving profile changes: ' + err.message);
+    }
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Changes';
   }
 }
 
