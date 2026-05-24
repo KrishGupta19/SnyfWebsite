@@ -573,6 +573,59 @@
       .pf-otp-box { width: 28px; height: 36px; font-size: 1.1rem; border-radius: 6px; }
       .pf-otp-wrap { gap: 4px; }
     }
+
+    /* ── Inline edit inputs ── */
+    .pf-name-input {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--ink, #1E1E1B);
+      background: rgba(246,245,242,0.9);
+      border: 1.5px solid var(--cyan, #6FB7D6);
+      border-radius: 8px;
+      padding: 5px 10px;
+      outline: none;
+      font-family: inherit;
+      transition: box-shadow 0.2s;
+    }
+
+    .pf-name-input:focus {
+      box-shadow: 0 0 0 3px rgba(111,183,214,0.12);
+    }
+
+    .pf-name-save {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--mint, #7BC6A4);
+      background: rgba(123,198,164,0.1);
+      border: 1px solid rgba(123,198,164,0.3);
+      border-radius: 6px;
+      padding: 5px 12px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.18s;
+    }
+
+    .pf-name-save:hover {
+      background: rgba(123,198,164,0.2);
+    }
+
+    .pf-handle-input {
+      font-size: 13px;
+      font-weight: 600;
+      font-family: var(--mono, monospace);
+      color: var(--cyan, #6FB7D6);
+      background: rgba(246,245,242,0.9);
+      border: 1.5px solid rgba(111,183,214,0.4);
+      border-radius: 8px;
+      padding: 5px 10px;
+      outline: none;
+      width: 160px;
+      transition: box-shadow 0.2s;
+    }
+
+    .pf-handle-input:focus {
+      box-shadow: 0 0 0 3px rgba(111,183,214,0.12);
+    }
   </style>
 </head>
 
@@ -721,13 +774,44 @@
       <div class="pf-header-card">
         <div class="pf-avatar" id="pf-avatar">?</div>
         <div class="pf-user-info">
-          <div class="pf-name-edit" id="pf-name-display">
-            <div class="pf-user-name" id="pf-user-name" onclick="startEditName()" style="cursor:pointer;" title="Click to edit">
-              —
-            </div>
+          <div id="pf-name-display">
+            <div
+              class="pf-user-name"
+              id="pf-user-name"
+              onclick="startEditName()"
+              style="cursor:pointer;"
+              title="Click to edit your name"
+            >—</div>
+            <div style="
+              font-size:10px;
+              color:var(--muted,#6E6A64);
+              font-family:var(--mono,monospace);
+              letter-spacing:0.08em;
+              margin-top:2px;
+              opacity:0.55;
+            ">click to edit</div>
           </div>
           <div class="pf-user-email" id="pf-user-email">—</div>
           <div class="pf-user-since" id="pf-user-since">—</div>
+          <div id="pf-handle-wrap" style="margin-top:8px;">
+            <span
+              id="pf-user-handle"
+              data-handle=""
+              onclick="startEditHandle()"
+              style="
+                font-family:var(--mono,monospace);
+                font-size:11px;
+                color:var(--cyan,#6FB7D6);
+                cursor:pointer;
+                padding:3px 9px;
+                background:rgba(111,183,214,0.08);
+                border:1px solid rgba(111,183,214,0.2);
+                border-radius:4px;
+                display:inline-block;
+              "
+              title="Click to set your handle"
+            >+ Set handle</span>
+          </div>
         </div>
         <button class="pf-signout-btn" onclick="handleSignOut()">Sign Out</button>
       </div>
@@ -1086,6 +1170,10 @@ async function loadProfile(user) {
   document.getElementById('pf-user-email').textContent = user.email || '—';
   document.getElementById('pf-user-since').textContent = `Member since ${sinceStr}`;
 
+  // Load existing handle
+  const handle = profile?.handle || '';
+  renderHandle(handle);
+
   // Update nav profile link
   const navLink = document.getElementById('nav-profile-link');
   if (navLink) navLink.textContent = initial;
@@ -1255,30 +1343,32 @@ async function loadReviews(userId) {
 // ── EDIT NAME ─────────────────────────────────────────────────
 function startEditName() {
   if (!currentUser) return;
-  const nameEl  = document.getElementById('pf-user-name');
-  const current = nameEl.textContent.trim();
   const wrap    = document.getElementById('pf-name-display');
+  const current = document.getElementById('pf-user-name')?.textContent?.trim() || '';
 
   wrap.innerHTML = `
-    <input
-      class="pf-name-input"
-      id="pf-name-inp"
-      value="${current}"
-      maxlength="40"
-      placeholder="Your name"
-    >
-    <button class="pf-name-save" onclick="saveName()">Save</button>
-    <button
-      class="pf-name-save"
-      style="color:var(--muted);background:none;border:none;"
-      onclick="cancelEditName('${current}')"
-    >Cancel</button>`;
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+      <input
+        class="pf-name-input"
+        id="pf-name-inp"
+        value="${current}"
+        maxlength="40"
+        placeholder="Your name"
+      >
+      <button class="pf-name-save" onclick="saveName()">Save</button>
+      <button
+        class="pf-name-save"
+        style="color:var(--muted,#6E6A64);background:none;border:none;"
+        onclick="cancelEditName('${current.replace(/'/g, "\\'")}')"
+      >Cancel</button>
+    </div>`;
 
-  document.getElementById('pf-name-inp')?.focus();
+  const inp = document.getElementById('pf-name-inp');
+  inp?.focus();
+  inp?.select();
 
-  // Enter to save
-  document.getElementById('pf-name-inp')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') saveName();
+  inp?.addEventListener('keydown', e => {
+    if (e.key === 'Enter')  saveName();
     if (e.key === 'Escape') cancelEditName(current);
   });
 }
@@ -1289,22 +1379,21 @@ async function saveName() {
   const name = inp?.value?.trim();
   if (!name) return;
 
-  await db.from('users').update({ name }).eq('id', currentUser.id);
+  try {
+    await db.from('users').update({ name }).eq('id', currentUser.id);
+  } catch (err) {
+    dbError('saveName', err);
+  }
 
-  const wrap = document.getElementById('pf-name-display');
-  wrap.innerHTML = `
-    <div
-      class="pf-user-name"
-      id="pf-user-name"
-      onclick="startEditName()"
-      style="cursor:pointer;"
-      title="Click to edit"
-    >${name}</div>`;
-
+  renderName(name);
   document.getElementById('pf-avatar').textContent = name[0]?.toUpperCase() || 'S';
 }
 
 function cancelEditName(original) {
+  renderName(original);
+}
+
+function renderName(name) {
   const wrap = document.getElementById('pf-name-display');
   wrap.innerHTML = `
     <div
@@ -1312,8 +1401,16 @@ function cancelEditName(original) {
       id="pf-user-name"
       onclick="startEditName()"
       style="cursor:pointer;"
-      title="Click to edit"
-    >${original}</div>`;
+      title="Click to edit your name"
+    >${name}</div>
+    <div style="
+      font-size:10px;
+      color:var(--muted,#6E6A64);
+      font-family:var(--mono,monospace);
+      letter-spacing:0.08em;
+      margin-top:2px;
+      opacity:0.55;
+    ">click to edit</div>`;
 }
 
 // Scroll effect on navbar
@@ -1368,7 +1465,7 @@ window.addEventListener('scroll', () => {
   requestAnimationFrame(updateCursor);
 
   // Hover effect for interactive elements
-  const hoverTargets = 'a, button, input, select, textarea, [role="button"], .pf-user-name, .pf-stat-card';
+  const hoverTargets = 'a, button, input, select, textarea, [role="button"], .pf-user-name, .pf-stat-card, #pf-user-handle';
   
   document.addEventListener('mouseover', e => {
     if (e.target && e.target.closest(hoverTargets)) {
@@ -1382,6 +1479,131 @@ window.addEventListener('scroll', () => {
     }
   }, { passive: true });
 })();
+
+// ── HANDLE EDIT ───────────────────────────────────────────────
+function startEditHandle() {
+  if (!currentUser) return;
+  const wrap    = document.getElementById('pf-handle-wrap');
+  const current = document.getElementById('pf-user-handle')?.dataset?.handle || '';
+
+  wrap.innerHTML = `
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <span style="
+        font-family:var(--mono,monospace);
+        font-size:13px;
+        font-weight:700;
+        color:var(--muted,#6E6A64);
+      ">@</span>
+      <input
+        class="pf-handle-input"
+        id="pf-handle-inp"
+        value="${current}"
+        maxlength="30"
+        placeholder="yourhandle"
+      >
+      <button class="pf-name-save" onclick="saveHandle()">Save</button>
+      <button
+        class="pf-name-save"
+        style="color:var(--muted,#6E6A64);background:none;border:none;"
+        onclick="cancelEditHandle('${current}')"
+      >Cancel</button>
+    </div>`;
+
+  const inp = document.getElementById('pf-handle-inp');
+  inp?.focus();
+
+  inp?.addEventListener('keydown', e => {
+    if (e.key === 'Enter')  saveHandle();
+    if (e.key === 'Escape') cancelEditHandle(current);
+  });
+
+  // Only allow valid handle characters
+  inp?.addEventListener('input', e => {
+    e.target.value = e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+  });
+}
+
+async function saveHandle() {
+  if (!currentUser) return;
+  const inp    = document.getElementById('pf-handle-inp');
+  const handle = inp?.value?.trim().toLowerCase();
+
+  if (!handle) {
+    renderHandle('');
+    return;
+  }
+
+  // Basic validation — only letters, numbers, underscores
+  if (!/^[a-z0-9_]{1,30}$/.test(handle)) {
+    inp.style.borderColor = 'var(--orange,#D97A4A)';
+    inp.placeholder = 'Only letters, numbers, _';
+    return;
+  }
+
+  try {
+    await db.from('users').update({ handle }).eq('id', currentUser.id);
+    renderHandle(handle);
+  } catch (err) {
+    dbError('saveHandle', err);
+    // Could be duplicate handle
+    const inp = document.getElementById('pf-handle-inp');
+    if (inp) {
+      inp.style.borderColor = 'var(--orange,#D97A4A)';
+      inp.placeholder = 'Handle already taken';
+      inp.value = '';
+    }
+  }
+}
+
+function cancelEditHandle(original) {
+  renderHandle(original);
+}
+
+function renderHandle(handle) {
+  const wrap = document.getElementById('pf-handle-wrap');
+  if (!wrap) return;
+
+  if (handle) {
+    wrap.innerHTML = `
+      <span
+        id="pf-user-handle"
+        data-handle="${handle}"
+        onclick="startEditHandle()"
+        style="
+          font-family:var(--mono,monospace);
+          font-size:11px;
+          color:var(--cyan,#6FB7D6);
+          cursor:pointer;
+          padding:3px 9px;
+          background:rgba(111,183,214,0.08);
+          border:1px solid rgba(111,183,214,0.2);
+          border-radius:4px;
+          display:inline-block;
+        "
+        title="Click to edit handle"
+      >@${handle}</span>`;
+  } else {
+    wrap.innerHTML = `
+      <span
+        id="pf-user-handle"
+        data-handle=""
+        onclick="startEditHandle()"
+        style="
+          font-family:var(--mono,monospace);
+          font-size:11px;
+          color:var(--cyan,#6FB7D6);
+          cursor:pointer;
+          padding:3px 9px;
+          background:rgba(111,183,214,0.08);
+          border:1px solid rgba(111,183,214,0.2);
+          border-radius:4px;
+          display:inline-block;
+          opacity:0.7;
+        "
+        title="Click to set your handle"
+      >+ Set handle</span>`;
+  }
+}
 
 </script>
 </body>
