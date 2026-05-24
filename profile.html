@@ -1496,7 +1496,7 @@ async function loadProfile(user) {
     avatarEl.style.color = 'var(--ink, #1E1E1B)';
   }
 
-  document.getElementById('pf-user-name').textContent  = name;
+  renderName(name);
   document.getElementById('pf-user-email').textContent = user.email || '—';
   
   // Mobile display
@@ -1721,12 +1721,12 @@ async function saveName() {
 
   try {
     await db.from('users').update({ name }).eq('id', currentUser.id);
+    if (currentProfile) currentProfile.name = name;
+    await loadProfile(currentUser);
   } catch (err) {
     dbError('saveName', err);
+    renderName(name);
   }
-
-  renderName(name);
-  document.getElementById('pf-avatar').textContent = name[0]?.toUpperCase() || 'S';
 }
 
 function cancelEditName(original) {
@@ -1882,7 +1882,8 @@ async function saveHandle() {
 
   try {
     await db.from('users').update({ handle }).eq('id', currentUser.id);
-    renderHandle(handle);
+    if (currentProfile) currentProfile.handle = handle;
+    await loadProfile(currentUser);
   } catch (err) {
     dbError('saveHandle', err);
     // Could be duplicate handle
