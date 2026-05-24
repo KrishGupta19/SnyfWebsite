@@ -519,14 +519,14 @@
     /* ── OTP input boxes ── */
     .pf-otp-wrap {
       display: flex;
-      gap: 10px;
+      gap: 6px;
       justify-content: center;
       margin-bottom: 20px;
     }
 
     .pf-otp-box {
-      width: 48px;
-      height: 56px;
+      width: 42px;
+      height: 50px;
       text-align: center;
       font-size: 1.4rem;
       font-weight: 700;
@@ -534,7 +534,7 @@
       color: var(--ink, #1E1E1B);
       background: rgba(246,245,242,0.9);
       border: 2px solid var(--border, #D8D5CF);
-      border-radius: 12px;
+      border-radius: 10px;
       outline: none;
       transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
       caret-color: transparent;
@@ -564,9 +564,14 @@
       80%       { transform: translateX(4px); }
     }
 
+    @media (max-width: 480px) {
+      .pf-otp-box { width: 34px; height: 42px; font-size: 1.2rem; border-radius: 8px; }
+      .pf-otp-wrap { gap: 5px; }
+    }
+
     @media (max-width: 380px) {
-      .pf-otp-box { width: 40px; height: 48px; font-size: 1.2rem; border-radius: 10px; }
-      .pf-otp-wrap { gap: 7px; }
+      .pf-otp-box { width: 28px; height: 36px; font-size: 1.1rem; border-radius: 6px; }
+      .pf-otp-wrap { gap: 4px; }
     }
   </style>
 </head>
@@ -644,10 +649,10 @@
           border-radius:10px;
         ">
           ✓ OTP sent to <strong id="pf-email-display"></strong><br>
-          Check your inbox and enter the 6-digit code below.
+          Check your inbox and enter the 8-digit code below.
         </div>
 
-        <label class="pf-auth-label">6-Digit OTP Code</label>
+        <label class="pf-auth-label">8-Digit OTP Code</label>
 
         <!-- OTP input boxes -->
         <div class="pf-otp-wrap" id="pf-otp-wrap">
@@ -657,6 +662,8 @@
           <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-3">
           <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-4">
           <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-5">
+          <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-6">
+          <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-7">
         </div>
 
         <div class="pf-auth-error" id="pf-otp-error"></div>
@@ -843,7 +850,7 @@ function initOTPBoxes() {
       const pasted = (e.clipboardData || window.clipboardData)
         .getData('text')
         .replace(/[^0-9]/g, '')
-        .slice(0, 6);
+        .slice(0, 8);
 
       pasted.split('').forEach((char, idx) => {
         if (boxes[idx]) {
@@ -856,8 +863,8 @@ function initOTPBoxes() {
       const lastIdx = Math.min(pasted.length, boxes.length - 1);
       boxes[lastIdx].focus();
 
-      // Auto verify if all 6 filled
-      if (pasted.length === 6) {
+      // Auto verify if all 8 filled
+      if (pasted.length === 8) {
         setTimeout(() => verifyOTP(), 200);
       }
     });
@@ -939,8 +946,8 @@ async function verifyOTP() {
 
   errEl.classList.remove('show');
 
-  if (token.length !== 6) {
-    errEl.textContent = 'Enter all 6 digits';
+  if (token.length !== 8) {
+    errEl.textContent = 'Enter all 8 digits';
     errEl.classList.add('show');
     shakeOTPBoxes();
     return;

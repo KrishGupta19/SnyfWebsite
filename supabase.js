@@ -68,11 +68,39 @@ async function snyfSignInOTP(email) {
 }
 
 async function snyfVerifyOTP(email, token) {
-  const { data, error } = await db.auth.verifyOtp({
+  // Try 'magiclink' first (standard for passwordless email login)
+  let { data, error } = await db.auth.verifyOtp({
     email,
     token,
-    type: 'email',
+    type: 'magiclink',
   });
+
+  // Try 'signup' if user is registering for the first time
+  if (error) {
+    const signupResult = await db.auth.verifyOtp({
+      email,
+      token,
+      type: 'signup',
+    });
+    if (!signupResult.error) {
+      data = signupResult.data;
+      error = null;
+    }
+  }
+
+  // Fallback to 'email' if neither worked
+  if (error) {
+    const emailResult = await db.auth.verifyOtp({
+      email,
+      token,
+      type: 'email',
+    });
+    if (!emailResult.error) {
+      data = emailResult.data;
+      error = null;
+    }
+  }
+
   return { user: data?.user || null, error };
 }
 
