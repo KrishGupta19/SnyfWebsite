@@ -358,7 +358,7 @@
                 </div>
                 <div class="pending-card">
                   <div class="pending-icon">📱</div>
-                  <div><div class="pending-text">QR codes not yet generated</div><div class="pending-sub">Blue Tokai · Nook Café</div></div>
+                  <div><div class="pending-text">QR codes not yet generated</div><div class="pending-sub">Add venues to generate QR codes</div></div>
                   <button class="btn btn--xs btn--cyan" onclick="navTo('qr',document.querySelector('[data-section=qr]'))">Generate</button>
                 </div>
               </div>
@@ -581,8 +581,6 @@
                 <label class="input-label">Select Venue</label>
                 <select class="select" id="qr-venue-select" onchange="updateQRPreview()">
                   <option value="">— Select a venue —</option>
-                  <option value="blue-tokai">Blue Tokai Coffee Roasters</option>
-                  <option value="nook-cafe">Nook Café</option>
                 </select>
               </div>
               <div class="field" style="margin-bottom:16px;">
@@ -808,70 +806,17 @@ function getVenueUrl(slug) {
   return isLocal ? `/venue.html?slug=${slug}` : `/${slug}`;
 }
 
-let VENUES_DATA = [
-  { id:1, name:'Blue Tokai Coffee Roasters', slug:'blue-tokai', zone:'Cyber Hub', category:'Café', desc:"Single-origin coffee roasted in-house. NCR's most consistent flat white.", tagline:"NCR's best specialty coffee", status:'active', created:'2026-05-01', scores:{food:8.8,ambience:9.1,service:8.2,value:7.4,wait:6.1}, visits:312, scoreSource:'Manual Override', scoreNote:'Based on personal visit + 12 early reports', scoreLocked:false, username:'blue-tokai_admin', password:'BT@secure1' },
-  { id:2, name:'Nook Café', slug:'nook-cafe', zone:'Sector 29', category:'Café', desc:'Hidden gem. Best value breakfast in Sector 29.', tagline:'Best value breakfast in Sector 29', status:'active', created:'2026-05-03', scores:{food:9.0,ambience:7.6,service:8.4,value:9.1,wait:8.2}, visits:318, scoreSource:'Manual Override', scoreNote:'Based on team visit + beta users', scoreLocked:false, username:'nook-cafe_admin', password:'NC@secure1' },
-];
-
-let REPORTS_DATA = [
-  { id:1, venue:'Blue Tokai Coffee Roasters', reviewer:'@rk_explorer', score:8.6, note:'Genuinely great flat white. Crowded on weekends.', trustLevel:'Anchor', date:'2h ago', status:'verified', flagged:false },
-  { id:2, venue:'Nook Café', reviewer:'@aditya_g', score:9.1, note:'Best croissant in NCR. No frills but worth it.', trustLevel:'Verified', date:'4h ago', status:'verified', flagged:false },
-  { id:3, venue:'Blue Tokai Coffee Roasters', reviewer:'@anon_user', score:4.2, note:null, trustLevel:'Scout', date:'6h ago', status:'unverified', flagged:true },
-  { id:4, venue:'Nook Café', reviewer:'@priya_m', score:8.8, note:'Service is fast and food is consistent.', trustLevel:'Explorer', date:'1d ago', status:'verified', flagged:false },
-  { id:5, venue:'Blue Tokai Coffee Roasters', reviewer:'@anon_user2', score:4.9, note:null, trustLevel:'Scout', date:'2d ago', status:'unverified', flagged:true },
-];
-
-let MENU_DATA = {
-  'blue-tokai': [
-    { id:'bt1', name:'Signature Flat White', category:'Coffee', price:280, tag:'Bestseller', available:true, img:'☕' },
-    { id:'bt2', name:'Single Origin Pour Over', category:'Coffee', price:320, tag:"Chef's Pick", available:true, img:'☕' },
-    { id:'bt3', name:'Avocado Toast', category:'Food', price:380, tag:'Popular', available:true, img:'🥑' },
-    { id:'bt4', name:'Cold Brew', category:'Cold Drinks', price:250, tag:null, available:true, img:'🧊' },
-    { id:'bt5', name:'Banana Bread', category:'Snacks', price:180, tag:null, available:false, img:'🍞' },
-  ],
-  'nook-cafe': [
-    { id:'nc1', name:'Butter Croissant', category:'Breakfast', price:140, tag:'Bestseller', available:true, img:'🥐' },
-    { id:'nc2', name:'Masala Chai Latte', category:'Coffee', price:160, tag:'Popular', available:true, img:'🍵' },
-    { id:'nc3', name:'Avocado Toast', category:'Breakfast', price:280, tag:'Veg', available:true, img:'🥑' },
-    { id:'nc4', name:'Filter Coffee', category:'Coffee', price:120, tag:null, available:true, img:'☕' },
-  ],
-};
-
-let WAITLIST_DATA = [
-  { id:1, name:'Rahul Sharma', email:'rahul@gmail.com', type:'user', date:'2026-05-20', status:'new' },
-  { id:2, name:'Café Bloom', email:'owner@cafebloom.in', type:'business', date:'2026-05-20', status:'new' },
-  { id:3, name:'Priya Mehta', email:'priya@outlook.com', type:'user', date:'2026-05-19', status:'contacted' },
-  { id:4, name:'The Brew House', email:'info@brewhouse.com', type:'business', date:'2026-05-19', status:'new' },
-  { id:5, name:'Aditya Gupta', email:'aditya@gmail.com', type:'user', date:'2026-05-18', status:'new' },
-  { id:6, name:'Neha K', email:'neha@yahoo.com', type:'user', date:'2026-05-17', status:'contacted' },
-];
-
-let ACTIVITY_DATA = [
-  { type:'mint',   icon:'✓', text:'Nook Café trust scores updated',               time:'2m ago' },
-  { type:'cyan',   icon:'◈', text:'New field report — Blue Tokai',                time:'14m ago' },
-  { type:'orange', icon:'⚠', text:'Anomaly flagged — anon_user review',           time:'28m ago' },
-  { type:'gold',   icon:'◈', text:'Business waitlist signup — Café Bloom',        time:'1h ago' },
-  { type:'mint',   icon:'✓', text:'Blue Tokai QR scanned · Table visit',          time:'2h ago' },
-  { type:'cyan',   icon:'◈', text:'New field report — Nook Café',                 time:'3h ago' },
-  { type:'orange', icon:'⚠', text:'Flagged report — score anomaly detected',      time:'5h ago' },
-  { type:'mint',   icon:'✓', text:'Venue created — Nook Café',                    time:'2d ago' },
-  { type:'mint',   icon:'✓', text:'Venue created — Blue Tokai',                   time:'3d ago' },
-  { type:'gold',   icon:'◈', text:'Super admin login',                             time:'3d ago' },
-];
-
+let VENUES_DATA = [];
+let REPORTS_DATA = [];
+let MENU_DATA = {};
+let WAITLIST_DATA = [];
+let ACTIVITY_DATA = [];
 let TICKER_EVENTS_DATA = [
-  '✓ Blue Tokai, Cyber Hub — trust score updated',
-  '◈ Nook Café, Sector 29 — Snyf partner · verified',
-  '⚠ Suspicious spike detected — flagged for review',
-  '◈ New partner onboarding — DLF Phase 4 · coming soon',
-  '✓ 318 verified visits indexed — Nook Café',
+  '⬡ Snyf platform is live',
+  '◈ Add your first venue to get started',
+  '⚠ No field reports yet — awaiting community data',
 ];
-
-let SCORE_HISTORY = [
-  { dim:'Food Quality', old:'8.5', new:'8.8', source:'Manual Override', date:'2026-05-01', note:'Personal visit' },
-  { dim:'Ambience',     old:'8.9', new:'9.1', source:'Manual Override', date:'2026-05-01', note:'Personal visit' },
-  { dim:'Waiting Time', old:'6.8', new:'6.1', source:'Manual Override', date:'2026-05-10', note:'Multiple reports indicate longer waits' },
-];
+let SCORE_HISTORY = [];
 
 const DIMS = [
   { key:'food',     label:'Food Quality' },
@@ -1047,13 +992,12 @@ async function initAdminApp() {
       .select('*');
     
     if (venuesErr) throw venuesErr;
-    if (dbVenues && dbVenues.length > 0) {
-      VENUES_DATA = dbVenues.map(mapVenueFromRow);
-      // Initialize menu lists
-      VENUES_DATA.forEach(v => {
-        if (!MENU_DATA[v.slug]) MENU_DATA[v.slug] = [];
-      });
-    }
+    // Always replace with DB data (empty array if none exist)
+    VENUES_DATA = (dbVenues || []).map(mapVenueFromRow);
+    // Initialize empty menu lists for each venue
+    VENUES_DATA.forEach(v => {
+      if (!MENU_DATA[v.slug]) MENU_DATA[v.slug] = [];
+    });
 
     // 1b. Fetch Credentials
     let credentials = [];
@@ -1158,8 +1102,9 @@ async function initAdminApp() {
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (!waitlistErr && dbWaitlist && dbWaitlist.length > 0) {
-        WAITLIST_DATA = dbWaitlist.map(mapWaitlistFromRow);
+      // Always replace with DB data (empty if none exist)
+      if (!waitlistErr) {
+        WAITLIST_DATA = (dbWaitlist || []).map(mapWaitlistFromRow);
       }
     } catch (waitlistErr) {
       console.warn('waitlist fetch failed:', waitlistErr);
@@ -1171,8 +1116,8 @@ async function initAdminApp() {
 
     showToast('✓ Data synchronized with Supabase', 'success');
   } catch (err) {
-    console.error('Supabase initialization failed, using mock data:', err);
-    showToast('⚠ Using offline mock data', 'warning');
+    console.error('Supabase initialization failed:', err);
+    showToast('⚠ Could not load data from Supabase', 'error');
   }
 
   // Render UIs
@@ -1185,6 +1130,19 @@ async function initAdminApp() {
   renderTickerEditor();
   initAddVenueSliders();
   populateQRVenues();
+}
+
+// QR VENUE POPULATE
+function populateQRVenues() {
+  const sel = document.getElementById('qr-venue-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Select a venue —</option>';
+  VENUES_DATA.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.slug;
+    opt.textContent = v.name;
+    sel.appendChild(opt);
+  });
 }
 
 // NAV
