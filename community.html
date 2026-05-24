@@ -290,128 +290,7 @@
       standard: { label: 'Standard', icon: '⏱', color: '#D4A853' }
     };
 
-    const reports = [
-      {
-        id: 1,
-        cafe: 'Blue Tokai Coffee Roasters',
-        zone: 'Cyber Hub',
-        score: 8.7,
-        scores: { food: 9.0, ambience: 8.5, service: 8.8, value: 8.2, wait: 9.0 },
-        note: 'Strong flat white, quick staff, weekend crowd gets heavy.',
-        verified: true,
-        flagged: false,
-        trustLevel: 'anchor',
-        reviewer: '@delhi_caffeine',
-        time: '2h ago',
-        daysAgo: 0,
-        reactions: { accurate: 14, outdated: 2, helpful: 24 }
-      },
-      {
-        id: 2,
-        cafe: 'Ivy & Bean',
-        zone: 'Cyber Hub',
-        score: 7.5,
-        scores: { food: 7.2, ambience: 8.0, service: 7.5, value: 7.0, wait: 7.8 },
-        note: 'Calm room and good seating. Food is fine, coffee is better.',
-        verified: true,
-        flagged: false,
-        trustLevel: 'trusted',
-        reviewer: '@nomad_work',
-        time: '4h ago',
-        daysAgo: 0,
-        reactions: { accurate: 8, outdated: 0, helpful: 18 }
-      },
-      {
-        id: 3,
-        cafe: 'Nook Cafe',
-        zone: 'Sector 29',
-        score: 8.8,
-        scores: { food: 9.2, ambience: 8.0, service: 8.5, value: 9.5, wait: 8.8 },
-        note: 'Excellent value. Small space but the bakery counter is worth it.',
-        verified: true,
-        flagged: false,
-        trustLevel: 'anchor',
-        reviewer: '@budget_bites',
-        time: '6h ago',
-        daysAgo: 0,
-        reactions: { accurate: 22, outdated: 1, helpful: 38 }
-      },
-      {
-        id: 4,
-        cafe: 'Perch Wine & Coffee Bar',
-        zone: 'Khan Market',
-        score: 6.9,
-        scores: { food: 7.5, ambience: 8.5, service: 5.5, value: 6.0, wait: 6.5 },
-        note: 'Beautiful space. Service was slow on a weekday afternoon.',
-        verified: true,
-        flagged: false,
-        trustLevel: 'trusted',
-        reviewer: '@vinous_intel',
-        time: '12h ago',
-        daysAgo: 0,
-        reactions: { accurate: 10, outdated: 4, helpful: 15 }
-      },
-      {
-        id: 5,
-        cafe: 'The Grind',
-        zone: 'DLF Phase 4',
-        score: 8.2,
-        scores: { food: 8.0, ambience: 8.5, service: 8.2, value: 8.5, wait: 8.0 },
-        note: 'Reliable work cafe. Fast service and steady quality.',
-        verified: true,
-        flagged: false,
-        trustLevel: 'trusted',
-        reviewer: '@laptop_warrior',
-        time: '1d ago',
-        daysAgo: 1,
-        reactions: { accurate: 16, outdated: 1, helpful: 29 }
-      },
-      {
-        id: 6,
-        cafe: 'Urban Cafe',
-        zone: 'DLF Phase 4',
-        score: 4.1,
-        scores: { food: 4.5, ambience: 5.0, service: 3.5, value: 4.0, wait: 3.0 },
-        note: 'Several details did not match recent community reports.',
-        verified: false,
-        flagged: true,
-        trustLevel: 'standard',
-        reviewer: '@anon_whistle',
-        time: '2d ago',
-        daysAgo: 2,
-        reactions: { accurate: 1, outdated: 5, helpful: 4 }
-      },
-      {
-        id: 7,
-        cafe: 'Fig & Maple',
-        zone: 'Sector 29',
-        score: 8.4,
-        scores: { food: 8.8, ambience: 8.5, service: 8.0, value: 8.0, wait: 8.2 },
-        note: 'Great brunch pacing. Pricey, but the experience feels cared for.',
-        verified: true,
-        flagged: false,
-        trustLevel: 'anchor',
-        reviewer: '@brunch_guru',
-        time: '3d ago',
-        daysAgo: 3,
-        reactions: { accurate: 19, outdated: 0, helpful: 31 }
-      },
-      {
-        id: 8,
-        cafe: 'Raasta',
-        zone: 'Cyber Hub',
-        score: 5.2,
-        scores: { food: 5.5, ambience: 7.0, service: 4.5, value: 5.0, wait: 4.0 },
-        note: 'Fun for groups, inconsistent kitchen timing.',
-        verified: false,
-        flagged: true,
-        trustLevel: 'standard',
-        reviewer: '@night_crawler',
-        time: '4d ago',
-        daysAgo: 4,
-        reactions: { accurate: 3, outdated: 6, helpful: 9 }
-      },
-    ];
+    const reports = [];
 
     const CH_TICKER_EVENTS = [
       '✓ Blue Tokai, Cyber Hub — trust score updated',
@@ -700,6 +579,7 @@
         const { data, error } = await db
           .from('field_reports')
           .select('*')
+          .not('user_id', 'is', null)
           .order('created_at', { ascending: false })
           .limit(60);
 
