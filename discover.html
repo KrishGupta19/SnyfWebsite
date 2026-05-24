@@ -413,6 +413,7 @@
         <a href="index.html">Home</a>
         <a href="community.html">Commons</a>
         <a href="discover.html" class="active">Discover</a>
+        <a href="profile.html" id="nav-profile-link">Profile</a>
       </div>
     </div>
   </nav>
@@ -894,6 +895,16 @@ async function loadVenues() {
     sessionStorage.setItem('snyf_visited', 'true');
     initTicker();
     loadVenues();
+
+    // Update nav profile link if logged in
+    snyfGetUser().then(async user => {
+      if (user) {
+        const profile = await snyfGetProfile(user.id);
+        const name = profile?.name || user.email?.split('@')[0] || 'S';
+        const navLink = document.getElementById('nav-profile-link');
+        if (navLink) navLink.textContent = name[0].toUpperCase();
+      }
+    });
 
     // ── Custom Cybernetic Cursor Tracking ───────────────────────────
     (function () {

@@ -1476,7 +1476,7 @@
               id="sl-value" oninput="updateSlider('value', this.value)">
           </div>
 
-          <button class="track-back-btn" onclick="resetToMenu()">← Back to Menu</button>
+          <button class="track-back-btn" onclick="submitReviewAndReturn()">Submit & Back to Menu</button>
         </div>
 
       </div>
@@ -2068,19 +2068,29 @@
 
     try {
       if (VENUE_DATA?.id) {
-        await db.from('orders').insert({
-          venue_id:             VENUE_DATA.id,
-          table_num:            null,
-          items:                orderItems,
-          subtotal,
-          gst,
-          service_charge:       sc,
-          total,
-          special_instructions: instrEl?.value?.trim() || null,
-          status:               'received',
-          session_id:           snyfSessionId(),
-          source:               'snyf',
-        });
+        // Capture order ID for review linkage
+        const { data: insertedOrder } = await db
+          .from('orders')
+          .insert({
+            venue_id:             VENUE_DATA.id,
+            table_num:            null,
+            items:                orderItems,
+            subtotal,
+            gst,
+            service_charge:       sc,
+            total,
+            special_instructions: instrEl?.value?.trim() || null,
+            status:               'received',
+            session_id:           snyfSessionId(),
+            source:               'snyf',
+            user_id:              (await snyfGetUser())?.id || null,
+          })
+          .select('id')
+          .single();
+
+        window._lastOrderId  = insertedOrder?.id  || null;
+        window._lastVenueId  = VENUE_DATA.id;
+        window._lastVenueName = VENUE_DATA.name;
       }
     } catch (err) {
       dbError('confirmOrder', err);
@@ -2181,7 +2191,53 @@
     wrap.innerHTML = dots;
   }
 
+async function submitReviewAndReturn() {
+  const food     = parseFloat(document.getElementById('sl-food')?.value     || '5');
+  const ambience = parseFloat(document.getElementById('sl-ambience')?.value || '5');
+  const service  = parseFloat(document.getElementById('sl-service')?.value  || '5');
+  const value    = parseFloat(document.getElementById('sl-value')?.value    || '5');
 
+  // Only save if user actually moved the sliders (not all default 4.0)
+  const hasRated = [food, ambience, service, value].some(v => v !== 4.0);
+
+  if (hasRated) {
+    try {
+      const user = await snyfGetUser();
+
+      await db.from('field_reports').insert({
+        venue_id:    window._lastVenueId  || null,
+        venue_name:  window._lastVenueName || VENUE_DATA?.name || '',
+        user_id:     user?.id || null,
+        trust_level: 'scout',
+        food,
+        ambience,
+        service,
+        value,
+        wait_time:   null,
+        note:        null,
+        verified:    true,      // ordered = verified visit
+        flagged:     false,
+        source:      'qr_scan',
+        session_id:  snyfSessionId(),
+        order_id:    window._lastOrderId || null,
+      });
+
+      // Recompute trust level silently if logged in
+      if (user?.id) recomputeTrustLevel(user.id);
+
+    } catch (err) {
+      dbError('submitReview', err);
+      // Silent fail — don't block user
+    }
+  }
+
+  // Clear order reference
+  window._lastOrderId   = null;
+  window._lastVenueId   = null;
+  window._lastVenueName = null;
+
+  resetToMenu();
+}
   </script>
 </body>
 </html>

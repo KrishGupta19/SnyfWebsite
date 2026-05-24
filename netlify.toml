@@ -32,6 +32,11 @@
   to     = "/admin/index.html"
   status = 200
 
+[[redirects]]
+  from   = "/profile"
+  to     = "/profile.html"
+  status = 200
+
 # ── Venue admin catch-all → Café OS React app ─────────────────
 # Handles EVERY venue admin URL automatically
 # snyf.co.in/blue-tokai/admin → cafe-os/index.html?slug=blue-tokai

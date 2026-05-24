@@ -32,3 +32,107 @@ function snyfTimeAgo(iso) {
   if (m < 1440) return `${Math.floor(m / 60)}h ago`;
   return `${Math.floor(m / 1440)}d ago`;
 }
+
+// ── Auth helpers ──────────────────────────────────────────────
+
+// Get current logged-in user (null if guest)
+async function snyfGetUser() {
+  try {
+    const { data: { user } } = await db.auth.getUser();
+    return user || null;
+  } catch { return null; }
+}
+
+// Get user profile from users table
+async function snyfGetProfile(userId) {
+  try {
+    const { data } = await db
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    return data || null;
+  } catch { return null; }
+}
+
+// Sign in with email OTP
+async function snyfSignInOTP(email) {
+  const { error } = await db.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: true,
+      // No emailRedirectTo — we handle verification manually with OTP code
+    },
+  });
+  return !error;
+}
+
+async function snyfVerifyOTP(email, token) {
+  const { data, error } = await db.auth.verifyOtp({
+    email,
+    token,
+    type: 'email',
+  });
+  return { user: data?.user || null, error };
+}
+
+// Sign out
+async function snyfSignOut() {
+  await db.auth.signOut();
+}
+
+// Listen for auth state changes
+function snyfOnAuthChange(callback) {
+  return db.auth.onAuthStateChange((_event, session) => {
+    callback(session?.user || null);
+  });
+}
+
+// Compute trust level silently (never shown to user yet)
+async function recomputeTrustLevel(userId) {
+  try {
+    const { data: reports } = await db
+      .from('field_reports')
+      .select('verified, flagged, venue_id, created_at')
+      .eq('user_id', userId);
+
+    if (!reports || reports.length === 0) return 'scout';
+
+    const total      = reports.length;
+    const verified   = reports.filter(r => r.verified).length;
+    const flagged    = reports.filter(r => r.flagged).length;
+    const venues     = new Set(reports.map(r => r.venue_id).filter(Boolean)).size;
+    const { data: userRow } = await db
+      .from('users')
+      .select('created_at')
+      .eq('id', userId)
+      .single();
+
+    const ageDays = userRow
+      ? Math.floor((Date.now() - new Date(userRow.created_at)) / 86400000)
+      : 0;
+
+    // Recent flagged (last 30 days)
+    const thirtyDaysAgo  = new Date(Date.now() - 30 * 86400000);
+    const recentFlagged  = reports.filter(r =>
+      r.flagged && new Date(r.created_at) > thirtyDaysAgo
+    ).length;
+
+    let level = 'scout';
+
+    if (total >= 3 && ageDays >= 7 && verified >= 1) {
+      level = 'explorer';
+    }
+    if (total >= 10 && ageDays >= 30 && verified >= 5 && recentFlagged === 0 && venues >= 2) {
+      level = 'verified';
+    }
+    if (total >= 25 && ageDays >= 90 && verified >= 15 && flagged === 0 && venues >= 5) {
+      level = 'anchor';
+    }
+
+    // Update silently
+    await db.from('users').update({ trust_level: level }).eq('id', userId);
+    return level;
+
+  } catch { return 'scout'; }
+}

@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snyf — My Profile</title>
+  <meta name="description" content="Your Snyf profile. Order history, reviews, and account settings.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Oswald:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="community.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="supabase.js"></script>
+
+  <style>
+    /* ── Profile-specific styles ── */
+
+    .pf-root {
+      min-height: 100vh;
+      background: var(--paper, #F6F5F2);
+    }
+
+    /* ── Auth screen ── */
+    .pf-auth-wrap {
+      min-height: calc(100vh - 64px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .pf-auth-card {
+      background: rgba(255,255,255,0.72);
+      border: 1px solid var(--border, #D8D5CF);
+      border-radius: 20px;
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 400px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 40px rgba(30,30,27,0.08);
+    }
+
+    .pf-auth-logo {
+      font-family: var(--display, 'Oswald', sans-serif);
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -1px;
+      color: var(--ink, #1E1E1B);
+      margin-bottom: 4px;
+    }
+
+    .pf-auth-sub {
+      font-family: var(--mono, monospace);
+      font-size: 9px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted, #6E6A64);
+      margin-bottom: 28px;
+    }
+
+    .pf-auth-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted, #6E6A64);
+      margin-bottom: 8px;
+    }
+
+    .pf-auth-input {
+      width: 100%;
+      background: rgba(246,245,242,0.8);
+      border: 1px solid var(--border, #D8D5CF);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--ink, #1E1E1B);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      margin-bottom: 16px;
+    }
+
+    .pf-auth-input:focus {
+      border-color: var(--cyan, #6FB7D6);
+      box-shadow: 0 0 0 3px rgba(111,183,214,0.12);
+    }
+
+    .pf-auth-btn {
+      width: 100%;
+      height: 48px;
+      background: var(--ink, #1E1E1B);
+      color: #F6F5F2;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.18s;
+      margin-bottom: 12px;
+    }
+
+    .pf-auth-btn:hover { background: #2d2d29; }
+    .pf-auth-btn:disabled { opacity: 0.5; cursor: default; }
+
+    .pf-auth-msg {
+      font-size: 13px;
+      color: var(--muted, #6E6A64);
+      text-align: center;
+      line-height: 1.6;
+      padding: 12px 14px;
+      background: rgba(111,183,214,0.07);
+      border: 1px solid rgba(111,183,214,0.2);
+      border-radius: 10px;
+      display: none;
+    }
+
+    .pf-auth-msg.show { display: block; }
+
+    .pf-auth-error {
+      font-size: 12px;
+      color: var(--orange, #D97A4A);
+      background: rgba(217,122,74,0.07);
+      border: 1px solid rgba(217,122,74,0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .pf-auth-error.show { display: block; }
+
+    .pf-guest-link {
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted, #6E6A64);
+      margin-top: 16px;
+    }
+
+    .pf-guest-link a {
+      color: var(--cyan, #6FB7D6);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* ── Profile screen ── */
+    .pf-wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    /* Profile header card */
+    .pf-header-card {
+      background: rgba(255,255,255,0.72);
+      border: 1px solid var(--border, #D8D5CF);
+      border-radius: 20px;
+      padding: 28px;
+      backdrop-filter: blur(16px);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .pf-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--cyan, #6FB7D6), #A59BB7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--display, 'Oswald', sans-serif);
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .pf-user-info { flex: 1; min-width: 0; }
+
+    .pf-user-name {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--ink, #1E1E1B);
+      margin-bottom: 4px;
+    }
+
+    .pf-user-email {
+      font-family: var(--mono, monospace);
+      font-size: 11px;
+      color: var(--muted, #6E6A64);
+      margin-bottom: 8px;
+    }
+
+    .pf-user-since {
+      font-size: 11px;
+      color: var(--muted, #6E6A64);
+    }
+
+    .pf-signout-btn {
+      background: transparent;
+      border: 1px solid var(--border, #D8D5CF);
+      border-radius: 8px;
+      padding: 9px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted, #6E6A64);
+      cursor: pointer;
+      transition: all 0.18s;
+      white-space: nowrap;
+    }
+
+    .pf-signout-btn:hover {
+      border-color: var(--orange, #D97A4A);
+      color: var(--orange, #D97A4A);
+    }
+
+    /* Edit name inline */
+    .pf-name-edit {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pf-name-input {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--ink, #1E1E1B);
+      background: rgba(246,245,242,0.8);
+      border: 1px solid var(--cyan, #6FB7D6);
+      border-radius: 8px;
+      padding: 4px 10px;
+      outline: none;
+      width: 200px;
+    }
+
+    .pf-name-save {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--mint, #7BC6A4);
+      background: rgba(123,198,164,0.1);
+      border: 1px solid rgba(123,198,164,0.3);
+      border-radius: 6px;
+      padding: 4px 10px;
+      cursor: pointer;
+    }
+
+    /* Stats row */
+    .pf-stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .pf-stat-card {
+      background: rgba(255,255,255,0.72);
+      border: 1px solid var(--border, #D8D5CF);
+      border-radius: 14px;
+      padding: 18px 16px;
+      text-align: center;
+      backdrop-filter: blur(16px);
+    }
+
+    .pf-stat-num {
+      font-family: var(--display, 'Oswald', sans-serif);
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -1px;
+      color: var(--cyan, #6FB7D6);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .pf-stat-label {
+      font-family: var(--mono, monospace);
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted, #6E6A64);
+    }
+
+    /* Section */
+    .pf-section {
+      background: rgba(255,255,255,0.72);
+      border: 1px solid var(--border, #D8D5CF);
+      border-radius: 20px;
+      overflow: hidden;
+      backdrop-filter: blur(16px);
+      margin-bottom: 16px;
+    }
+
+    .pf-section-head {
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid rgba(30,30,27,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .pf-section-title {
+      font-family: var(--mono, monospace);
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted, #6E6A64);
+    }
+
+    .pf-section-count {
+      font-family: var(--mono, monospace);
+      font-size: 10px;
+      color: var(--muted, #6E6A64);
+    }
+
+    /* Order item */
+    .pf-order-item {
+      padding: 16px 22px;
+      border-bottom: 1px solid rgba(30,30,27,0.05);
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .pf-order-item:last-child { border-bottom: none; }
+
+    .pf-order-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(111,183,214,0.1);
+      border: 1px solid rgba(111,183,214,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .pf-order-venue {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink, #1E1E1B);
+      margin-bottom: 3px;
+    }
+
+    .pf-order-items-text {
+      font-size: 12px;
+      color: var(--muted, #6E6A64);
+      margin-bottom: 4px;
+      line-height: 1.5;
+    }
+
+    .pf-order-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pf-order-total {
+      font-family: var(--mono, monospace);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--cyan, #6FB7D6);
+    }
+
+    .pf-order-date {
+      font-family: var(--mono, monospace);
+      font-size: 10px;
+      color: rgba(110,106,100,0.5);
+    }
+
+    .pf-order-status {
+      font-family: var(--mono, monospace);
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .pf-order-status--delivered {
+      color: var(--mint, #7BC6A4);
+      background: rgba(123,198,164,0.1);
+      border: 1px solid rgba(123,198,164,0.25);
+    }
+
+    .pf-order-status--active {
+      color: var(--cyan, #6FB7D6);
+      background: rgba(111,183,214,0.1);
+      border: 1px solid rgba(111,183,214,0.25);
+    }
+
+    /* Review item */
+    .pf-review-item {
+      padding: 16px 22px;
+      border-bottom: 1px solid rgba(30,30,27,0.05);
+    }
+
+    .pf-review-item:last-child { border-bottom: none; }
+
+    .pf-review-venue {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink, #1E1E1B);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .pf-review-date {
+      font-family: var(--mono, monospace);
+      font-size: 9px;
+      color: rgba(110,106,100,0.5);
+    }
+
+    .pf-review-scores {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .pf-score-chip {
+      font-family: var(--mono, monospace);
+      font-size: 10px;
+      color: var(--muted, #6E6A64);
+      background: var(--hover, #ECE9E2);
+      padding: 3px 9px;
+      border-radius: 4px;
+    }
+
+    .pf-score-chip span {
+      color: var(--ink, #1E1E1B);
+      font-weight: 700;
+    }
+
+    .pf-review-note {
+      font-size: 12.5px;
+      color: var(--muted, #6E6A64);
+      font-style: italic;
+      line-height: 1.55;
+    }
+
+    /* Empty state */
+    .pf-empty {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--muted, #6E6A64);
+    }
+
+    .pf-empty-icon {
+      font-size: 1.8rem;
+      opacity: 0.3;
+      margin-bottom: 10px;
+    }
+
+    .pf-empty-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .pf-empty-sub {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+
+    .pf-empty-link {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 9px 20px;
+      background: var(--ink, #1E1E1B);
+      color: #F6F5F2;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* Loading */
+    .pf-loading {
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .pf-spinner {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--border, #D8D5CF);
+      border-top-color: var(--cyan, #6FB7D6);
+      border-radius: 50%;
+      animation: pf-spin 0.8s linear infinite;
+    }
+
+    @keyframes pf-spin { to { transform: rotate(360deg); } }
+
+    /* Ambient blobs — same as community.html */
+    .ch-ambient { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .pf-stats-row { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .pf-stat-card { padding: 14px 10px; }
+      .pf-stat-num  { font-size: 1.5rem; }
+      .pf-header-card { gap: 14px; }
+      .pf-auth-card { padding: 24px 20px; }
+    }
+
+    /* ── OTP input boxes ── */
+    .pf-otp-wrap {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .pf-otp-box {
+      width: 48px;
+      height: 56px;
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: var(--mono, monospace);
+      color: var(--ink, #1E1E1B);
+      background: rgba(246,245,242,0.9);
+      border: 2px solid var(--border, #D8D5CF);
+      border-radius: 12px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+      caret-color: transparent;
+    }
+
+    .pf-otp-box:focus {
+      border-color: var(--cyan, #6FB7D6);
+      box-shadow: 0 0 0 3px rgba(111,183,214,0.15);
+      transform: translateY(-2px);
+    }
+
+    .pf-otp-box.filled {
+      border-color: var(--mint, #7BC6A4);
+      background: rgba(123,198,164,0.06);
+    }
+
+    .pf-otp-box.error {
+      border-color: var(--orange, #D97A4A);
+      animation: pf-shake 0.35s ease;
+    }
+
+    @keyframes pf-shake {
+      0%, 100% { transform: translateX(0); }
+      20%       { transform: translateX(-6px); }
+      40%       { transform: translateX(6px); }
+      60%       { transform: translateX(-4px); }
+      80%       { transform: translateX(4px); }
+    }
+
+    @media (max-width: 380px) {
+      .pf-otp-box { width: 40px; height: 48px; font-size: 1.2rem; border-radius: 10px; }
+      .pf-otp-wrap { gap: 7px; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Custom cursor — same as community.html -->
+  <div id="cursor-dot" class="custom-cursor"></div>
+  <div id="cursor-ring" class="custom-cursor"></div>
+
+<div class="pf-root">
+
+  <!-- Ambient blobs -->
+  <div class="ch-ambient" aria-hidden="true">
+    <div class="ch-blob ch-blob-1"></div>
+    <div class="ch-blob ch-blob-2"></div>
+    <div class="ch-blob ch-blob-3"></div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="ch-nav">
+    <div class="ch-nav-inner">
+      <a class="ch-brand" href="index.html">
+        <svg viewBox="290 205 460 600" fill="none">
+          <path d="M 545.500 217.030 C 524.226 220.316, 502.003 231.768, 483.981 248.733 C 448.819 281.833, 422.448 337.634, 401.087 424.134 C 388.150 476.521, 382.288 517.708, 383.316 549 C 384.599 588.041, 394.818 610.893, 415.560 621.104 C 421.010 623.787, 423.463 624.355, 431.387 624.770 C 451.756 625.835, 461.447 619.381, 487.698 587.270 C 510.136 559.823, 524.938 546.615, 543.378 537.585 C 557.397 530.720, 569.200 528, 584.968 528 C 605.834 528, 618.436 532.166, 630.213 542.958 C 645.364 556.841, 650.843 579.426, 644.449 601.638 C 634.739 635.369, 600.050 661.214, 550.784 671.422 C 531.560 675.406, 518.429 676.317, 489.098 675.702 C 466.098 675.219, 458.848 674.649, 435.500 671.486 C 402.131 666.964, 376.647 665.882, 362.322 668.377 C 343.381 671.675, 331.756 677.263, 320.454 688.500 C 307.781 701.100, 302.978 712.386, 303.024 729.460 C 303.054 740.563, 304.125 745.443, 308.554 754.667 C 321.085 780.763, 354.131 794.178, 406 794.225 C 427.882 794.245, 442.730 793.007, 464 789.389 C 543.382 775.888, 617.688 743.093, 668.256 699.241 C 707.931 664.835, 731.169 626.059, 738.511 582.010 C 740.800 568.281, 740.117 541.774, 737.145 529 C 729.739 497.162, 712.126 471.116, 686.873 454.657 C 667.594 442.091, 648.307 436.683, 623 436.747 C 582.969 436.848, 547.507 452.865, 516.980 484.634 C 506.596 495.441, 498.888 505.289, 483.431 527.500 C 465.304 553.547, 457.749 560, 445.380 560 C 440.507 560, 438.550 559.466, 434.874 557.135 C 428.263 552.943, 426.500 548.703, 426.500 537 C 426.500 528.449, 426.809 526.851, 429.593 521 C 439.059 501.103, 461.024 479.871, 529.570 424.361 C 609.162 359.905, 633.551 326.425, 631.774 284.058 C 630.948 264.346, 624.620 249.708, 611 236.005 C 598.166 223.092, 583.814 217.266, 563 216.517 C 556.675 216.289, 548.800 216.520, 545.500 217.030" fill="currentColor" fill-rule="evenodd"/>
+        </svg>
+        <span>Snyf</span>
+      </a>
+      <div class="ch-nav-links">
+        <a href="index.html">Home</a>
+        <a href="community.html">Commons</a>
+        <a href="discover.html">Discover</a>
+        <a href="profile.html" class="active" id="nav-profile-link">Profile</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── AUTH SCREEN (shown when not logged in) ── -->
+  <div id="pf-auth-screen" class="pf-auth-wrap" style="display:none;">
+    <div class="pf-auth-card">
+
+      <div class="pf-auth-logo">Snyf</div>
+      <div class="pf-auth-sub">Sign in to your profile</div>
+
+      <!-- Step 1 — Enter email -->
+      <div id="pf-step-email">
+        <label class="pf-auth-label">Your Email</label>
+        <input
+          type="email"
+          class="pf-auth-input"
+          id="pf-email-input"
+          placeholder="you@example.com"
+          autocomplete="email"
+        >
+        <div class="pf-auth-error" id="pf-email-error"></div>
+        <button class="pf-auth-btn" id="pf-send-otp-btn" onclick="sendOTP()">
+          Send OTP →
+        </button>
+        <div class="pf-guest-link">
+          Just browsing?
+          <a href="discover.html">Explore venues</a>
+        </div>
+      </div>
+
+      <!-- Step 2 — Enter OTP code -->
+      <div id="pf-step-otp" style="display:none;">
+
+        <div style="
+          font-size:13px;
+          color:var(--muted,#6E6A64);
+          margin-bottom:20px;
+          line-height:1.6;
+          padding:12px 14px;
+          background:rgba(111,183,214,0.07);
+          border:1px solid rgba(111,183,214,0.2);
+          border-radius:10px;
+        ">
+          ✓ OTP sent to <strong id="pf-email-display"></strong><br>
+          Check your inbox and enter the 6-digit code below.
+        </div>
+
+        <label class="pf-auth-label">6-Digit OTP Code</label>
+
+        <!-- OTP input boxes -->
+        <div class="pf-otp-wrap" id="pf-otp-wrap">
+          <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-0" autocomplete="one-time-code">
+          <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-1">
+          <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-2">
+          <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-3">
+          <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-4">
+          <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-5">
+        </div>
+
+        <div class="pf-auth-error" id="pf-otp-error"></div>
+
+        <button class="pf-auth-btn" id="pf-verify-btn" onclick="verifyOTP()">
+          Verify & Sign In →
+        </button>
+
+        <!-- Resend + back -->
+        <div style="display:flex;justify-content:space-between;margin-top:14px;">
+          <button
+            onclick="resendOTP()"
+            id="pf-resend-btn"
+            style="
+              background:none;border:none;cursor:pointer;
+              font-size:13px;color:var(--muted,#6E6A64);
+              text-decoration:underline;
+            "
+          >
+            Resend OTP
+          </button>
+          <button
+            onclick="backToEmail()"
+            style="
+              background:none;border:none;cursor:pointer;
+              font-size:13px;color:var(--muted,#6E6A64);
+            "
+          >
+            ← Different email
+          </button>
+        </div>
+
+        <!-- Countdown for resend -->
+        <div id="pf-resend-countdown" style="
+          text-align:center;
+          font-family:monospace;
+          font-size:11px;
+          color:var(--muted,#6E6A64);
+          margin-top:8px;
+          display:none;
+        ">
+          Resend available in <span id="pf-countdown-num">30</span>s
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── PROFILE SCREEN (shown when logged in) ── -->
+  <div id="pf-profile-screen" style="display:none;">
+    <div class="pf-wrap">
+
+      <!-- Header card -->
+      <div class="pf-header-card">
+        <div class="pf-avatar" id="pf-avatar">?</div>
+        <div class="pf-user-info">
+          <div class="pf-name-edit" id="pf-name-display">
+            <div class="pf-user-name" id="pf-user-name" onclick="startEditName()" style="cursor:pointer;" title="Click to edit">
+              —
+            </div>
+          </div>
+          <div class="pf-user-email" id="pf-user-email">—</div>
+          <div class="pf-user-since" id="pf-user-since">—</div>
+        </div>
+        <button class="pf-signout-btn" onclick="handleSignOut()">Sign Out</button>
+      </div>
+
+      <!-- Stats row -->
+      <div class="pf-stats-row">
+        <div class="pf-stat-card">
+          <div class="pf-stat-num" id="pf-stat-orders">0</div>
+          <div class="pf-stat-label">Orders</div>
+        </div>
+        <div class="pf-stat-card">
+          <div class="pf-stat-num" id="pf-stat-reviews">0</div>
+          <div class="pf-stat-label">Reviews</div>
+        </div>
+        <div class="pf-stat-card">
+          <div class="pf-stat-num" id="pf-stat-venues">0</div>
+          <div class="pf-stat-label">Venues</div>
+        </div>
+      </div>
+
+      <!-- Order history -->
+      <div class="pf-section">
+        <div class="pf-section-head">
+          <span class="pf-section-title">Order History</span>
+          <span class="pf-section-count" id="pf-orders-count">—</span>
+        </div>
+        <div id="pf-orders-list">
+          <div class="pf-loading"><div class="pf-spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- Review history -->
+      <div class="pf-section">
+        <div class="pf-section-head">
+          <span class="pf-section-title">My Reviews</span>
+          <span class="pf-section-count" id="pf-reviews-count">—</span>
+        </div>
+        <div id="pf-reviews-list">
+          <div class="pf-loading"><div class="pf-spinner"></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── LOADING SCREEN (initial auth check) ── -->
+  <div id="pf-loading-screen" class="pf-auth-wrap">
+    <div class="pf-spinner"></div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// PROFILE PAGE — COMPLETE LOGIC
+// ══════════════════════════════════════════════════════════════
+
+let currentUser    = null;
+let currentProfile = null;
+let currentEmail   = '';
+let resendTimer    = null;
+
+// ── INIT ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+
+  // Check if already logged in
+  const { data: { user } } = await db.auth.getUser();
+
+  if (user) {
+    currentUser = user;
+    await loadProfile(user);
+  } else {
+    showAuthScreen();
+  }
+
+  // OTP box keyboard handling
+  initOTPBoxes();
+});
+
+// ── OTP BOX KEYBOARD LOGIC ────────────────────────────────────
+function initOTPBoxes() {
+  const boxes = document.querySelectorAll('.pf-otp-box');
+
+  boxes.forEach((box, i) => {
+    // On input — move to next box
+    box.addEventListener('input', e => {
+      const val = e.target.value.replace(/[^0-9]/g, '');
+      e.target.value = val;
+
+      if (val) {
+        e.target.classList.add('filled');
+        e.target.classList.remove('error');
+        // Move to next
+        if (i < boxes.length - 1) {
+          boxes[i + 1].focus();
+        } else {
+          // Last box filled — auto verify
+          box.blur();
+          verifyOTP();
+        }
+      } else {
+        e.target.classList.remove('filled');
+      }
+    });
+
+    // On keydown — handle backspace
+    box.addEventListener('keydown', e => {
+      if (e.key === 'Backspace') {
+        if (!e.target.value && i > 0) {
+          boxes[i - 1].value = '';
+          boxes[i - 1].classList.remove('filled');
+          boxes[i - 1].focus();
+        }
+      }
+    });
+
+    // On paste — fill all boxes from pasted content
+    box.addEventListener('paste', e => {
+      e.preventDefault();
+      const pasted = (e.clipboardData || window.clipboardData)
+        .getData('text')
+        .replace(/[^0-9]/g, '')
+        .slice(0, 6);
+
+      pasted.split('').forEach((char, idx) => {
+        if (boxes[idx]) {
+          boxes[idx].value = char;
+          boxes[idx].classList.add('filled');
+        }
+      });
+
+      // Focus last filled box
+      const lastIdx = Math.min(pasted.length, boxes.length - 1);
+      boxes[lastIdx].focus();
+
+      // Auto verify if all 6 filled
+      if (pasted.length === 6) {
+        setTimeout(() => verifyOTP(), 200);
+      }
+    });
+
+    // Only allow numbers
+    box.addEventListener('keypress', e => {
+      if (!/[0-9]/.test(e.key)) e.preventDefault();
+    });
+  });
+}
+
+function getOTPValue() {
+  return Array.from(document.querySelectorAll('.pf-otp-box'))
+    .map(b => b.value)
+    .join('');
+}
+
+// Resend + back logic helpers
+function clearOTPBoxes() {
+  document.querySelectorAll('.pf-otp-box').forEach(b => {
+    b.value = '';
+    b.classList.remove('filled', 'error');
+  });
+}
+
+function shakeOTPBoxes() {
+  document.querySelectorAll('.pf-otp-box').forEach(b => {
+    b.classList.add('error');
+    setTimeout(() => b.classList.remove('error'), 400);
+  });
+}
+
+// ── SEND OTP ──────────────────────────────────────────────────
+async function sendOTP() {
+  const email  = document.getElementById('pf-email-input').value.trim();
+  const errEl  = document.getElementById('pf-email-error');
+  const btn    = document.getElementById('pf-send-otp-btn');
+
+  errEl.classList.remove('show');
+
+  if (!email || !email.includes('@') || !email.includes('.')) {
+    errEl.textContent = 'Please enter a valid email address';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled    = true;
+  btn.textContent = 'Sending...';
+
+  const ok = await snyfSignInOTP(email);
+
+  if (ok) {
+    currentEmail = email;
+    document.getElementById('pf-email-display').textContent = email;
+    document.getElementById('pf-step-email').style.display  = 'none';
+    document.getElementById('pf-step-otp').style.display    = 'block';
+
+    // Focus first OTP box
+    setTimeout(() => {
+      document.getElementById('otp-0')?.focus();
+    }, 100);
+
+    // Start resend countdown
+    startResendCountdown();
+
+  } else {
+    errEl.textContent = 'Could not send OTP. Try again.';
+    errEl.classList.add('show');
+    btn.disabled    = false;
+    btn.textContent = 'Send OTP →';
+  }
+}
+
+// ── VERIFY OTP ────────────────────────────────────────────────
+async function verifyOTP() {
+  const token  = getOTPValue();
+  const errEl  = document.getElementById('pf-otp-error');
+  const btn    = document.getElementById('pf-verify-btn');
+
+  errEl.classList.remove('show');
+
+  if (token.length !== 6) {
+    errEl.textContent = 'Enter all 6 digits';
+    errEl.classList.add('show');
+    shakeOTPBoxes();
+    return;
+  }
+
+  btn.disabled    = true;
+  btn.textContent = 'Verifying...';
+
+  const { user, error } = await snyfVerifyOTP(currentEmail, token);
+
+  if (user) {
+    currentUser = user;
+    if (resendTimer) clearInterval(resendTimer);
+    await loadProfile(user);
+  } else {
+    errEl.textContent = 'Invalid or expired OTP. Try again.';
+    errEl.classList.add('show');
+    shakeOTPBoxes();
+    clearOTPBoxes();
+    document.getElementById('otp-0')?.focus();
+    btn.disabled    = false;
+    btn.textContent = 'Verify & Sign In →';
+  }
+}
+
+// ── RESEND OTP ────────────────────────────────────────────────
+async function resendOTP() {
+  const btn = document.getElementById('pf-resend-btn');
+  btn.disabled    = true;
+  btn.textContent = 'Sending...';
+
+  clearOTPBoxes();
+
+  const ok = await snyfSignInOTP(currentEmail);
+
+  if (ok) {
+    startResendCountdown();
+  } else {
+    btn.disabled    = false;
+    btn.textContent = 'Resend OTP';
+  }
+}
+
+function startResendCountdown() {
+  const btn       = document.getElementById('pf-resend-btn');
+  const countdown = document.getElementById('pf-resend-countdown');
+  const numEl     = document.getElementById('pf-countdown-num');
+
+  btn.style.display      = 'none';
+  countdown.style.display = 'block';
+
+  let secs = 30;
+  numEl.textContent = secs;
+
+  if (resendTimer) clearInterval(resendTimer);
+
+  resendTimer = setInterval(() => {
+    secs--;
+    numEl.textContent = secs;
+    if (secs <= 0) {
+      clearInterval(resendTimer);
+      countdown.style.display = 'none';
+      btn.style.display       = 'inline';
+      btn.disabled            = false;
+      btn.textContent         = 'Resend OTP';
+    }
+  }, 1000);
+}
+
+// ── BACK TO EMAIL ─────────────────────────────────────────────
+function backToEmail() {
+  if (resendTimer) clearInterval(resendTimer);
+  clearOTPBoxes();
+  document.getElementById('pf-step-otp').style.display   = 'none';
+  document.getElementById('pf-step-email').style.display = 'block';
+  document.getElementById('pf-send-otp-btn').disabled    = false;
+  document.getElementById('pf-send-otp-btn').textContent = 'Send OTP →';
+  document.getElementById('pf-email-input').focus();
+}
+
+// ── SIGN OUT ──────────────────────────────────────────────────
+async function handleSignOut() {
+  await snyfSignOut();
+  currentUser    = null;
+  currentProfile = null;
+  currentEmail   = '';
+  showAuthScreen();
+}
+
+// ── SCREEN MANAGEMENT ─────────────────────────────────────────
+function showAuthScreen() {
+  document.getElementById('pf-loading-screen').style.display = 'none';
+  document.getElementById('pf-profile-screen').style.display = 'none';
+  document.getElementById('pf-auth-screen').style.display    = 'flex';
+  // Reset to email step
+  document.getElementById('pf-step-email').style.display = 'block';
+  document.getElementById('pf-step-otp').style.display   = 'none';
+}
+
+function showProfileScreen() {
+  document.getElementById('pf-loading-screen').style.display = 'none';
+  document.getElementById('pf-auth-screen').style.display    = 'none';
+  document.getElementById('pf-profile-screen').style.display = 'block';
+}
+
+// ── LOAD PROFILE ──────────────────────────────────────────────
+async function loadProfile(user) {
+  showProfileScreen();
+
+  // Get or create user profile
+  let profile = await snyfGetProfile(user.id);
+
+  if (!profile) {
+    await db.from('users').upsert({
+      id:           user.id,
+      email:        user.email,
+      trust_level:  'scout',
+      report_count: 0,
+      verified:     false,
+    });
+    profile = await snyfGetProfile(user.id);
+  }
+
+  currentProfile = profile;
+
+  // Populate header
+  const name      = profile?.name || user.email?.split('@')[0] || 'Snyf User';
+  const initial   = name[0]?.toUpperCase() || 'S';
+  const sinceDate = new Date(user.created_at || profile?.created_at || Date.now());
+  const sinceStr  = sinceDate.toLocaleDateString('en-IN', {
+    month: 'long', year: 'numeric',
+  });
+
+  document.getElementById('pf-avatar').textContent     = initial;
+  document.getElementById('pf-user-name').textContent  = name;
+  document.getElementById('pf-user-email').textContent = user.email || '—';
+  document.getElementById('pf-user-since').textContent = `Member since ${sinceStr}`;
+
+  // Update nav profile link
+  const navLink = document.getElementById('nav-profile-link');
+  if (navLink) navLink.textContent = initial;
+
+  // Load data in parallel
+  await Promise.all([
+    loadOrders(user.id),
+    loadReviews(user.id),
+  ]);
+}
+
+// ── LOAD ORDERS ───────────────────────────────────────────────
+async function loadOrders(userId) {
+  const listEl  = document.getElementById('pf-orders-list');
+  const countEl = document.getElementById('pf-orders-count');
+
+  try {
+    const { data: orders, error } = await db
+      .from('orders')
+      .select('*, venues(name, slug)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+
+    const count = orders?.length || 0;
+    countEl.textContent = `${count} order${count !== 1 ? 's' : ''}`;
+    document.getElementById('pf-stat-orders').textContent = count;
+
+    const uniqueVenues = new Set(
+      (orders || []).map(o => o.venue_id).filter(Boolean)
+    ).size;
+    document.getElementById('pf-stat-venues').textContent = uniqueVenues;
+
+    if (!orders || orders.length === 0) {
+      listEl.innerHTML = `
+        <div class="pf-empty">
+          <div class="pf-empty-icon">🛒</div>
+          <div class="pf-empty-title">No orders yet</div>
+          <div class="pf-empty-sub">
+            Visit a Snyf partner venue to place your first order
+          </div>
+          <a href="discover.html" class="pf-empty-link">Browse Venues →</a>
+        </div>`;
+      return;
+    }
+
+    listEl.innerHTML = orders.map(order => {
+      const venueName = order.venues?.name || 'Unknown Venue';
+      const venueSlug = order.venues?.slug || '';
+      const items     = order.items || [];
+      const itemsText = items.slice(0, 2).map(i => `${i.name} ×${i.qty}`).join(', ')
+                      + (items.length > 2 ? ` +${items.length - 2} more` : '');
+      const isActive  = order.status !== 'delivered';
+      const date      = new Date(order.created_at).toLocaleDateString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric',
+      });
+
+      return `
+      <div class="pf-order-item">
+        <div class="pf-order-icon">🍽</div>
+        <div style="flex:1;min-width:0;">
+          <div class="pf-order-venue">
+            ${venueSlug
+              ? `<a href="${venueSlug}" style="color:inherit;text-decoration:none;">${venueName}</a>`
+              : venueName}
+          </div>
+          <div class="pf-order-items-text">${itemsText || 'No items'}</div>
+          <div class="pf-order-meta">
+            <span class="pf-order-total">
+              ₹${(order.total || 0).toLocaleString('en-IN')}
+            </span>
+            <span class="pf-order-date">${date}</span>
+            <span class="pf-order-status ${
+              isActive ? 'pf-order-status--active' : 'pf-order-status--delivered'
+            }">
+              ${order.status || 'received'}
+            </span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+  } catch (err) {
+    dbError('loadOrders', err);
+    listEl.innerHTML = `
+      <div class="pf-empty">
+        <div class="pf-empty-title">Could not load orders</div>
+      </div>`;
+  }
+}
+
+// ── LOAD REVIEWS ──────────────────────────────────────────────
+async function loadReviews(userId) {
+  const listEl  = document.getElementById('pf-reviews-list');
+  const countEl = document.getElementById('pf-reviews-count');
+
+  try {
+    const { data: reviews, error } = await db
+      .from('field_reports')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+
+    const count = reviews?.length || 0;
+    countEl.textContent = `${count} review${count !== 1 ? 's' : ''}`;
+    document.getElementById('pf-stat-reviews').textContent = count;
+
+    if (!reviews || reviews.length === 0) {
+      listEl.innerHTML = `
+        <div class="pf-empty">
+          <div class="pf-empty-icon">📋</div>
+          <div class="pf-empty-title">No reviews yet</div>
+          <div class="pf-empty-sub">
+            Rate your experience after ordering from any venue
+          </div>
+          <a href="community.html" class="pf-empty-link">Browse Commons →</a>
+        </div>`;
+      return;
+    }
+
+    listEl.innerHTML = reviews.map(r => {
+      const date   = new Date(r.created_at).toLocaleDateString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric',
+      });
+      const scores = [
+        r.food     != null && { label: 'Food',     val: r.food },
+        r.ambience != null && { label: 'Ambience', val: r.ambience },
+        r.service  != null && { label: 'Service',  val: r.service },
+        r.value    != null && { label: 'Value',     val: r.value },
+      ].filter(Boolean);
+
+      return `
+      <div class="pf-review-item">
+        <div class="pf-review-venue">
+          <span>${r.venue_name || 'Unknown Venue'}</span>
+          <span class="pf-review-date">${date}</span>
+        </div>
+        <div class="pf-review-scores">
+          ${scores.map(s => `
+            <span class="pf-score-chip">
+              ${s.label} <span>${Number(s.val).toFixed(1)}</span>
+            </span>`).join('')}
+        </div>
+        ${r.note
+          ? `<div class="pf-review-note">"${r.note}"</div>`
+          : ''}
+      </div>`;
+    }).join('');
+
+    // Recompute trust level silently
+    recomputeTrustLevel(userId);
+
+  } catch (err) {
+    dbError('loadReviews', err);
+    listEl.innerHTML = `
+      <div class="pf-empty">
+        <div class="pf-empty-title">Could not load reviews</div>
+      </div>`;
+  }
+}
+
+// ── EDIT NAME ─────────────────────────────────────────────────
+function startEditName() {
+  if (!currentUser) return;
+  const nameEl  = document.getElementById('pf-user-name');
+  const current = nameEl.textContent.trim();
+  const wrap    = document.getElementById('pf-name-display');
+
+  wrap.innerHTML = `
+    <input
+      class="pf-name-input"
+      id="pf-name-inp"
+      value="${current}"
+      maxlength="40"
+      placeholder="Your name"
+    >
+    <button class="pf-name-save" onclick="saveName()">Save</button>
+    <button
+      class="pf-name-save"
+      style="color:var(--muted);background:none;border:none;"
+      onclick="cancelEditName('${current}')"
+    >Cancel</button>`;
+
+  document.getElementById('pf-name-inp')?.focus();
+
+  // Enter to save
+  document.getElementById('pf-name-inp')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveName();
+    if (e.key === 'Escape') cancelEditName(current);
+  });
+}
+
+async function saveName() {
+  if (!currentUser) return;
+  const inp  = document.getElementById('pf-name-inp');
+  const name = inp?.value?.trim();
+  if (!name) return;
+
+  await db.from('users').update({ name }).eq('id', currentUser.id);
+
+  const wrap = document.getElementById('pf-name-display');
+  wrap.innerHTML = `
+    <div
+      class="pf-user-name"
+      id="pf-user-name"
+      onclick="startEditName()"
+      style="cursor:pointer;"
+      title="Click to edit"
+    >${name}</div>`;
+
+  document.getElementById('pf-avatar').textContent = name[0]?.toUpperCase() || 'S';
+}
+
+function cancelEditName(original) {
+  const wrap = document.getElementById('pf-name-display');
+  wrap.innerHTML = `
+    <div
+      class="pf-user-name"
+      id="pf-user-name"
+      onclick="startEditName()"
+      style="cursor:pointer;"
+      title="Click to edit"
+    >${original}</div>`;
+}
+
+// Scroll effect on navbar
+window.addEventListener('scroll', () => {
+  document.querySelector('.ch-nav')?.classList.toggle('scrolled', window.scrollY > 10);
+}, { passive: true });
+
+// ── Custom Cybernetic Cursor Tracking ───────────────────────────
+(function () {
+  const isFinePointer = window.matchMedia('(pointer: fine)').matches;
+  if (!isFinePointer) return;
+
+  const dot = document.getElementById('cursor-dot');
+  const ring = document.getElementById('cursor-ring');
+  if (!dot || !ring) return;
+
+  let mouseX = window.innerWidth / 2;
+  let mouseY = window.innerHeight / 2;
+  
+  let ringX = mouseX;
+  let ringY = mouseY;
+  let dotX = mouseX;
+  let dotY = mouseY;
+
+  window.addEventListener('mousemove', e => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  }, { passive: true });
+
+  document.addEventListener('mouseleave', () => {
+    dot.style.opacity = '0';
+    ring.style.opacity = '0';
+  });
+  document.addEventListener('mouseenter', () => {
+    dot.style.opacity = '1';
+    ring.style.opacity = '1';
+  });
+
+  function updateCursor() {
+    // Instant dot lock for zero lag feel
+    dotX += (mouseX - dotX);
+    dotY += (mouseY - dotY);
+    dot.style.transform = `translate3d(${dotX}px, ${dotY}px, 0)`;
+
+    // Spring damped trailing ring
+    ringX += (mouseX - ringX) * 0.15;
+    ringY += (mouseY - ringY) * 0.15;
+    ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0)`;
+
+    requestAnimationFrame(updateCursor);
+  }
+  requestAnimationFrame(updateCursor);
+
+  // Hover effect for interactive elements
+  const hoverTargets = 'a, button, input, select, textarea, [role="button"], .pf-user-name, .pf-stat-card';
+  
+  document.addEventListener('mouseover', e => {
+    if (e.target && e.target.closest(hoverTargets)) {
+      document.body.classList.add('cursor-hovering');
+    }
+  }, { passive: true });
+
+  document.addEventListener('mouseout', e => {
+    if (e.target && !e.target.closest(hoverTargets)) {
+      document.body.classList.remove('cursor-hovering');
+    }
+  }, { passive: true });
+})();
+
+</script>
+</body>
+</html>

@@ -46,6 +46,8 @@
       <div class="ch-nav-links">
         <a href="index.html">Home</a>
         <a href="community.html" class="nav-commons active">Commons</a>
+        <a href="discover.html">Discover</a>
+        <a href="profile.html" id="nav-profile-link">Profile</a>
         <button class="ch-btn ch-btn--primary" id="nav-write-btn" type="button">Write Report</button>
       </div>
     </div>
@@ -678,12 +680,15 @@
       const email    = $('#email-input').value.trim()  || null;
       const note     = $('#note-input').value.trim()   || null;
 
+      const reportUser = await snyfGetUser();
+
       try {
         // Save to Supabase field_reports
         const { error } = await db.from('field_reports').insert({
           venue_name:  place,
           reviewer,
           email,
+          user_id:     reportUser?.id  || null,
           trust_level: 'scout',
           food:        state.form.scores.food,
           ambience:    state.form.scores.ambience,
@@ -697,6 +702,9 @@
         });
 
         if (error) throw error;
+
+        // After successful insert, recompute trust level if logged in
+        if (reportUser?.id) recomputeTrustLevel(reportUser.id);
 
         // Add to local reports array for immediate display
         reports.unshift({
@@ -740,6 +748,16 @@
       loadReportsFromDB();
       renderSliders();
       updateComposite();
+
+      // Update nav profile link if logged in
+      snyfGetUser().then(async user => {
+        if (user) {
+          const profile = await snyfGetProfile(user.id);
+          const name = profile?.name || user.email?.split('@')[0] || 'S';
+          const navLink = document.getElementById('nav-profile-link');
+          if (navLink) navLink.textContent = name[0].toUpperCase();
+        }
+      });
 
       $('#nav-write-btn').addEventListener('click', showForm);
       $('#hero-write-btn').addEventListener('click', showForm);
