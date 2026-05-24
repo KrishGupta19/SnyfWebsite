@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="supabase.js"></script>
   <!-- Google tag (gtag.js) GA4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-6BGX89GGJK"></script>
   <script>
@@ -19,6 +21,37 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Oswald:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="community.css">
+  <style>
+    .wr-autocomplete-list {
+      position: absolute;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1px solid var(--border, #D8D5CF);
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(30,30,27,0.08);
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+      margin-top: 4px;
+    }
+    .wr-autocomplete-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink, #1E1E1B);
+      transition: background 0.15s;
+      border-bottom: 1px solid rgba(30,30,27,0.04);
+      text-align: left;
+    }
+    .wr-autocomplete-item:last-child {
+      border-bottom: none;
+    }
+    .wr-autocomplete-item:hover {
+      background: rgba(111,183,214,0.08);
+    }
+  </style>
 </head>
 <body>
   <!-- Custom Cybernetic Cursor -->
@@ -75,14 +108,12 @@
             <h3>Which place did you visit?</h3>
             <p>Select from the list or type any cafe name.</p>
           </div>
-          <input type="text" class="wr-input" id="wr-place-input" placeholder="Search or type cafe name..." autocomplete="off">
-          <div class="wr-place-chips">
-            <button type="button" class="wr-place-chip" data-place="Blue Tokai, Cyber Hub">Blue Tokai</button>
-            <button type="button" class="wr-place-chip" data-place="Ivy & Bean, Cyber Hub">Ivy & Bean</button>
-            <button type="button" class="wr-place-chip" data-place="Nook Cafe, Sector 29">Nook Cafe</button>
-            <button type="button" class="wr-place-chip" data-place="Perch, Khan Market">Perch</button>
-            <button type="button" class="wr-place-chip" data-place="The Grind, DLF Phase 4">The Grind</button>
-            <button type="button" class="wr-place-chip" data-place="Fig & Maple, Sushant Lok">Fig & Maple</button>
+          <div style="position:relative; width:100%;">
+            <input type="text" class="wr-input" id="wr-place-input" placeholder="Search or type cafe name..." autocomplete="off">
+            <div id="wr-autocomplete-list" class="wr-autocomplete-list" style="display:none;"></div>
+          </div>
+          <div class="wr-place-chips" id="wr-place-chips">
+            <!-- Loaded dynamically from Supabase -->
           </div>
           <div class="wr-selected-place" id="wr-selected-place" style="display:none;">
             <span class="wr-selected-label">Selected:</span>
@@ -167,6 +198,8 @@
     ];
 
     const formData = { place: '', scores: {}, note: '', handle: '', email: '' };
+    let activeVenues = [];
+    let selectedVenueId = null;
 
     function el(id) {
       return document.getElementById(id);
@@ -220,12 +253,17 @@
       updateCompositeScore();
     }
 
-    function setPlace(place) {
+    function setPlace(place, venueId = null) {
       formData.place = place.trim();
+      selectedVenueId = venueId;
       el('wr-place-input').value = formData.place;
       el('wr-selected-name').textContent = formData.place;
       el('wr-selected-place').style.display = formData.place ? 'flex' : 'none';
       el('wr-next-1').disabled = !formData.place;
+      
+      // Clear autocomplete dropdown
+      el('wr-autocomplete-list').innerHTML = '';
+      el('wr-autocomplete-list').style.display = 'none';
     }
 
     function checkSubmit() {
@@ -235,10 +273,53 @@
       el('wr-submit-btn').disabled = !(handle && email && visited);
     }
 
-    function showSuccess() {
+    async function submitReport() {
+      const submitBtn = el('wr-submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
       formData.handle = el('wr-handle').value.trim();
       formData.email = el('wr-email').value.trim();
       formData.note = el('wr-note').value.trim();
+
+      const reportUser = await snyfGetUser();
+
+      try {
+        const { error } = await db.from('field_reports').insert({
+          venue_name:  formData.place,
+          venue_id:    selectedVenueId,
+          reviewer:    formData.handle,
+          email:       formData.email,
+          user_id:     reportUser?.id || null,
+          trust_level: 'scout',
+          food:        formData.scores.food,
+          ambience:    formData.scores.ambience,
+          service:     formData.scores.service,
+          value:       formData.scores.value,
+          wait_time:   formData.scores.wait,
+          note:        formData.note || null,
+          verified:    false,
+          flagged:     false,
+          source:      'web',
+        });
+
+        if (error) throw error;
+
+        // If logged in, recompute user's trust level
+        if (reportUser?.id) {
+          recomputeTrustLevel(reportUser.id);
+        }
+
+        showSuccess();
+      } catch (err) {
+        console.error('Error submitting report:', err);
+        alert('Could not submit report to database. Please check your connection.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Field Report';
+      }
+    }
+
+    function showSuccess() {
       document.querySelectorAll('.wr-step-panel').forEach(panel => panel.classList.remove('active'));
       el('wr-step-success').classList.add('active');
       document.querySelectorAll('.wr-step-dot').forEach(dot => {
@@ -249,7 +330,7 @@
         <div class="wr-terminal-line visible t-dim">&gt; SNYF Intelligence Engine v2.1</div>
         <div class="wr-terminal-line visible">&gt; Field report indexed for: <span class="t-cyan">${formData.place}</span></div>
         <div class="wr-terminal-line visible">&gt; Trust Score: <span class="t-cyan">${el('wr-composite-score').textContent}/10</span></div>
-        <div class="wr-terminal-line visible t-green">&gt; Report submitted successfully.</div>
+        <div class="wr-terminal-line visible t-green">&gt; Report submitted successfully to database.</div>
       `;
     }
 
@@ -266,18 +347,124 @@
       goToStep(1);
     }
 
+    async function loadActiveVenues() {
+      try {
+        const { data, error } = await db
+          .from('venues')
+          .select('id, name, zone')
+          .eq('status', 'active')
+          .order('sort_order', { ascending: true });
+
+        if (error) throw error;
+
+        if (data) {
+          activeVenues = data;
+          renderVenueChips(activeVenues.slice(0, 6));
+        }
+      } catch (err) {
+        console.error('Error loading active venues:', err);
+      }
+    }
+
+    function renderVenueChips(list) {
+      const container = el('wr-place-chips');
+      if (!container) return;
+
+      container.innerHTML = list.map(v => {
+        const fullPlace = v.zone ? `${v.name}, ${v.zone}` : v.name;
+        return `<button type="button" class="wr-place-chip" data-id="${v.id}" data-place="${fullPlace}">${v.name}</button>`;
+      }).join('');
+
+      // Add click events to chips
+      container.querySelectorAll('.wr-place-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          container.querySelectorAll('.wr-place-chip').forEach(other => other.classList.remove('active'));
+          chip.classList.add('active');
+          setPlace(chip.dataset.place, chip.dataset.id);
+        });
+      });
+    }
+
+    function handleAutocomplete(query) {
+      const dropdown = el('wr-autocomplete-list');
+      if (!query.trim()) {
+        dropdown.innerHTML = '';
+        dropdown.style.display = 'none';
+        return;
+      }
+
+      const matches = activeVenues.filter(v => 
+        v.name.toLowerCase().includes(query.toLowerCase()) ||
+        (v.zone && v.zone.toLowerCase().includes(query.toLowerCase()))
+      );
+
+      if (matches.length === 0) {
+        dropdown.innerHTML = '';
+        dropdown.style.display = 'none';
+        return;
+      }
+
+      dropdown.innerHTML = matches.map(v => {
+        const fullPlace = v.zone ? `${v.name}, ${v.zone}` : v.name;
+        return `<div class="wr-autocomplete-item" data-id="${v.id}" data-place="${fullPlace}">${v.name} <span style="font-size:11px;opacity:0.6;margin-left:4px;">(${v.zone || ''})</span></div>`;
+      }).join('');
+
+      dropdown.style.display = 'block';
+
+      // Click event for items
+      dropdown.querySelectorAll('.wr-autocomplete-item').forEach(item => {
+        item.addEventListener('click', () => {
+          setPlace(item.dataset.place, item.dataset.id);
+        });
+      });
+    }
+
+    async function checkCurrentUser() {
+      try {
+        const user = await snyfGetUser();
+        if (user) {
+          const profile = await snyfGetProfile(user.id);
+          const handle = profile?.handle || '';
+          const name = profile?.name || user.user_metadata?.name || '';
+          
+          const handleInput = el('wr-handle');
+          const emailInput = el('wr-email');
+          
+          if (handleInput) {
+            handleInput.value = handle ? `@${handle}` : name;
+          }
+          if (emailInput) {
+            emailInput.value = user.email || '';
+          }
+          checkSubmit();
+        }
+      } catch (err) {
+        console.error('Error fetching user info:', err);
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       initSliders();
 
-      document.querySelectorAll('.wr-place-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-          document.querySelectorAll('.wr-place-chip').forEach(other => other.classList.remove('active'));
-          chip.classList.add('active');
-          setPlace(chip.dataset.place);
-        });
+      // Load active venues and current user info
+      loadActiveVenues();
+      checkCurrentUser();
+
+      // Autocomplete handler
+      const placeInput = el('wr-place-input');
+      placeInput.addEventListener('input', event => {
+        const val = event.target.value;
+        setPlace(val, null); // Clear selected id when user types manually
+        handleAutocomplete(val);
       });
 
-      el('wr-place-input').addEventListener('input', event => setPlace(event.target.value));
+      // Close autocomplete on click outside
+      document.addEventListener('click', e => {
+        if (!e.target.closest('#wr-place-input') && !e.target.closest('#wr-autocomplete-list')) {
+          el('wr-autocomplete-list').style.display = 'none';
+        }
+      });
+
       el('wr-clear-place').addEventListener('click', () => {
         document.querySelectorAll('.wr-place-chip').forEach(chip => chip.classList.remove('active'));
         setPlace('');
@@ -296,7 +483,7 @@
       el('wr-handle').addEventListener('input', checkSubmit);
       el('wr-email').addEventListener('input', checkSubmit);
       el('wr-visited-check').addEventListener('change', checkSubmit);
-      el('wr-submit-btn').addEventListener('click', showSuccess);
+      el('wr-submit-btn').addEventListener('click', submitReport);
       el('wr-new-report').addEventListener('click', resetForm);
 
       // ── Custom Cybernetic Cursor Tracking ───────────────────────────
