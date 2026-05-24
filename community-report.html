@@ -164,8 +164,10 @@
             <p>Only people who actually visited can submit a field report.</p>
           </div>
           <div class="wr-verify-fields">
-            <input type="text" class="wr-input" id="wr-handle" placeholder="Your name or handle" autocomplete="off">
-            <input type="email" class="wr-input" id="wr-email" placeholder="Email for verification" autocomplete="email">
+            <div id="wr-auth-fields-wrapper" style="display: flex; flex-direction: column; gap: 16px; width: 100%;">
+              <input type="text" class="wr-input" id="wr-handle" placeholder="Your name or handle" autocomplete="off">
+              <input type="email" class="wr-input" id="wr-email" placeholder="Email for verification" autocomplete="email">
+            </div>
             <label class="wr-checkbox-row">
               <input type="checkbox" id="wr-visited-check">
               <span>I personally visited this place</span>
@@ -422,6 +424,7 @@
     async function checkCurrentUser() {
       try {
         const user = await snyfGetUser();
+        const wrapper = el('wr-auth-fields-wrapper');
         if (user) {
           const profile = await snyfGetProfile(user.id);
           const handle = profile?.handle || '';
@@ -436,8 +439,15 @@
           if (emailInput) {
             emailInput.value = user.email || '';
           }
-          checkSubmit();
+          if (wrapper) {
+            wrapper.style.display = 'none';
+          }
+        } else {
+          if (wrapper) {
+            wrapper.style.display = 'flex';
+          }
         }
+        checkSubmit();
       } catch (err) {
         console.error('Error fetching user info:', err);
       }

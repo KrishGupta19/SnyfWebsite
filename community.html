@@ -21,6 +21,37 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Oswald:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="community.css">
+  <style>
+    .wr-autocomplete-list {
+      position: absolute;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1px solid var(--border, #D8D5CF);
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(30,30,27,0.08);
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+      margin-top: 4px;
+    }
+    .wr-autocomplete-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink, #1E1E1B);
+      transition: background 0.15s;
+      border-bottom: 1px solid rgba(30,30,27,0.04);
+      text-align: left;
+    }
+    .wr-autocomplete-item:last-child {
+      border-bottom: none;
+    }
+    .wr-autocomplete-item:hover {
+      background: rgba(111,183,214,0.08);
+    }
+  </style>
 </head>
 <body>
   <!-- Custom Cybernetic Cursor -->
@@ -178,16 +209,13 @@
         </div>
 
         <div class="form-step active" data-step="1">
-          <div class="field">
+          <div class="field" style="position:relative; width:100%;">
             <label for="place-input">Place visited</label>
             <input id="place-input" type="text" placeholder="Type a cafe or restaurant name" autocomplete="off">
+            <div id="autocomplete-list" class="wr-autocomplete-list" style="display:none;"></div>
           </div>
-          <div class="quick-places">
-            <button class="quick-place" type="button" data-place="Blue Tokai Coffee Roasters, Cyber Hub">Blue Tokai</button>
-            <button class="quick-place" type="button" data-place="Ivy & Bean, Cyber Hub">Ivy & Bean</button>
-            <button class="quick-place" type="button" data-place="Nook Cafe, Sector 29">Nook Cafe</button>
-            <button class="quick-place" type="button" data-place="Perch Wine & Coffee Bar, Khan Market">Perch</button>
-            <button class="quick-place" type="button" data-place="The Grind, DLF Phase 4">The Grind</button>
+          <div class="quick-places" id="quick-places">
+            <!-- Loaded dynamically from Supabase -->
           </div>
           <div class="form-actions">
             <span></span>
@@ -223,13 +251,15 @@
         </div>
 
         <div class="form-step" data-step="4">
-          <div class="field">
-            <label for="handle-input">Name or handle</label>
-            <input id="handle-input" type="text" placeholder="@your_handle" autocomplete="off">
-          </div>
-          <div class="field">
-            <label for="email-input">Email for verification</label>
-            <input id="email-input" type="email" placeholder="you@example.com" autocomplete="email">
+          <div id="auth-fields-wrapper">
+            <div class="field">
+              <label for="handle-input">Name or handle</label>
+              <input id="handle-input" type="text" placeholder="@your_handle" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="email-input">Email for verification</label>
+              <input id="email-input" type="email" placeholder="you@example.com" autocomplete="email">
+            </div>
           </div>
           <label style="display:flex;align-items:center;gap:10px;margin-top:12px;cursor:pointer;">
             <input id="visited-input" type="checkbox" style="width:18px;height:18px;accent-color:var(--cyan);">
@@ -409,6 +439,9 @@
       search: '',
       form: { place: '', scores: { food: 5, ambience: 5, service: 5, value: 5, wait: 5 } },
     };
+
+    let activeVenues = [];
+    let selectedVenueId = null;
 
     const $ = selector => document.querySelector(selector);
     const $$ = selector => Array.from(document.querySelectorAll(selector));
@@ -594,17 +627,58 @@
       return score;
     }
 
+    function setPlace(place, venueId = null) {
+      state.form.place = place.trim();
+      selectedVenueId = venueId;
+      $('#place-input').value = state.form.place;
+      validatePlace();
+      
+      // Close autocomplete
+      $('#autocomplete-list').innerHTML = '';
+      $('#autocomplete-list').style.display = 'none';
+    }
+
     function validatePlace() {
       state.form.place = $('#place-input').value.trim();
       $('#step-1-next').disabled = !state.form.place;
     }
 
     function validateSubmit() {
-      $('#submit-btn').disabled = !(HTMLInputElement && ($('#handle-input').value.trim()) && ($('#email-input').value.trim()) && $('#visited-input').checked);
+      const handle = $('#handle-input').value.trim();
+      const email = $('#email-input').value.trim();
+      const visited = $('#visited-input').checked;
+      $('#submit-btn').disabled = !(handle && email && visited);
+    }
+
+    async function checkCurrentUser() {
+      try {
+        const user = await snyfGetUser();
+        const wrapper = document.getElementById('auth-fields-wrapper');
+        if (user) {
+          const profile = await snyfGetProfile(user.id);
+          const handle = profile?.handle || '';
+          const name = profile?.name || user.user_metadata?.name || '';
+          
+          $('#handle-input').value = handle ? `@${handle}` : name;
+          $('#email-input').value = user.email || '';
+          
+          if (wrapper) {
+            wrapper.style.display = 'none';
+          }
+        } else {
+          if (wrapper) {
+            wrapper.style.display = 'block';
+          }
+        }
+        validateSubmit();
+      } catch (err) {
+        console.error('Error checking user session:', err);
+      }
     }
 
     function resetForm() {
       state.form = { place: '', scores: { food: 5, ambience: 5, service: 5, value: 5, wait: 5 } };
+      selectedVenueId = null;
       $('#place-input').value = '';
       $('#note-input').value = '';
       $('#char-count').textContent = '0';
@@ -615,7 +689,9 @@
       renderSliders();
       updateComposite();
       validatePlace();
-      validateSubmit();
+      
+      checkCurrentUser();
+      
       goStep(1);
     }
 
@@ -686,6 +762,7 @@
         // Save to Supabase field_reports
         const { error } = await db.from('field_reports').insert({
           venue_name:  place,
+          venue_id:    selectedVenueId,
           reviewer,
           email,
           user_id:     reportUser?.id  || null,
@@ -740,6 +817,78 @@
       renderReports();
     }
 
+    async function loadActiveVenues() {
+      try {
+        const { data, error } = await db
+          .from('venues')
+          .select('id, name, zone')
+          .eq('status', 'active')
+          .order('sort_order', { ascending: true });
+
+        if (error) throw error;
+
+        if (data) {
+          activeVenues = data;
+          renderVenueChips(activeVenues.slice(0, 5));
+        }
+      } catch (err) {
+        console.error('Error loading active venues:', err);
+      }
+    }
+
+    function renderVenueChips(list) {
+      const container = $('#quick-places');
+      if (!container) return;
+
+      container.innerHTML = list.map(v => {
+        const fullPlace = v.zone ? `${v.name}, ${v.zone}` : v.name;
+        return `<button class="quick-place" type="button" data-id="${v.id}" data-place="${fullPlace}">${v.name}</button>`;
+      }).join('');
+
+      // Add click events to chips
+      container.querySelectorAll('.quick-place').forEach(button => {
+        button.addEventListener('click', () => {
+          container.querySelectorAll('.quick-place').forEach(item => item.classList.remove('active'));
+          button.classList.add('active');
+          setPlace(button.dataset.place, button.dataset.id);
+        });
+      });
+    }
+
+    function handleAutocomplete(query) {
+      const dropdown = $('#autocomplete-list');
+      if (!query.trim()) {
+        dropdown.innerHTML = '';
+        dropdown.style.display = 'none';
+        return;
+      }
+
+      const matches = activeVenues.filter(v => 
+        v.name.toLowerCase().includes(query.toLowerCase()) ||
+        (v.zone && v.zone.toLowerCase().includes(query.toLowerCase()))
+      );
+
+      if (matches.length === 0) {
+        dropdown.innerHTML = '';
+        dropdown.style.display = 'none';
+        return;
+      }
+
+      dropdown.innerHTML = matches.map(v => {
+        const fullPlace = v.zone ? `${v.name}, ${v.zone}` : v.name;
+        return `<div class="wr-autocomplete-item" data-id="${v.id}" data-place="${fullPlace}">${v.name} <span style="font-size:11px;opacity:0.6;margin-left:4px;">(${v.zone || ''})</span></div>`;
+      }).join('');
+
+      dropdown.style.display = 'block';
+
+      // Click event for items
+      dropdown.querySelectorAll('.wr-autocomplete-item').forEach(item => {
+        item.addEventListener('click', () => {
+          setPlace(item.dataset.place, item.dataset.id);
+        });
+      });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       sessionStorage.setItem('snyf_visited', 'true');
       initTicker();
@@ -748,6 +897,8 @@
       loadReportsFromDB();
       renderSliders();
       updateComposite();
+      loadActiveVenues();
+      checkCurrentUser();
 
       // Update nav profile link if logged in
       snyfGetUser().then(async user => {
@@ -819,14 +970,19 @@
         alert('All verified NCR intelligence feeds have been fully loaded.');
       });
 
-      $('#place-input').addEventListener('input', validatePlace);
-      $$('.quick-place').forEach(button => {
-        button.addEventListener('click', () => {
-          $$('.quick-place').forEach(item => item.classList.remove('active'));
-          button.classList.add('active');
-          $('#place-input').value = button.dataset.place;
-          validatePlace();
-        });
+      // Autocomplete & venue selection handler
+      const placeInput = $('#place-input');
+      placeInput.addEventListener('input', event => {
+        const val = event.target.value;
+        setPlace(val, null); // Clear selected id when user types manually
+        handleAutocomplete(val);
+      });
+
+      // Close autocomplete dropdown on outside click
+      document.addEventListener('click', e => {
+        if (!e.target.closest('#place-input') && !e.target.closest('#autocomplete-list')) {
+          $('#autocomplete-list').style.display = 'none';
+        }
       });
 
       $('#step-1-next').addEventListener('click', () => goStep(2));
