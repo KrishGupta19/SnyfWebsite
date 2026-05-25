@@ -253,10 +253,26 @@
       padding: 2px 6px;
     }
 
-    .menu-direct-rate-slider-row {
+    .menu-direct-rate-row {
       display: flex;
       align-items: center;
       gap: 12px;
+    }
+
+    .menu-direct-rate-label {
+      width: 70px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .menu-direct-rate-val {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink);
+      width: 24px;
+      text-align: right;
+      font-weight: 700;
     }
 
     .menu-direct-rate-slider {
@@ -2384,22 +2400,37 @@ async function renderDirectRateBox() {
   }
 
   if (existingReport) {
-    const userScore = (
-      (existingReport.food || 5.0) * 0.3 + 
-      (existingReport.ambience || 5.0) * 0.2 + 
-      (existingReport.service || 5.0) * 0.2 + 
-      (existingReport.value || 5.0) * 0.2 + 
-      (existingReport.wait_time || 5.0) * 0.1
-    ).toFixed(1);
+    const food = existingReport.food != null ? Number(existingReport.food) : 5.0;
+    const ambience = existingReport.ambience != null ? Number(existingReport.ambience) : 5.0;
+    const service = existingReport.service != null ? Number(existingReport.service) : 5.0;
+    const value = existingReport.value != null ? Number(existingReport.value) : 5.0;
+    const wait = existingReport.wait_time != null ? Number(existingReport.wait_time) : 5.0;
+
+    const userScore = (food * 0.3 + ambience * 0.2 + service * 0.2 + value * 0.2 + wait * 0.1).toFixed(1);
 
     container.innerHTML = `
       <div class="menu-direct-rate-title">
         <span>Your Rating</span>
         <span class="menu-direct-rate-val-display">${userScore} / 7</span>
       </div>
-      <div class="menu-direct-rate-ui">
-        <p style="font-size:12px;color:var(--muted);margin:0;line-height:1.5;">
-          You rated this venue ${userScore}/7. Thank you for contributing to Snyf Intelligence!
+      <div class="menu-direct-rate-ui" style="gap: 8px;">
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--muted)">
+          <span>Food</span><strong style="color:var(--ink)">${food.toFixed(1)}</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--muted)">
+          <span>Ambience</span><strong style="color:var(--ink)">${ambience.toFixed(1)}</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--muted)">
+          <span>Service</span><strong style="color:var(--ink)">${service.toFixed(1)}</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--muted)">
+          <span>Value</span><strong style="color:var(--ink)">${value.toFixed(1)}</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--muted)">
+          <span>Wait</span><strong style="color:var(--ink)">${wait.toFixed(1)}</strong>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin:6px 0 0;line-height:1.5;text-align:center;">
+          Thank you for contributing to Snyf Intelligence!
         </p>
       </div>
     `;
@@ -2412,9 +2443,37 @@ async function renderDirectRateBox() {
       <span class="menu-direct-rate-val-display" id="direct-rate-num">5.0 / 7</span>
     </div>
     <div class="menu-direct-rate-ui">
-      <div class="menu-direct-rate-slider-row">
-        <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="5.0" id="direct-rate-input" oninput="updateDirectRateDisplay(this.value)">
+      <!-- Food -->
+      <div class="menu-direct-rate-row">
+        <span class="menu-direct-rate-label">Food</span>
+        <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="5.0" id="direct-rate-food" oninput="updateDirectRateValues()">
+        <span class="menu-direct-rate-val" id="direct-rate-food-val">5.0</span>
       </div>
+      <!-- Ambience -->
+      <div class="menu-direct-rate-row">
+        <span class="menu-direct-rate-label">Ambience</span>
+        <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="5.0" id="direct-rate-ambience" oninput="updateDirectRateValues()">
+        <span class="menu-direct-rate-val" id="direct-rate-ambience-val">5.0</span>
+      </div>
+      <!-- Service -->
+      <div class="menu-direct-rate-row">
+        <span class="menu-direct-rate-label">Service</span>
+        <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="5.0" id="direct-rate-service" oninput="updateDirectRateValues()">
+        <span class="menu-direct-rate-val" id="direct-rate-service-val">5.0</span>
+      </div>
+      <!-- Value -->
+      <div class="menu-direct-rate-row">
+        <span class="menu-direct-rate-label">Value</span>
+        <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="5.0" id="direct-rate-value" oninput="updateDirectRateValues()">
+        <span class="menu-direct-rate-val" id="direct-rate-value-val">5.0</span>
+      </div>
+      <!-- Wait -->
+      <div class="menu-direct-rate-row">
+        <span class="menu-direct-rate-label">Wait</span>
+        <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="5.0" id="direct-rate-wait" oninput="updateDirectRateValues()">
+        <span class="menu-direct-rate-val" id="direct-rate-wait-val">5.0</span>
+      </div>
+
       <button class="menu-direct-rate-btn" id="direct-rate-submit-btn" onclick="submitDirectRate()">
         Submit Rating
       </button>
@@ -2422,19 +2481,42 @@ async function renderDirectRateBox() {
   `;
 }
 
-window.updateDirectRateDisplay = function(val) {
+window.updateDirectRateValues = function() {
+  const food = parseFloat(document.getElementById('direct-rate-food')?.value || '5.0');
+  const ambience = parseFloat(document.getElementById('direct-rate-ambience')?.value || '5.0');
+  const service = parseFloat(document.getElementById('direct-rate-service')?.value || '5.0');
+  const value = parseFloat(document.getElementById('direct-rate-value')?.value || '5.0');
+  const wait = parseFloat(document.getElementById('direct-rate-wait')?.value || '5.0');
+
+  const fEl = document.getElementById('direct-rate-food-val');
+  const aEl = document.getElementById('direct-rate-ambience-val');
+  const sEl = document.getElementById('direct-rate-service-val');
+  const vEl = document.getElementById('direct-rate-value-val');
+  const wEl = document.getElementById('direct-rate-wait-val');
+
+  if (fEl) fEl.textContent = food.toFixed(1);
+  if (aEl) aEl.textContent = ambience.toFixed(1);
+  if (sEl) sEl.textContent = service.toFixed(1);
+  if (vEl) vEl.textContent = value.toFixed(1);
+  if (wEl) wEl.textContent = wait.toFixed(1);
+
+  const overall = (food * 0.3 + ambience * 0.2 + service * 0.2 + value * 0.2 + wait * 0.1).toFixed(1);
   const numDisplay = document.getElementById('direct-rate-num');
   if (numDisplay) {
-    numDisplay.textContent = parseFloat(val).toFixed(1) + ' / 7';
+    numDisplay.textContent = overall + ' / 7';
   }
 };
 
 window.submitDirectRate = async function() {
   const btn = document.getElementById('direct-rate-submit-btn');
-  const input = document.getElementById('direct-rate-input');
-  if (!btn || !input) return;
+  if (!btn) return;
 
-  const ratingVal = parseFloat(input.value);
+  const food = parseFloat(document.getElementById('direct-rate-food')?.value || '5.0');
+  const ambience = parseFloat(document.getElementById('direct-rate-ambience')?.value || '5.0');
+  const service = parseFloat(document.getElementById('direct-rate-service')?.value || '5.0');
+  const value = parseFloat(document.getElementById('direct-rate-value')?.value || '5.0');
+  const wait = parseFloat(document.getElementById('direct-rate-wait')?.value || '5.0');
+
   btn.disabled = true;
   btn.textContent = 'Submitting...';
 
@@ -2451,11 +2533,11 @@ window.submitDirectRate = async function() {
       venue_name:  VENUE_DATA.name,
       user_id:     user.id,
       trust_level: 'scout',
-      food:        ratingVal,
-      ambience:    ratingVal,
-      service:     ratingVal,
-      value:       ratingVal,
-      wait_time:   ratingVal,
+      food,
+      ambience,
+      service,
+      value,
+      wait_time:   wait,
       note:        'Direct rating',
       verified:    true,
       flagged:     false,
