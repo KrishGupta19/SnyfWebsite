@@ -1195,6 +1195,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (user) {
     currentUser = user;
+    const redirect = new URLSearchParams(window.location.search).get('redirect');
+    if (redirect) {
+      window.location.href = redirect;
+      return;
+    }
     await loadProfile(user);
   } else {
     showAuthScreen();
@@ -1358,6 +1363,11 @@ async function verifyOTP() {
   if (user) {
     currentUser = user;
     if (resendTimer) clearInterval(resendTimer);
+    const redirect = new URLSearchParams(window.location.search).get('redirect');
+    if (redirect) {
+      window.location.href = redirect;
+      return;
+    }
     await loadProfile(user);
   } else {
     errEl.textContent = 'Invalid or expired OTP. Try again.';
