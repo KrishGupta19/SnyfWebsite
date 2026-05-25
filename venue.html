@@ -1559,36 +1559,36 @@
           <div class="track-slider-row">
             <div class="track-slider-meta">
               <span class="track-slider-label">Food Quality</span>
-              <span class="track-slider-val" id="sl-food-val">4.0</span>
+              <span class="track-slider-val" id="sl-food-val">5.0</span>
             </div>
-            <input type="range" class="track-slider" min="1" max="7" step="0.5" value="4"
+            <input type="range" class="track-slider" min="1.0" max="7.0" step="0.1" value="5.0"
               id="sl-food" oninput="updateSlider('food', this.value)">
           </div>
 
           <div class="track-slider-row">
             <div class="track-slider-meta">
               <span class="track-slider-label">Ambience</span>
-              <span class="track-slider-val" id="sl-ambience-val">4.0</span>
+              <span class="track-slider-val" id="sl-ambience-val">5.0</span>
             </div>
-            <input type="range" class="track-slider" min="1" max="7" step="0.5" value="4"
+            <input type="range" class="track-slider" min="1.0" max="7.0" step="0.1" value="5.0"
               id="sl-ambience" oninput="updateSlider('ambience', this.value)">
           </div>
 
           <div class="track-slider-row">
             <div class="track-slider-meta">
               <span class="track-slider-label">Service</span>
-              <span class="track-slider-val" id="sl-service-val">4.0</span>
+              <span class="track-slider-val" id="sl-service-val">5.0</span>
             </div>
-            <input type="range" class="track-slider" min="1" max="7" step="0.5" value="4"
+            <input type="range" class="track-slider" min="1.0" max="7.0" step="0.1" value="5.0"
               id="sl-service" oninput="updateSlider('service', this.value)">
           </div>
 
           <div class="track-slider-row">
             <div class="track-slider-meta">
               <span class="track-slider-label">Value for Money</span>
-              <span class="track-slider-val" id="sl-value-val">4.0</span>
+              <span class="track-slider-val" id="sl-value-val">5.0</span>
             </div>
-            <input type="range" class="track-slider" min="1" max="7" step="0.5" value="4"
+            <input type="range" class="track-slider" min="1.0" max="7.0" step="0.1" value="5.0"
               id="sl-value" oninput="updateSlider('value', this.value)">
           </div>
 
@@ -1844,13 +1844,45 @@
   // ══════════════════════════════════════════
   // INIT
   // ══════════════════════════════════════════
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     // Read table from URL
     const params = new URLSearchParams(window.location.search);
     tableNum = params.get('table');
 
     // Ambient track dots (pre-generate)
     renderTrackDots();
+
+    // Check for pending review submission from order tracking
+    const pendingReviewStr = sessionStorage.getItem('snyf_pending_tracking_review');
+    if (pendingReviewStr) {
+      const pending = JSON.parse(pendingReviewStr);
+      sessionStorage.removeItem('snyf_pending_tracking_review');
+      const user = await snyfGetUser();
+      if (user) {
+        try {
+          await db.from('field_reports').insert({
+            venue_id:    pending.venue_id,
+            venue_name:  pending.venue_name,
+            user_id:     user.id,
+            trust_level: 'scout',
+            food:        pending.food,
+            ambience:    pending.ambience,
+            service:     pending.service,
+            value:       pending.value,
+            wait_time:   null,
+            note:        'Order feedback',
+            verified:    true,
+            flagged:     false,
+            source:      'qr_scan',
+            session_id:  snyfSessionId(),
+            order_id:    pending.order_id,
+          });
+          showToast('Feedback submitted successfully! 🎉');
+        } catch (err) {
+          console.error('Failed to submit pending review:', err);
+        }
+      }
+    }
 
     // Load dynamic venue details from Supabase
     // Back link - goes to discover page
@@ -2311,29 +2343,48 @@
   }
 
 async function submitReviewAndReturn() {
-  const food     = parseFloat(document.getElementById('sl-food')?.value     || '5');
-  const ambience = parseFloat(document.getElementById('sl-ambience')?.value || '5');
-  const service  = parseFloat(document.getElementById('sl-service')?.value  || '5');
-  const value    = parseFloat(document.getElementById('sl-value')?.value    || '5');
+  const food     = parseFloat(document.getElementById('sl-food')?.value     || '5.0');
+  const ambience = parseFloat(document.getElementById('sl-ambience')?.value || '5.0');
+  const service  = parseFloat(document.getElementById('sl-service')?.value  || '5.0');
+  const value    = parseFloat(document.getElementById('sl-value')?.value    || '5.0');
 
-  // Only save if user actually moved the sliders (not all default 4.0)
-  const hasRated = [food, ambience, service, value].some(v => v !== 4.0);
+  // Only save if user actually moved the sliders (not all default 5.0)
+  const hasRated = [food, ambience, service, value].some(v => v !== 5.0);
 
   if (hasRated) {
     try {
       const user = await snyfGetUser();
+      if (!user) {
+        // Save pending review in sessionStorage
+        const pendingReview = {
+          venue_id:    window._lastVenueId  || null,
+          venue_name:  window._lastVenueName || VENUE_DATA?.name || '',
+          food,
+          ambience,
+          service,
+          value,
+          order_id:    window._lastOrderId || null,
+        };
+        sessionStorage.setItem('snyf_pending_tracking_review', JSON.stringify(pendingReview));
+
+        showToast('Please log in to submit your rating.');
+        setTimeout(() => {
+          window.location.href = `profile.html?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+        }, 1500);
+        return;
+      }
 
       await db.from('field_reports').insert({
         venue_id:    window._lastVenueId  || null,
         venue_name:  window._lastVenueName || VENUE_DATA?.name || '',
-        user_id:     user?.id || null,
+        user_id:     user.id,
         trust_level: 'scout',
         food,
         ambience,
         service,
         value,
         wait_time:   null,
-        note:        null,
+        note:        'Order feedback',
         verified:    true,      // ordered = verified visit
         flagged:     false,
         source:      'qr_scan',
