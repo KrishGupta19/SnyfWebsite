@@ -1648,16 +1648,24 @@ body.visual-mode-on .nav-inner {
 
 @media (max-width: 768px) {
     .hero-cards {
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-        padding: 0 16px;
+        flex-direction: row;
+        align-items: stretch;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: 16px;
+        padding: 4px 20px 16px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        max-width: 100vw;
+    }
+    .hero-cards::-webkit-scrollbar {
+        display: none;
     }
     .hero-intel-card {
         width: 100%;
-        max-width: 380px;
+        min-height: 200px;
         height: auto;
-        min-height: 180px;
     }
 }
 
@@ -7347,10 +7355,12 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     max-width: calc(100vw - 2rem);
   }
   .hero-card-float-wrapper {
-    width: 100%;
-    max-width: 340px;
-    flex: none;
-    justify-content: center;
+    flex: 0 0 80vw;
+    max-width: 300px;
+    min-width: 260px;
+    scroll-snap-align: start;
+    animation: none !important;
+    justify-content: stretch;
   }
   .hero-intel-card {
     width: 100%;
