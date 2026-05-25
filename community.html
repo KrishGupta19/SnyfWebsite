@@ -89,10 +89,7 @@
     <section class="ch-hero">
       <div class="ch-container">
         <div class="ch-hero-inner">
-          <div class="ch-eyebrow">
-            <span class="ch-pulse"></span>
-            NCR · FIELD INTELLIGENCE · LIVE
-          </div>
+
 
           <h1 class="ch-heading">
             The Commons<span class="ch-dot">.</span>
@@ -117,56 +114,56 @@
           </div>
         </div>
 
-        <!-- Thin scrolling ticker — replaces intel strip + live card -->
-        <div class="ch-ticker-wrap">
-          <div class="ch-ticker" id="ch-ticker">
-            <!-- JS injects lines -->
-          </div>
-        </div>
       </div>
     </section>
 
     <!-- ZONE 3 — Feed With Floating Filter Pill -->
     <section class="ch-feed-section">
       <div class="ch-container">
-        <!-- Sticky filter bar -->
         <div class="ch-filter-bar" id="ch-filter-bar">
-          <div class="ch-filter-scroll">
-            <!-- Search -->
-            <div class="ch-search-wrap">
-              <span class="ch-search-icon">⌕</span>
-              <input
-                type="search"
-                class="ch-search"
-                id="search-input"
-                placeholder="Search cafés, zones..."
-                autocomplete="off"
-              >
+          <div class="ch-filter-container">
+
+            <!-- Top Row: Search and Sort -->
+            <div class="ch-filter-row ch-filter-row--top">
+              <div class="ch-search-wrap">
+                <span class="ch-search-icon">⌕</span>
+                <input
+                  type="search"
+                  class="ch-search"
+                  id="search-input"
+                  placeholder="Search cafés, zones..."
+                  autocomplete="off"
+                >
+              </div>
+
+              <select class="ch-sort" id="sort-select">
+                <option value="recent">Recent</option>
+                <option value="score">Top Score</option>
+                <option value="helpful">Most Helpful</option>
+              </select>
             </div>
 
-            <!-- Filter pills -->
-            <div class="ch-pills" id="status-filters">
-              <button class="ch-pill active" data-filter="all">All</button>
-              <button class="ch-pill" data-filter="verified">✓ Verified</button>
-              <button class="ch-pill" data-filter="flagged">⚠ Flagged</button>
+            <!-- Middle Row: Zones (All NCR...) -->
+            <div class="ch-filter-scroll-wrapper">
+              <div class="ch-pills" id="zone-filters">
+                <button class="ch-pill ch-pill--zone active" data-zone="all">All NCR</button>
+                <button class="ch-pill ch-pill--zone" data-zone="Cyber Hub">Cyber Hub</button>
+                <button class="ch-pill ch-pill--zone" data-zone="Sector 29">Sector 29</button>
+                <button class="ch-pill ch-pill--zone" data-zone="DLF Phase 4">DLF Phase 4</button>
+                <button class="ch-pill ch-pill--zone" data-zone="Khan Market">Khan Market</button>
+                <button class="ch-pill ch-pill--zone" data-zone="Sushant Lok">Sushant Lok</button>
+              </div>
             </div>
 
-            <!-- Zone pills -->
-            <div class="ch-pills ch-pills--zones" id="zone-filters">
-              <button class="ch-pill ch-pill--zone active" data-zone="all">All NCR</button>
-              <button class="ch-pill ch-pill--zone" data-zone="Cyber Hub">Cyber Hub</button>
-              <button class="ch-pill ch-pill--zone" data-zone="Sector 29">Sector 29</button>
-              <button class="ch-pill ch-pill--zone" data-zone="DLF Phase 4">DLF Phase 4</button>
-              <button class="ch-pill ch-pill--zone" data-zone="Khan Market">Khan Market</button>
-              <button class="ch-pill ch-pill--zone" data-zone="Sushant Lok">Sushant Lok</button>
+            <!-- Bottom Row: Filter (All, Verified, Flagged...) -->
+            <div class="ch-filter-scroll-wrapper">
+              <div class="ch-pills" id="status-filters">
+                <button class="ch-pill active" data-filter="all">All</button>
+                <button class="ch-pill" data-filter="verified">✓ Verified</button>
+                <button class="ch-pill" data-filter="flagged">⚠ Flagged</button>
+              </div>
             </div>
 
-            <!-- Sort -->
-            <select class="ch-sort" id="sort-select">
-              <option value="recent">Recent</option>
-              <option value="score">Top Score</option>
-              <option value="helpful">Most Helpful</option>
-            </select>
           </div>
         </div>
 
@@ -292,16 +289,6 @@
 
     const reports = [];
 
-    const CH_TICKER_EVENTS = [
-      '◈ New field report verified — Cyber Hub',
-      '⚠ Suspicious spike — Sector 29 cluster · flagged',
-      '◈ 12 new reports indexed — NCR Commons',
-      '✓ Anchor reviewer report indexed',
-      '⚠ Pattern detected — 8 consecutive 5★ same IP',
-      '◈ Score recalculated · 92% confidence',
-      '✓ 94% confidence confirmed · Khan Market',
-      '⚠ Wait time anomaly detected · flagged',
-    ];
 
     const dimensions = [
       { key: 'food', label: 'Food' },
@@ -325,20 +312,6 @@
     const $ = selector => document.querySelector(selector);
     const $$ = selector => Array.from(document.querySelectorAll(selector));
 
-    function initTicker() {
-      const ticker = document.getElementById('ch-ticker');
-      if (!ticker) return;
-      let pool = [...CH_TICKER_EVENTS];
-      let shuffled = pool.sort(() => Math.random() - 0.5);
-      // Build inner content — duplicate for seamless loop
-      const content = [...shuffled, ...shuffled].map(e => {
-        const isFlag = e.startsWith('⚠');
-        const isNew  = e.startsWith('◈');
-        return `<span class="ch-tick-item ${isFlag ? 'ch-tick--flag' : isNew ? 'ch-tick--new' : 'ch-tick--ok'}">${e}</span>`;
-      }).join('<span class="ch-tick-sep">·</span>');
-
-      ticker.innerHTML = content;
-    }
 
     function renderReport(r) {
       const tl = TRUST_LEVELS[r.trustLevel] || TRUST_LEVELS.standard;
@@ -771,7 +744,6 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       sessionStorage.setItem('snyf_visited', 'true');
-      initTicker();
       renderStats();
       renderReports();
       loadReportsFromDB();

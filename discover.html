@@ -422,10 +422,7 @@
   <section class="ch-hero">
     <div class="ch-container">
       <div class="ch-hero-inner">
-        <div class="ch-eyebrow">
-          <span class="ch-pulse"></span>
-          NCR · VERIFIED PARTNER VENUES · LIVE
-        </div>
+
         <h1 class="ch-heading">
           Discover<span class="ch-dot">.</span>
         </h1>
@@ -444,10 +441,6 @@
         </div>
       </div>
 
-      <!-- Ticker -->
-      <div class="ch-ticker-wrap">
-        <div class="ch-ticker" id="dv-ticker"></div>
-      </div>
     </div>
   </section>
 
@@ -455,46 +448,50 @@
   <section class="ch-feed-section">
     <div class="ch-container">
 
-      <!-- Sticky filter bar -->
       <div class="ch-filter-bar" id="dv-filter-bar">
-        <div class="ch-filter-scroll">
+        <div class="ch-filter-container">
 
-          <!-- Search -->
-          <div class="ch-search-wrap">
-            <span class="ch-search-icon">⌕</span>
-            <input
-              type="search"
-              class="ch-search"
-              id="dv-search"
-              placeholder="Search venues, zones..."
-              autocomplete="off"
-            >
+          <!-- Top Row: Search and Sort -->
+          <div class="ch-filter-row ch-filter-row--top">
+            <div class="ch-search-wrap">
+              <span class="ch-search-icon">⌕</span>
+              <input
+                type="search"
+                class="ch-search"
+                id="dv-search"
+                placeholder="Search venues, zones..."
+                autocomplete="off"
+              >
+            </div>
+
+            <select class="ch-sort" id="dv-sort">
+              <option value="score">Top Rated</option>
+              <option value="name">A → Z</option>
+              <option value="newest">Newest</option>
+            </select>
           </div>
 
-          <!-- Category pills -->
-          <div class="ch-pills" id="dv-cat-filters">
-            <button class="ch-pill active" data-cat="all">All Venues</button>
-            <button class="ch-pill" data-cat="Café">Cafés</button>
-            <button class="ch-pill" data-cat="Restaurant">Restaurants</button>
-            <button class="ch-pill" data-cat="Bar">Bars</button>
+          <!-- Middle Row: Zones (All NCR...) -->
+          <div class="ch-filter-scroll-wrapper">
+            <div class="ch-pills" id="dv-zone-filters">
+              <button class="ch-pill ch-pill--zone active" data-zone="all">All NCR</button>
+              <button class="ch-pill ch-pill--zone" data-zone="Cyber Hub">Cyber Hub</button>
+              <button class="ch-pill ch-pill--zone" data-zone="Sector 29">Sector 29</button>
+              <button class="ch-pill ch-pill--zone" data-zone="DLF Phase 4">DLF Phase 4</button>
+              <button class="ch-pill ch-pill--zone" data-zone="Khan Market">Khan Market</button>
+              <button class="ch-pill ch-pill--zone" data-zone="Sushant Lok">Sushant Lok</button>
+            </div>
           </div>
 
-          <!-- Zone pills -->
-          <div class="ch-pills ch-pills--zones" id="dv-zone-filters">
-            <button class="ch-pill ch-pill--zone active" data-zone="all">All NCR</button>
-            <button class="ch-pill ch-pill--zone" data-zone="Cyber Hub">Cyber Hub</button>
-            <button class="ch-pill ch-pill--zone" data-zone="Sector 29">Sector 29</button>
-            <button class="ch-pill ch-pill--zone" data-zone="DLF Phase 4">DLF Phase 4</button>
-            <button class="ch-pill ch-pill--zone" data-zone="Khan Market">Khan Market</button>
-            <button class="ch-pill ch-pill--zone" data-zone="Sushant Lok">Sushant Lok</button>
+          <!-- Bottom Row: Categories (All Venues...) -->
+          <div class="ch-filter-scroll-wrapper">
+            <div class="ch-pills" id="dv-cat-filters">
+              <button class="ch-pill active" data-cat="all">All Venues</button>
+              <button class="ch-pill" data-cat="Café">Cafés</button>
+              <button class="ch-pill" data-cat="Restaurant">Restaurants</button>
+              <button class="ch-pill" data-cat="Bar">Bars</button>
+            </div>
           </div>
-
-          <!-- Sort -->
-          <select class="ch-sort" id="dv-sort">
-            <option value="score">Top Rated</option>
-            <option value="name">A → Z</option>
-            <option value="newest">Newest</option>
-          </select>
 
         </div>
       </div>
@@ -677,8 +674,7 @@ async function loadVenues() {
         <!-- Counter -->
         <div class="dv-img-counter" id="counter-${venue.slug}">1 / ${imgCount || 1}</div>
 
-        <!-- Partner badge -->
-        <div class="dv-partner-badge">✓ Snyf Partner</div>
+
 
         <!-- Swipe hint on touch -->
         <div class="dv-swipe-hint">swipe for more</div>
@@ -835,27 +831,6 @@ async function loadVenues() {
     }, { passive: true });
   }
 
-  // ── TICKER ────────────────────────────────────────────────────
-  function initTicker() {
-    const ticker = document.getElementById('dv-ticker');
-    if (!ticker) return;
-
-    // Static ticker — update manually or connect to ticker_events table later
-    const events = [
-      { text: '✓ Snyf partner venues — NCR · Gurugram',   type: 'ok'  },
-      { text: '◈ New venue onboarding underway',           type: 'new' },
-      { text: '✓ Trust intelligence layer — active',       type: 'ok'  },
-      { text: '◈ Field reports — community powered',       type: 'new' },
-      { text: '✓ QR scanning active at partner venues',    type: 'ok'  },
-    ];
-
-    const doubled = [...events, ...events];
-    ticker.innerHTML = doubled.map(e =>
-      `<span class="ch-tick-item ch-tick--${e.type}">${e.text}</span>
-       <span class="ch-tick-sep">·</span>`
-    ).join('');
-  }
-
   // ── FILTER BINDINGS ───────────────────────────────────────────
   document.querySelectorAll('#dv-cat-filters .ch-pill').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -893,7 +868,6 @@ async function loadVenues() {
   // ── INIT ──────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
     sessionStorage.setItem('snyf_visited', 'true');
-    initTicker();
     loadVenues();
 
     // Update nav profile link if logged in
