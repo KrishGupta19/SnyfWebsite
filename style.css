@@ -7518,6 +7518,20 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   .problem-card { padding: 20px 16px; }
   .bc-rupee-count { font-size: 16px; }
 
+}
+
+@media (max-width: 768px) {
+  /* Prevent backdrop-filter containing block trap for position: fixed elements on mobile */
+  .navbar.scrolled {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(246, 245, 242, 0.98) !important;
+  }
+  body.visual-mode-on .navbar.scrolled {
+    background: transparent !important;
+    border-bottom: none !important;
+  }
+
   /* Mobile floating view mode toggle */
   .view-toggle {
     position: fixed !important;
