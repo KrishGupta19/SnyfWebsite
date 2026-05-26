@@ -7023,8 +7023,15 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
 .deck-info-panel {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 8px 0;
+  gap: 20px;
+  padding: 24px;
+  background: rgba(246, 245, 242, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  max-width: 280px;
+  width: 100%;
+  align-self: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
 .dip-counter {
@@ -7176,23 +7183,6 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   display: none;
   align-items: center;
   gap: 8px;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  color: var(--muted);
-  cursor: pointer;
-  transition: all 0.2s;
-  align-self: flex-start;
-}
-
-.dip-reshuffle-btn:hover {
-  border-color: var(--cyan);
-  color: var(--cyan);
-  background: rgba(111,183,214,0.04);
 }
 
 /* ── Responsive ─────────────────────────────────────────────── */
@@ -7202,20 +7192,31 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     gap: 32px;
   }
   .deck-stage {
-    height: 450px;
-    order: 2;
+    height: 420px;
+    order: 1;
   }
   .deck-stack {
-    height: 400px;
+    height: 380px;
     max-width: 340px;
     margin: 0 auto;
   }
   .deck-placeholder {
-    height: 400px;
+    height: 380px;
     max-width: 340px;
   }
   .deck-info-panel {
-    order: 1;
+    order: 2;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+    max-width: 340px;
+    width: 100%;
+    margin: 16px auto 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
   }
   .deck-hint-desktop { display: none; }
   .deck-hint-mobile  { display: block; }
@@ -7225,19 +7226,24 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
 }
 
 @media (max-width: 480px) {
-  .deck-stage { height: 380px; }
-  .deck-card  { padding: 22px 20px; border-radius: 16px; }
+  .deck-stage { height: 350px; }
+  .deck-card  { padding: 16px; border-radius: 12px; gap: 10px; }
   .deck-stack {
-    height: 330px;
-    max-width: 280px;
+    height: 310px;
+    max-width: 270px;
     margin: 0 auto;
   }
   .deck-placeholder {
-    height: 330px;
-    max-width: 280px;
+    height: 310px;
+    max-width: 270px;
   }
-  .deck-info-panel h3.dip-title { font-size: 1.4rem; }
-  .dip-counter span:first-child  { font-size: 2.2rem; }
+  .deck-info-panel {
+    max-width: 270px;
+  }
+  .dc-num { font-size: 10px; }
+  .dc-tag { font-size: 8px; }
+  .deck-card h3.dc-title { font-size: 1.1rem; }
+  .deck-card p.dc-body  { font-size: 0.82rem; }
 }
 
 
@@ -7389,17 +7395,30 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     max-width: 100%;
   }
   .deck-layout { grid-template-columns: 1fr; gap: 24px; }
-  .deck-stage { height: 430px; order: 2; }
+  .deck-stage { height: 400px; order: 1; }
   .deck-stack {
-    height: 380px;
+    height: 360px;
     max-width: 320px;
     margin: 0 auto;
   }
   .deck-placeholder {
-    height: 380px;
+    height: 360px;
     max-width: 320px;
   }
-  .deck-info-panel { order: 1; }
+  .deck-info-panel {
+    order: 2;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+    max-width: 320px;
+    width: 100%;
+    margin: 16px auto 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
   .deck-hint-desktop { display: none; }
   .deck-hint-mobile  { display: block; }
   .about-layout { grid-template-columns: 1fr; gap: 32px; }
@@ -7434,16 +7453,19 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   .snippet-item { height: 24px; line-height: 24px; font-size: 0.78rem; }
   .section { padding: 52px 0; }
   .container { padding: 0 14px; }
-  .deck-stage { height: auto; min-height: 320px; }
+  .deck-stage { height: 370px; min-height: unset; }
   .deck-stack {
-    height: auto;
-    min-height: 300px;
-    max-width: 300px;
+    height: 330px;
+    max-width: 290px;
     margin: 0 auto;
   }
   .deck-placeholder {
-    height: 300px;
-    max-width: 300px;
+    height: 330px;
+    max-width: 290px;
+  }
+  .deck-info-panel {
+    max-width: 290px;
+    margin-top: 12px;
   }
   .deck-card  { padding: 14px; border-radius: 12px; }
   
@@ -7493,12 +7515,13 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     font-size: clamp(1.95rem, 10.5vw, 2.75rem);
     letter-spacing: 0;
   }
-  .deck-stage { height: auto; min-height: 300px; }
-  .deck-card  { padding: 12px 10px; border-radius: 12px; }
-  .deck-card-num { font-size: 10px; }
-  .deck-card-tag { font-size: 8px; }
-  .deck-card-title { font-size: 1.1rem; }
-  .deck-card-body  { font-size: 0.82rem; }
+  .deck-stage { height: 340px; }
+  .deck-card  { padding: 14px 12px; border-radius: 12px; gap: 8px; }
+  .dc-num { font-size: 10px; }
+  .dc-tag { font-size: 8px; }
+  .deck-card h3.dc-title { font-size: 1.05rem; }
+  .deck-card p.dc-body  { font-size: 0.78rem; line-height: 1.4; }
+  .dc-stat { font-size: 9px; padding-top: 4px; }
   .section-title { font-size: clamp(1.4rem, 7vw, 2rem); }
   .problem-card { padding: 16px 14px; }
   .waitlist-form .btn { width: 100%; }

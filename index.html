@@ -790,15 +790,6 @@
                         <span class="dip-total">05</span>
                     </div>
 
-                    <div class="dip-tag" id="dip-tag">CORE FRAMEWORK</div>
-                    <h3 class="dip-title" id="dip-title">Dimension Protocol</h3>
-                    <p class="dip-body" id="dip-body">Every review is structured across 5 mandatory dimensions — food, ambience, service, value, wait time. No dimension skipped. No data point wasted.</p>
-
-                    <div class="dip-stat" id="dip-stat">
-                        <span class="dip-stat-dot" id="dip-stat-dot"></span>
-                        <span id="dip-stat-text">5 dimensions · every review</span>
-                    </div>
-
                     <!-- Progress dots -->
                     <div class="dip-dots" id="dip-dots">
                         <!-- Injected by JS -->
@@ -808,12 +799,11 @@
                     <div class="dip-nav">
                         <button class="dip-nav-btn" id="dip-prev" aria-label="Previous card">←</button>
                         <button class="dip-nav-btn dip-nav-btn--primary" id="dip-next" aria-label="Next card">Next →</button>
+                        <!-- Reshuffle button — shows after all cards revealed -->
+                        <button class="dip-reshuffle-btn dip-nav-btn dip-nav-btn--primary" id="dip-reshuffle" style="display:none; align-items: center; gap: 8px;">
+                            ↺ Reshuffle
+                        </button>
                     </div>
-
-                    <!-- Reshuffle button — shows after all cards revealed -->
-                    <button class="dip-reshuffle-btn" id="dip-reshuffle" style="display:none;">
-                        ↺ Reshuffle deck
-                    </button>
                 </div>
             </div>
         </div>
@@ -3480,12 +3470,6 @@
       const stack        = document.getElementById('deck-stack');
       const hint         = document.getElementById('deck-hint');
       const dipCurrent   = document.getElementById('dip-current');
-      const dipTag       = document.getElementById('dip-tag');
-      const dipTitle     = document.getElementById('dip-title');
-      const dipBody      = document.getElementById('dip-body');
-      const dipStat      = document.getElementById('dip-stat');
-      const dipStatDot   = document.getElementById('dip-stat-dot');
-      const dipStatText  = document.getElementById('dip-stat-text');
       const dipDots      = document.getElementById('dip-dots');
       const dipPrev      = document.getElementById('dip-prev');
       const dipNext      = document.getElementById('dip-next');
@@ -3586,36 +3570,14 @@
       function updateInfoPanel(idx, animate) {
         const card = DECK_CARDS[idx];
         if (!card) return;
-
-        if (animate) {
-          // Fade out then in
-          [dipTag, dipTitle, dipBody, dipStat].forEach(el => {
-            el.style.transition = 'opacity 0.18s ease, transform 0.18s ease';
-            el.style.opacity    = '0';
-            el.style.transform  = 'translateY(6px)';
-          });
-          setTimeout(() => {
-            setInfoContent(card, idx);
-            [dipTag, dipTitle, dipBody, dipStat].forEach(el => {
-              el.style.opacity   = '1';
-              el.style.transform = 'translateY(0)';
-            });
-          }, 180);
-        } else {
-          setInfoContent(card, idx);
-        }
+        setInfoContent(card, idx);
       }
 
       function setInfoContent(card, idx) {
-        dipCurrent.textContent  = card.num;
-        dipTag.textContent      = card.tag;
-        dipTitle.textContent    = card.title;
-        dipBody.textContent     = card.body;
-        dipStatText.textContent = card.stat;
-        dipStatDot.style.background = card.accent;
-        dipTag.style.color          = card.accent;
-        dipTag.style.borderColor    = card.accent + '40';
-        dipCurrent.style.color      = card.accent;
+        if (dipCurrent) {
+          dipCurrent.textContent  = card.num;
+          dipCurrent.style.color      = card.accent;
+        }
       }
 
       // ── Progress dots ─────────────────────────────────────────────
