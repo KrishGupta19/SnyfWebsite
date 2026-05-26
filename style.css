@@ -1024,6 +1024,20 @@ body.visual-mode-on .nav-inner {
     z-index: 999;
     list-style: none;
 }
+
+/* Desktop only: transparent bridge that covers the 10px gap between
+   the trigger and the dropdown so hover is never lost mid-cursor-move */
+@media (min-width: 769px) {
+    .dropdown-menu::before {
+        content: '';
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        width: 100%;
+        /* 14px — slightly taller than the 10px gap for safety */
+        height: 14px;
+    }
+}
 .nav-dropdown.active .dropdown-menu {
     display: block;
 }
@@ -1161,6 +1175,32 @@ body.visual-mode-on .nav-inner {
     text-transform: uppercase;
     margin-bottom: 22px;
     animation: fadeUp 0.8s 0.1s ease both;
+}
+
+/* Static lines — each span on its own line, locked in place */
+.hero-h1-static {
+    display: block;
+}
+.hero-h1-static span {
+    display: block;
+}
+
+/* Animated line — FIXED height so the hero's vertical centering
+   always sees the same total h1 height, regardless of what text
+   the typing animation currently shows (or doesn't show). */
+.hero-h1-animated {
+    display: block;
+    /* 1.15em gives enough room for ascenders/descenders at line-height 1.0
+       while still being a rigid, non-changing size */
+    height: 1.15em;
+    line-height: 1.0;
+    overflow: hidden;
+    /* Prevent any flex/block ancestor from stretching this */
+    flex-shrink: 0;
+}
+.hero-h1-animated #typing-word {
+    display: inline-block;
+    line-height: 1.0;
 }
 
 /* Prismatic Refraction Effect */
@@ -7349,6 +7389,21 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     max-width: 100%;
     white-space: normal !important;
   }
+
+  /* Keep animated row height FIXED on mobile — prevents vertical shift from centering */
+  .hero-h1-animated {
+    height: 1.15em;
+    display: block;
+    overflow: hidden;
+  }
+  .hero-h1-static {
+    display: block;
+    text-align: center;
+  }
+  .hero-h1-static span {
+    display: block;
+  }
+
 
   .hero-sub {
     width: 100%;
