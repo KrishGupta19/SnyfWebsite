@@ -7369,7 +7369,8 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     width: 100%;
     max-width: 100%;
     padding: 0 1rem;
-    margin: 40px auto 0;
+    /* Reduced from 40px — removes the extra gap between navbar and heading */
+    margin: 8px auto 0;
     text-align: center;
     align-items: center;
   }
@@ -7390,11 +7391,11 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
     white-space: normal !important;
   }
 
-  /* Keep animated row height FIXED on mobile — prevents vertical shift from centering */
+  /* Mobile animated line: tall enough for 2 wrapped lines, no clipping */
   .hero-h1-animated {
-    height: 1.15em;
+    height: 2.5em;
     display: block;
-    overflow: hidden;
+    overflow: visible;
   }
   .hero-h1-static {
     display: block;
