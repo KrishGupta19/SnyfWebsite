@@ -15,6 +15,40 @@ window.addEventListener('load', () => {
     const preloader    = document.getElementById('preloader');
     if (!preloader) return;
 
+    // ── Skip loader for internal navigation ──────────────────
+    // If the user is coming from another page on the same site
+    // (e.g. Discover → Home, Commons → Home) or has already
+    // seen the loader this session, skip the full animation.
+    const isInternalNav = (function () {
+        try {
+            const ref = document.referrer;
+            if (!ref) return false;
+            const refHost = new URL(ref).hostname;
+            return refHost === location.hostname;
+        } catch (e) { return false; }
+    })();
+    const hasVisited = sessionStorage.getItem('snyf_visited') === 'true';
+
+    if (isInternalNav || hasVisited) {
+        // Mark as visited for future navigations within this session
+        sessionStorage.setItem('snyf_visited', 'true');
+        // Instantly hide the preloader and unblock the page
+        preloader.style.display = 'none';
+        document.body.classList.remove('loading');
+        // Soft fade-in of the page content
+        document.body.style.opacity = '0';
+        requestAnimationFrame(() => {
+            document.body.style.transition = 'opacity 0.5s ease';
+            document.body.style.opacity = '1';
+        });
+        // Init AOS if available
+        if (typeof AOS !== 'undefined') {
+            AOS.init({ once: true, offset: 60, duration: 800, easing: 'ease-out-cubic' });
+        }
+        return; // bail out — do not run the full preloader sequence
+    }
+    // ─────────────────────────────────────────────────────────
+
     const chars        = preloader.querySelectorAll('.pl-char');
     const scanBeam     = document.getElementById('pl-scan-beam');
     const underline    = document.getElementById('pl-logo-underline');
