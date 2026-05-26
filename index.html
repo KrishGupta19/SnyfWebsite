@@ -1128,9 +1128,18 @@
         document.querySelectorAll('.dropdown-trigger').forEach(btn => {
             btn.addEventListener('click', e => {
                 if (window.innerWidth > 768) return; // desktop uses CSS :hover
+                e.preventDefault();
                 e.stopPropagation();
                 const parent = btn.closest('.nav-dropdown');
-                parent.classList.toggle('active');
+                const wasActive = parent.classList.contains('active');
+                
+                // Close all dropdowns
+                document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('active'));
+                
+                // Toggle this dropdown
+                if (!wasActive) {
+                    parent.classList.add('active');
+                }
             });
         });
 

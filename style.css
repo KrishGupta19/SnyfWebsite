@@ -996,6 +996,7 @@ body.visual-mode-on .nav-inner {
     font-size: 0.6rem;
     transition: transform 0.25s ease;
     display: inline-block;
+    pointer-events: none;
 }
 @media (hover: hover) {
     .nav-dropdown:hover .dropdown-arrow {
@@ -7566,6 +7567,18 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   body.visual-mode-on .vt-opt--visual { color: #000 !important; }
   body.visual-mode-on .vt-opt--read { color: rgba(255, 255, 255, 0.4) !important; }
   body.visual-mode-on .vt-pill { background: #fff !important; }
+
+  /* Prevent deck section controls overflow on mobile */
+  .dip-dots {
+    display: none !important;
+  }
+  .dip-nav-btn {
+    padding: 8px 12px !important;
+    font-size: 11px !important;
+  }
+  .dip-nav-btn--primary {
+    padding: 8px 16px !important;
+  }
 }
 
 /* ── 480px: Small phones ────────────────────────────────────── */
