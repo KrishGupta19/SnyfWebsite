@@ -150,7 +150,7 @@
             </a>
             <ul class="nav-links">
                 <li class="nav-dropdown">
-                    <button class="dropdown-trigger">Protocol <span class="dropdown-arrow">▼</span></button>
+                    <button class="dropdown-trigger">Navigate <span class="dropdown-arrow">▼</span></button>
                     <ul class="dropdown-menu">
                         <li><a href="#story">Story</a></li>
                         <li><a href="#try-it-live">Try It</a></li>
@@ -271,25 +271,7 @@
         </div>
     </div>
 
-    <!-- ========== PROOF — Beat 2: The Proof in Numbers ========== -->
-    <section class="proof-section grid-bg" id="proof">
-        <div class="container">
-            <div class="proof-stats" data-aos="fade-up">
-                <div class="proof-stat">
-                    <strong><span class="counter" data-target="50" data-suffix="k+">0</span></strong>
-                    <span>Reviews Analyzed</span>
-                </div>
-                <div class="proof-stat">
-                    <strong><span class="counter" data-target="98" data-suffix="%">0</span></strong>
-                    <span>Fraud Detection Rate</span>
-                </div>
-                <div class="proof-stat">
-                    <strong><span class="counter" data-target="312" data-suffix="+">0</span></strong>
-                    <span>Partner Businesses</span>
-                </div>
-            </div>
-        </div>
-    </section>
+
 
     <!-- ========== MARQUEE STRIP — Live Verification Stream ========== -->
     <div class="marquee-strip" aria-hidden="true">
@@ -1123,15 +1105,26 @@
         const hamburger = document.getElementById('hamburger');
         const navLinks = document.querySelector('.nav-links');
 
-        function closeNav() { navLinks.classList.remove('open'); hamburger.setAttribute('aria-expanded', 'false'); hamburger.innerHTML = '&#9776;'; }
+        function closeNav() { 
+            navLinks.classList.remove('open'); 
+            hamburger.setAttribute('aria-expanded', 'false'); 
+            hamburger.innerHTML = '&#9776;'; 
+            document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('active'));
+        }
         function openNav() { navLinks.classList.add('open'); hamburger.setAttribute('aria-expanded', 'true'); hamburger.innerHTML = '&#10005;'; }
 
         hamburger.addEventListener('click', e => { e.stopPropagation(); navLinks.classList.contains('open') ? closeNav() : openNav(); });
         navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', closeNav));
-        document.addEventListener('click', e => { if (navLinks.classList.contains('open') && !navLinks.contains(e.target) && !hamburger.contains(e.target)) closeNav(); });
+        document.addEventListener('click', e => { 
+            if (navLinks.classList.contains('open') && !navLinks.contains(e.target) && !hamburger.contains(e.target)) {
+                closeNav(); 
+            } else if (!e.target.closest('.nav-dropdown')) {
+                document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('active'));
+            }
+        });
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeNav(); });
 
-        // Mobile: toggle Protocol dropdown accordion
+        // Mobile: toggle Navigate dropdown accordion
         document.querySelectorAll('.dropdown-trigger').forEach(btn => {
             btn.addEventListener('click', e => {
                 if (window.innerWidth > 768) return; // desktop uses CSS :hover
