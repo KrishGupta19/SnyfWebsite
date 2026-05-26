@@ -997,7 +997,14 @@ body.visual-mode-on .nav-inner {
     transition: transform 0.25s ease;
     display: inline-block;
 }
-.nav-dropdown:hover .dropdown-arrow,
+@media (hover: hover) {
+    .nav-dropdown:hover .dropdown-arrow {
+        transform: rotate(180deg);
+    }
+    .nav-dropdown:hover .dropdown-menu {
+        display: block;
+    }
+}
 .nav-dropdown.active .dropdown-arrow {
     transform: rotate(180deg);
 }
@@ -1016,7 +1023,6 @@ body.visual-mode-on .nav-inner {
     z-index: 999;
     list-style: none;
 }
-.nav-dropdown:hover .dropdown-menu,
 .nav-dropdown.active .dropdown-menu {
     display: block;
 }
@@ -4376,15 +4382,17 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
         border-bottom: none;
     }
     .nav-links.open a.nav-cta {
-        display: block;
-        text-align: center;
-        background: var(--white);
-        color: var(--black) !important;
-        border-radius: 8px;
-        padding: 12px;
-        font-weight: 600;
-        margin-top: 12px;
-        border: none;
+        display: block !important;
+        text-align: center !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        border-radius: 8px !important;
+        padding: 12px !important;
+        font-weight: 600 !important;
+        margin-top: 16px !important;
+        border: none !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
     .hamburger {
         display: block;
@@ -7514,8 +7522,9 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   .view-toggle {
     position: fixed !important;
     bottom: 24px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
+    right: 24px !important;
+    left: auto !important;
+    transform: none !important;
     z-index: 999999 !important;
     background: rgba(18, 18, 16, 0.9) !important;
     backdrop-filter: blur(10px) !important;
@@ -7543,11 +7552,6 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   body.visual-mode-on .vt-opt--visual { color: #000 !important; }
   body.visual-mode-on .vt-opt--read { color: rgba(255, 255, 255, 0.4) !important; }
   body.visual-mode-on .vt-pill { background: #fff !important; }
-
-  /* Hide floating toggle when mobile menu is open */
-  body:has(.nav-links.open) .view-toggle {
-    display: none !important;
-  }
 }
 
 /* ── 480px: Small phones ────────────────────────────────────── */
