@@ -998,7 +998,7 @@ body.visual-mode-on .nav-inner {
     display: inline-block;
     pointer-events: none;
 }
-@media (hover: hover) {
+@media (min-width: 769px) {
     .nav-dropdown:hover .dropdown-arrow {
         transform: rotate(180deg);
     }
@@ -7537,9 +7537,9 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   .view-toggle {
     position: fixed !important;
     bottom: 24px !important;
-    right: 24px !important;
-    left: auto !important;
-    transform: none !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
     z-index: 999999 !important;
     background: rgba(18, 18, 16, 0.9) !important;
     backdrop-filter: blur(10px) !important;
@@ -7601,4 +7601,69 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   .section-title { font-size: clamp(1.4rem, 7vw, 2rem); }
   .problem-card { padding: 16px 14px; }
   .waitlist-form .btn { width: 100%; }
+}
+
+/* Logo and mobile quick links brand grouping */
+.nav-brand-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mobile-quick-links {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .mobile-quick-links {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .mq-link {
+        font-family: var(--font-sans, system-ui, sans-serif);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-decoration: none;
+        padding: 5px 12px;
+        border-radius: 999px;
+        letter-spacing: 0.01em;
+        transition: all 0.2s ease;
+        text-transform: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .mq-commons {
+        background: linear-gradient(135deg, #3a9fc5 0%, #5b7fd4 100%);
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    
+    .mq-discover {
+        background: linear-gradient(135deg, #d97a4a 0%, #e4a94e 100%);
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    
+    .mq-link:active {
+        transform: scale(0.95);
+        opacity: 0.9;
+    }
+
+    /* Hide desktop version of Commons & Discover in the mobile drawer */
+    .mobile-hide-commons,
+    .mobile-hide-discover {
+        display: none !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .mobile-quick-links {
+        gap: 4px;
+    }
+    .mq-link {
+        font-size: 0.68rem;
+        padding: 4px 8px;
+    }
 }
