@@ -15,21 +15,6 @@ window.addEventListener('load', () => {
     const preloader    = document.getElementById('preloader');
     if (!preloader) return;
 
-    // Skip preloader if returning from Commons or Discover
-    if (sessionStorage.getItem('snyf_visited') === 'true') {
-        document.body.classList.remove('loading');
-        preloader.style.display = 'none';
-        if (typeof AOS !== 'undefined') {
-            AOS.init({
-                once: true,
-                offset: 60,
-                duration: 800,
-                easing: 'ease-out-cubic',
-            });
-        }
-        return;
-    }
-
     const chars        = preloader.querySelectorAll('.pl-char');
     const scanBeam     = document.getElementById('pl-scan-beam');
     const underline    = document.getElementById('pl-logo-underline');
@@ -68,9 +53,9 @@ window.addEventListener('load', () => {
 
     // ── Scramble config ──────────────────────────────
     const POOL         = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*!?';
-    const SCRAMBLE_ITER = 11;
-    const ITER_MS       = 42;
-    const STAGGER_MS    = 260;
+    const SCRAMBLE_ITER = 6;
+    const ITER_MS       = 25;
+    const STAGGER_MS    = 80;
 
     function scrambleChar(el, target, onDone) {
         let i = 0;
@@ -99,7 +84,7 @@ window.addEventListener('load', () => {
             let iter = 0;
             const id = setInterval(() => {
                 iter++;
-                if (iter >= 5) {
+                if (iter >= 4) {
                     clearInterval(id);
                     el.textContent = targets[i];
                     el.classList.remove('scrambling');
@@ -109,16 +94,12 @@ window.addEventListener('load', () => {
                 } else {
                     el.textContent = POOL[Math.floor(Math.random() * POOL.length)];
                 }
-            }, 38);
+            }, 20);
         });
     }
 
     // ── Progress & log state ─────────────────────────
-    let progress = 0;
-    let loaded   = false;
     let logIdx   = 0;
-
-    window.addEventListener('load', () => { loaded = true; });
 
     const LOG_LINES = [
         '› SYS_BOOT SEQUENCE COMPLETE',
@@ -163,27 +144,51 @@ window.addEventListener('load', () => {
     }
 
     function tickProgress() {
-        let step = Math.random() * 7 + 2;
-        if (progress > 78 && !loaded) step *= 0.12;
-        progress = Math.min(progress + step, loaded ? 100 : 98.5);
-
-        const rounded = Math.round(progress);
-        fill.style.width = progress + '%';
-        pctEl.textContent = rounded + '%';
-        statusEl.textContent = getStatus(rounded);
-
-        if (Math.random() < 0.28 && logIdx < LOG_LINES.length) appendLog();
-
-        if (progress >= 100 && loaded) {
-            fill.style.width = '100%';
-            pctEl.textContent = '100%';
-            statusEl.textContent = '✓ AUTHENTICATED';
-            statusEl.classList.add('authenticated');
-            pctEl.style.color = 'rgba(255,255,255,0.9)';
-            triggerAuthMoment();
-        } else {
-            setTimeout(tickProgress, 55 + Math.random() * 110);
+        if (!gsap) {
+            let progress = 0;
+            const fallbackTick = () => {
+                progress += 5;
+                const rounded = Math.round(progress);
+                fill.style.width = progress + '%';
+                pctEl.textContent = rounded + '%';
+                statusEl.textContent = getStatus(rounded);
+                if (progress < 100) {
+                    setTimeout(fallbackTick, 50);
+                } else {
+                    triggerAuthMoment();
+                }
+            };
+            fallbackTick();
+            return;
         }
+
+        let progressObj = { value: 0 };
+        gsap.to(progressObj, {
+            value: 100,
+            duration: 1.0,
+            ease: "power1.inOut",
+            onUpdate: () => {
+                const rounded = Math.round(progressObj.value);
+                fill.style.width = progressObj.value + '%';
+                pctEl.textContent = rounded + '%';
+                statusEl.textContent = getStatus(rounded);
+                
+                // Append logs dynamically during the GSAP tween
+                if (rounded >= 15 && logIdx === 0) appendLog();
+                if (rounded >= 35 && logIdx === 1) { appendLog(); appendLog(); }
+                if (rounded >= 55 && logIdx === 3) { appendLog(); appendLog(); }
+                if (rounded >= 75 && logIdx === 5) { appendLog(); appendLog(); }
+                if (rounded >= 90 && logIdx === 7) { appendLog(); appendLog(); }
+            },
+            onComplete: () => {
+                fill.style.width = '100%';
+                pctEl.textContent = '100%';
+                statusEl.textContent = '✓ AUTHENTICATED';
+                statusEl.classList.add('authenticated');
+                pctEl.style.color = 'rgba(255,255,255,0.9)';
+                triggerAuthMoment();
+            }
+        });
     }
 
     // ── AUTHENTICATED moment ─────────────────────────
@@ -195,15 +200,15 @@ window.addEventListener('load', () => {
         });
 
         // 2. White screen flash
-        authFlash.style.transition = 'opacity 0.07s ease';
-        authFlash.style.opacity = '0.18';
+        authFlash.style.transition = 'opacity 0.05s ease';
+        authFlash.style.opacity = '0.15';
         setTimeout(() => {
-            authFlash.style.transition = 'opacity 0.3s ease';
+            authFlash.style.transition = 'opacity 0.2s ease';
             authFlash.style.opacity = '0';
-        }, 120);
+        }, 100);
 
         // 3. After flash settles, fly
-        setTimeout(beginExit, 600);
+        setTimeout(beginExit, 250);
     }
 
     // ── BEGIN EXIT ───────────────────────────────────
@@ -216,14 +221,14 @@ window.addEventListener('load', () => {
             gsap.to(fadeEls, {
                 opacity: 0,
                 y: -10,
-                duration: 0.28,
-                stagger: 0.04,
+                duration: 0.2,
+                stagger: 0.03,
                 ease: 'power2.in',
                 onComplete: doFinalScramble
             });
         } else {
             fadeEls.forEach(el => { el.style.opacity = '0'; });
-            setTimeout(doFinalScramble, 300);
+            setTimeout(doFinalScramble, 200);
         }
     }
 
@@ -231,7 +236,7 @@ window.addEventListener('load', () => {
     function doFinalScramble() {
         setTimeout(() => {
             quickScramble(flyToNav);
-        }, 80);
+        }, 40);
     }
 
     // ── FLY TO NAV ───────────────────────────────────
@@ -266,9 +271,9 @@ window.addEventListener('load', () => {
             // so the logo appears to cross from dark → light world
             gsap.to(bgLayer, {
                 opacity: 0,
-                duration: 0.6,
+                duration: 0.3,
                 ease: 'power2.inOut',
-                delay: 0.15
+                delay: 0.1
             });
 
             // Fade grid + scanlines + corners
@@ -277,7 +282,7 @@ window.addEventListener('load', () => {
             );
             gsap.to(decorEls, {
                 opacity: 0,
-                duration: 0.4,
+                duration: 0.25,
                 ease: 'power2.in'
             });
 
@@ -286,14 +291,14 @@ window.addEventListener('load', () => {
                 x: dx,
                 y: dy,
                 scale: scale,
-                duration: 1.0,
+                duration: 0.5,
                 ease: 'power4.inOut',
                 onUpdate: function () {
                     // At 55% of the flight, shift color to dark
                     if (this.progress() > 0.55 && logoEl.style.color !== 'rgb(26, 26, 26)') {
                         gsap.to(logoEl, {
                             color: '#1A1A1A',
-                            duration: 0.25,
+                            duration: 0.15,
                             ease: 'none'
                         });
                     }
@@ -303,7 +308,7 @@ window.addEventListener('load', () => {
                     navLogo.style.opacity = '1';
                     navLogo.classList.add('nav-logo-ping');
                     setTimeout(() => navLogo.classList.remove('nav-logo-ping'), 700);
-                    gsap.to(logoEl, { opacity: 0, duration: 0.08 });
+                    gsap.to(logoEl, { opacity: 0, duration: 0.05 });
                     finishPreloader();
                 }
             });
@@ -311,9 +316,9 @@ window.addEventListener('load', () => {
             // Fade the whole preloader overlay out toward the end of the flight
             gsap.to(preloader, {
                 opacity: 0,
-                duration: 0.55,
+                duration: 0.3,
                 ease: 'power2.inOut',
-                delay: 0.55
+                delay: 0.2
             });
         });
     }
@@ -331,19 +336,19 @@ window.addEventListener('load', () => {
                     easing: 'ease-out-cubic',
                 });
             }
-        }, 200);
+        }, 100);
     }
 
     function fallbackExit() {
         sessionStorage.setItem('snyf_visited', 'true');
         window.scrollTo(0, 0);
         body.classList.remove('loading');
-        preloader.style.transition = 'opacity 0.6s ease';
+        preloader.style.transition = 'opacity 0.3s ease';
         preloader.style.opacity = '0';
         setTimeout(() => {
             preloader.style.display = 'none';
             if (typeof AOS !== 'undefined') AOS.init({ once: true });
-        }, 650);
+        }, 350);
     }
 
     // ── SEQUENCE START ───────────────────────────────
@@ -354,7 +359,7 @@ window.addEventListener('load', () => {
                 scrambleChar(el, el.dataset.char, isLast ? onAllDecoded : null);
             }, i * STAGGER_MS);
         });
-    }, 500);
+    }, 200);
 
     function onAllDecoded() {
         // Fire radar rings on decode
@@ -363,22 +368,22 @@ window.addEventListener('load', () => {
                 const ring = document.getElementById(id);
                 if (ring) ring.classList.add('fire');
             });
-        }, 60);
+        }, 50);
 
         // Scan beam sweep
         setTimeout(() => {
             scanBeam.classList.add('active');
-        }, 100);
+        }, 80);
 
         // Underline
         setTimeout(() => {
             underline.classList.add('drawn');
-        }, 320);
+        }, 150);
 
         // Tagline
         setTimeout(() => {
             tagline.classList.add('visible');
-        }, 520);
+        }, 250);
 
         // Reset rings so they can fire again at auth moment
         setTimeout(() => {
@@ -386,7 +391,7 @@ window.addEventListener('load', () => {
                 const ring = document.getElementById(id);
                 if (ring) ring.classList.remove('fire');
             });
-        }, 1400);
+        }, 600);
 
         // Progress + terminal appear
         setTimeout(() => {
@@ -394,8 +399,8 @@ window.addEventListener('load', () => {
             terminal.classList.add('visible');
             appendLog();
             appendLog();
-            setTimeout(tickProgress, 250);
-        }, 820);
+            setTimeout(tickProgress, 100);
+        }, 400);
     }
 
 })();

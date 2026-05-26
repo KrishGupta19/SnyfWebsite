@@ -66,29 +66,6 @@
 </head>
 
 <body class="loading">
-    <script>
-        (function() {
-            // Detect page reload
-            let isReload = false;
-            try {
-                const nav = performance.getEntriesByType('navigation')[0];
-                if (nav) isReload = (nav.type === 'reload');
-            } catch (e) {
-                try {
-                    isReload = (performance.navigation.type === 1);
-                } catch (err) {}
-            }
-            
-            if (isReload) {
-                sessionStorage.removeItem('snyf_visited');
-            }
-
-            if (sessionStorage.getItem('snyf_visited') === 'true') {
-                document.body.classList.remove('loading');
-                document.body.classList.add('skip-loader');
-            }
-        })();
-    </script>
     <!-- Custom Cybernetic Cursor -->
     <div id="cursor-dot" class="custom-cursor"></div>
     <div id="cursor-ring" class="custom-cursor"></div>
