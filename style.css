@@ -7509,6 +7509,45 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
   .story-content { padding: 18px 16px; gap: 16px; }
   .problem-card { padding: 20px 16px; }
   .bc-rupee-count { font-size: 16px; }
+
+  /* Mobile floating view mode toggle */
+  .view-toggle {
+    position: fixed !important;
+    bottom: 24px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 999999 !important;
+    background: rgba(18, 18, 16, 0.9) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
+    height: 40px !important;
+    padding: 3px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+  .vt-opt {
+    height: 32px !important;
+    font-size: 0.75rem !important;
+    padding: 0 16px !important;
+  }
+  .vt-pill {
+    top: 3px !important;
+    left: 3px !important;
+    height: calc(100% - 6px) !important;
+  }
+  body:not(.visual-mode-on) .vt-opt--read { color: #000 !important; }
+  body:not(.visual-mode-on) .vt-opt--visual { color: rgba(255, 255, 255, 0.4) !important; }
+  body:not(.visual-mode-on) .vt-pill { background: #fff !important; }
+  
+  body.visual-mode-on .vt-opt--visual { color: #000 !important; }
+  body.visual-mode-on .vt-opt--read { color: rgba(255, 255, 255, 0.4) !important; }
+  body.visual-mode-on .vt-pill { background: #fff !important; }
+
+  /* Hide floating toggle when mobile menu is open */
+  body:has(.nav-links.open) .view-toggle {
+    display: none !important;
+  }
 }
 
 /* ── 480px: Small phones ────────────────────────────────────── */
