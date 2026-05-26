@@ -16,31 +16,28 @@ window.addEventListener('load', () => {
     if (!preloader) return;
 
     // ── Skip loader for internal navigation ──────────────────
-    // If the user is coming from another page on the same site
-    // (e.g. Discover → Home, Commons → Home) or has already
-    // seen the loader this session, skip the full animation.
+    // The inline <head> script already set html.skip-loader-pending
+    // (runs before first paint, so no black flash). We just need to
+    // transfer that to body.skip-loader and clean up.
+    const skipPending = document.documentElement.classList.contains('skip-loader-pending');
+
+    // Also check referrer/sessionStorage as a belt-and-suspenders fallback
     const isInternalNav = (function () {
         try {
             const ref = document.referrer;
             if (!ref) return false;
-            const refHost = new URL(ref).hostname;
-            return refHost === location.hostname;
+            return new URL(ref).hostname === location.hostname;
         } catch (e) { return false; }
     })();
     const hasVisited = sessionStorage.getItem('snyf_visited') === 'true';
 
-    if (isInternalNav || hasVisited) {
-        // Mark as visited for future navigations within this session
+    if (skipPending || isInternalNav || hasVisited) {
         sessionStorage.setItem('snyf_visited', 'true');
-        // Instantly hide the preloader and unblock the page
-        preloader.style.display = 'none';
+        // Transfer pending class from <html> to <body> — preloader already hidden
+        document.documentElement.classList.remove('skip-loader-pending');
         document.body.classList.remove('loading');
-        // Soft fade-in of the page content
-        document.body.style.opacity = '0';
-        requestAnimationFrame(() => {
-            document.body.style.transition = 'opacity 0.5s ease';
-            document.body.style.opacity = '1';
-        });
+        document.body.classList.add('skip-loader');
+        preloader.style.display = 'none';
         // Init AOS if available
         if (typeof AOS !== 'undefined') {
             AOS.init({ once: true, offset: 60, duration: 800, easing: 'ease-out-cubic' });

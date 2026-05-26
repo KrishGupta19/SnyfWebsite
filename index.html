@@ -49,23 +49,41 @@
             mix-blend-mode: multiply;
         }
         
-        /* Instant loader skip style override with premium fade-in */
+        /* Instant loader skip — hides preloader with zero flash */
+        /* Applied to <html> by inline script before first paint */
+        html.skip-loader-pending .preloader,
         body.skip-loader .preloader {
             display: none !important;
         }
-        body.skip-loader > :not(.preloader) {
-            opacity: 0;
-            animation: skip-loader-fade-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        /* Gentle fade-in on the page when loader is skipped */
+        body.skip-loader {
+            animation: skip-body-fadein 0.45s ease forwards;
         }
-        @keyframes skip-loader-fade-in {
-            to {
-                opacity: 1;
-            }
+        @keyframes skip-body-fadein {
+            from { opacity: 0; }
+            to   { opacity: 1; }
         }
     </style>
+    <!-- MUST be last in <head>: synchronous skip-loader guard runs before first paint -->
+    <script>
+        (function () {
+            try {
+                var isInternal = false;
+                var ref = document.referrer;
+                if (ref) {
+                    isInternal = new URL(ref).hostname === location.hostname;
+                }
+                var hasVisited = sessionStorage.getItem('snyf_visited') === 'true';
+                if (isInternal || hasVisited) {
+                    // Add class synchronously — browser won't paint preloader at all
+                    document.documentElement.classList.add('skip-loader-pending');
+                }
+            } catch (e) {}
+        })();
+    </script>
 </head>
 
-<body class="loading">
+<body class="loading" id="snyf-body">
     <!-- Custom Cybernetic Cursor -->
     <div id="cursor-dot" class="custom-cursor"></div>
     <div id="cursor-ring" class="custom-cursor"></div>
