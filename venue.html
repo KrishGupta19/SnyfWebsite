@@ -1809,6 +1809,75 @@
     .active-order-bar:hover .aob-right {
       background: rgba(246,245,242,0.2);
     }
+
+    /* Elevated state — pushes AOB above the cart bar */
+    .active-order-bar {
+      transition: bottom 0.3s cubic-bezier(0.22,1,0.36,1), transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .active-order-bar.elevated {
+      bottom: 88px;
+    }
+
+    /* ── ACTIVE ORDER MULTI-ORDER MODAL ── */
+    .aob-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(30,30,27,0.45);
+      z-index: 10000;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+    .aob-modal-sheet {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: var(--max-w);
+      background: var(--paper);
+      border-radius: 24px 24px 0 0;
+      padding: 12px 20px 40px;
+      animation: sheet-slidein 0.3s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes sheet-slidein {
+      from { transform: translateX(-50%) translateY(100%); }
+      to   { transform: translateX(-50%) translateY(0); }
+    }
+    .aob-modal-handle {
+      width: 36px; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+    .aob-modal-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 14px;
+    }
+    .aob-order-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.18s;
+    }
+    .aob-order-card:last-child { margin-bottom: 0; }
+    .aob-order-card:hover {
+      border-color: var(--cyan);
+      background: rgba(111,183,214,0.04);
+    }
+    .aob-order-card-cta {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
@@ -1832,6 +1901,15 @@
       </div>
       <div class="aob-right">
         <span id="aob-cta">Track →</span>
+      </div>
+    </div>
+
+    <!-- ── Multi-order selection bottom sheet ── -->
+    <div class="aob-modal-overlay" id="aob-modal" style="display:none;" onclick="closeAobModal(event)">
+      <div class="aob-modal-sheet">
+        <div class="aob-modal-handle"></div>
+        <div class="aob-modal-title">Active Orders</div>
+        <div id="aob-modal-list"></div>
       </div>
     </div>
 
@@ -2500,14 +2578,17 @@
     const bar   = document.getElementById('menu-order-bar');
     const count = document.getElementById('order-count');
     const total = document.getElementById('order-total');
+    const aob   = document.getElementById('active-order-bar');
     const n = cartCount();
 
     if (n === 0) {
       bar.classList.add('hidden');
+      if (aob) aob.classList.remove('elevated');
     } else {
       bar.classList.remove('hidden');
       count.textContent = n;
       total.textContent = formatINR(cartTotal());
+      if (aob && aob.style.display !== 'none') aob.classList.add('elevated');
     }
   }
 
@@ -3216,6 +3297,10 @@ function refreshActiveOrderBar() {
 
   bar.style.display = 'flex';
 
+  // Stack above cart bar if it's visible
+  const cartBar = document.getElementById('menu-order-bar');
+  bar.classList.toggle('elevated', !!(cartBar && !cartBar.classList.contains('hidden')));
+
   if (orders.length === 1) {
     const o = orders[0];
     const itemCount = (o.items || []).reduce((s, i) => s + i.qty, 0);
@@ -3229,22 +3314,77 @@ function refreshActiveOrderBar() {
   }
 }
 
+let _aobModalOrders = [];
+
 function openActiveOrder() {
   const orders = getActiveOrders();
   if (!orders.length) return;
 
-  // Use the most recent order
-  const o = orders[0];
+  if (orders.length === 1) {
+    _openOrderTracking(orders[0]);
+  } else {
+    _showAobModal(orders);
+  }
+}
+
+function _openOrderTracking(o) {
   window._lastOrderId   = o.id;
   window._lastVenueId   = VENUE_DATA?.id || null;
   window._lastVenueName = o.venueName || VENUE_DATA?.name || '';
 
+  _closeAobModal();
   showScreen('screen-track');
   startTracking();
 
-  // Hide bar while on track screen
   const bar = document.getElementById('active-order-bar');
   if (bar) bar.style.display = 'none';
+}
+
+function _showAobModal(orders) {
+  _aobModalOrders = orders;
+  const modal = document.getElementById('aob-modal');
+  const list  = document.getElementById('aob-modal-list');
+  if (!modal || !list) return;
+
+  list.innerHTML = orders.map((o, i) => {
+    const itemCount  = (o.items || []).reduce((s, item) => s + item.qty, 0);
+    const statusLabel = STATUS_LABEL[o.status] || 'Order in progress';
+    const timeAgo    = _timeAgo(o.createdAt);
+    return `
+      <div class="aob-order-card" onclick="_openOrderTrackingByIdx(${i})">
+        <div class="aob-pulse"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:700;color:var(--ink);">${statusLabel}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">${itemCount} item${itemCount !== 1 ? 's' : ''} · ₹${(o.total || 0).toLocaleString('en-IN')} · ${timeAgo}</div>
+        </div>
+        <span class="aob-order-card-cta">Track →</span>
+      </div>
+    `;
+  }).join('');
+
+  modal.style.display = 'block';
+}
+
+function _openOrderTrackingByIdx(i) {
+  _openOrderTracking(_aobModalOrders[i]);
+}
+
+function closeAobModal(event) {
+  if (event && event.target !== document.getElementById('aob-modal')) return;
+  _closeAobModal();
+}
+
+function _closeAobModal() {
+  const modal = document.getElementById('aob-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function _timeAgo(isoStr) {
+  if (!isoStr) return '';
+  const mins = Math.floor((Date.now() - new Date(isoStr).getTime()) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  return `${Math.floor(mins / 60)}h ago`;
 }
 
 // Subscribe to realtime updates for all persisted active orders
