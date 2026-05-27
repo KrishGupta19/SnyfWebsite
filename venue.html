@@ -2306,10 +2306,11 @@
         </div>
       </div>
 
+      ${tableNum ? `
       <div class="cart-est-time">
-        ⏱ Estimated serving time: 24 mins
-        ${tableNum ? `· Table ${tableNum}` : ''}
+        📍 Table ${tableNum}
       </div>
+      ` : ''}
     `;
   }
 
