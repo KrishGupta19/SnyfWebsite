@@ -1064,7 +1064,7 @@
     .game-screen-wrapper {
       position: relative;
       width: 100%;
-      height: 140px;
+      height: 200px;
       background: rgba(0, 0, 0, 0.03);
       border-radius: 12px;
       overflow: hidden;
@@ -1074,10 +1074,66 @@
       background: rgba(0, 0, 0, 0.25);
       border-color: rgba(255, 255, 255, 0.05);
     }
-    #game-canvas {
-      display: block;
+    .memory-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      padding: 6px;
       width: 100%;
       height: 100%;
+      box-sizing: border-box;
+    }
+    .memory-card {
+      position: relative;
+      height: 60px;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+    .card-inner {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border-radius: 8px;
+    }
+    .memory-card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .card-back {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+    .card-front {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(8px);
+      transform: rotateY(180deg);
+      font-size: 20px;
+    }
+    .dark .card-front {
+      background: rgba(40, 40, 40, 0.85);
+    }
+    .memory-card.matched .card-inner {
+      animation: match-pulse 0.5s ease-out;
+    }
+    @keyframes match-pulse {
+      0% { transform: rotateY(180deg) scale(1); }
+      50% { transform: rotateY(180deg) scale(1.15); box-shadow: 0 0 15px var(--primary); }
+      100% { transform: rotateY(180deg) scale(1); }
     }
     .game-overlay {
       position: absolute;
@@ -1600,13 +1656,15 @@
         <div class="track-timer-wrap">
           <div class="game-container">
             <div class="game-header">
-              <span class="game-title">☕ Café Jump</span>
-              <span class="game-score">Score: <span id="game-score-val">0</span> | Best: <span id="game-best-val">0</span></span>
+              <span class="game-title">☕ Café Match</span>
+              <span class="game-score">Flips: <span id="game-score-val">0</span> | Best: <span id="game-best-val">0</span></span>
             </div>
             <div class="game-screen-wrapper">
-              <canvas id="game-canvas" width="300" height="150"></canvas>
+              <div class="memory-grid" id="memory-grid">
+                <!-- 12 cards injected here -->
+              </div>
               <div id="game-overlay" class="game-overlay">
-                <p class="game-instruction">Tap screen or Space to JUMP</p>
+                <p class="game-instruction">Match the Café Treats!</p>
                 <button class="game-start-btn" onclick="startCafeGame()">Start Game</button>
               </div>
             </div>
@@ -1904,28 +1962,13 @@
   ];
 
   // Cafe Game Variables
-  let gameCanvas = null;
-  let gameCtx = null;
+  const CARD_EMOJIS = ['☕', '🍩', '🥐', '🥞', '🍰', '🍪'];
+  let memoryCards = [];
+  let flippedCards = [];
+  let matchedPairs = 0;
+  let moveCount = 0;
   let gameActive = false;
-  let gameScore = 0;
-  let gameBest = parseInt(localStorage.getItem('cafe_jump_best') || '0', 10);
-  let gameFrameId = null;
-
-  let player = {
-    x: 30,
-    y: 110,
-    vy: 0,
-    width: 20,
-    height: 20,
-    isJumping: false,
-    jumpForce: -6,
-    gravity: 0.35,
-    emoji: '☕'
-  };
-
-  let obstacles = [];
-  let obstacleTimer = 0;
-  let gameSpeed = 3.2;
+  let gameBest = parseInt(localStorage.getItem('cafe_match_best') || '0', 10);
 
   const SPECIAL_CHIPS = [
     'No capsicum', 'Less spicy', 'No onion',
@@ -2371,152 +2414,103 @@
 
   // ── Café Play Zone Game logic ──────────────────────────────────
   function initCafeGame() {
-    gameCanvas = document.getElementById('game-canvas');
-    if (!gameCanvas) return;
-    gameCtx = gameCanvas.getContext('2d');
-    
-    // Set initial display
-    drawGameFrame();
-    document.getElementById('game-best-val').textContent = gameBest;
-
-    const wrapper = gameCanvas.parentElement;
-    wrapper.addEventListener('touchstart', (e) => {
-      if (e.target.tagName === 'BUTTON') return;
-      handleGameAction();
-    });
-    wrapper.addEventListener('click', (e) => {
-      if (e.target.tagName === 'BUTTON') return;
-      handleGameAction();
-    });
-
-    window.addEventListener('keydown', (e) => {
-      if ((e.code === 'Space' || e.code === 'ArrowUp') && gameActive) {
-        e.preventDefault();
-        handleGameAction();
-      }
-    });
-  }
-
-  function handleGameAction() {
-    if (!gameActive) return;
-    if (!player.isJumping) {
-      player.vy = player.jumpForce;
-      player.isJumping = true;
-      playAudioTone(440, 0.08, 'triangle');
-    }
+    const grid = document.getElementById('memory-grid');
+    if (!grid) return;
+    grid.innerHTML = Array.from({ length: 12 }, (_, i) => `
+      <div class="memory-card">
+        <div class="card-inner">
+          <div class="card-back">☕</div>
+          <div class="card-front">☕</div>
+        </div>
+      </div>
+    `).join('');
+    document.getElementById('game-best-val').textContent = gameBest || 0;
   }
 
   function startCafeGame() {
     const overlay = document.getElementById('game-overlay');
     overlay.classList.add('hidden');
-    
-    player.y = 110;
-    player.vy = 0;
-    player.isJumping = false;
-    obstacles = [];
-    obstacleTimer = 0;
-    gameScore = 0;
-    gameSpeed = 3.2;
-    document.getElementById('game-score-val').textContent = gameScore;
-    
+
+    matchedPairs = 0;
+    moveCount = 0;
+    flippedCards = [];
+    document.getElementById('game-score-val').textContent = moveCount;
+
+    const deck = [...CARD_EMOJIS, ...CARD_EMOJIS];
+    // Shuffle deck
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+
+    const grid = document.getElementById('memory-grid');
+    if (!grid) return;
+
+    grid.innerHTML = deck.map((emoji, index) => `
+      <div class="memory-card" data-index="${index}" data-emoji="${emoji}" onclick="flipCard(this)">
+        <div class="card-inner">
+          <div class="card-back">☕</div>
+          <div class="card-front">${emoji}</div>
+        </div>
+      </div>
+    `).join('');
+
     gameActive = true;
-    if (gameFrameId) cancelAnimationFrame(gameFrameId);
-    gameLoop();
   }
 
-  function gameLoop() {
+  function flipCard(cardEl) {
     if (!gameActive) return;
-    updateGame();
-    drawGameFrame();
-    gameFrameId = requestAnimationFrame(gameLoop);
+    if (cardEl.classList.contains('flipped') || cardEl.classList.contains('matched')) return;
+    if (flippedCards.length >= 2) return;
+
+    cardEl.classList.add('flipped');
+    playAudioTone(523.25, 0.08, 'sine');
+    flippedCards.push(cardEl);
+
+    if (flippedCards.length === 2) {
+      moveCount++;
+      document.getElementById('game-score-val').textContent = moveCount;
+      checkMatch();
+    }
   }
 
-  function updateGame() {
-    player.vy += player.gravity;
-    player.y += player.vy;
-    
-    if (player.y >= 110) {
-      player.y = 110;
-      player.vy = 0;
-      player.isJumping = false;
-    }
+  function checkMatch() {
+    const [card1, card2] = flippedCards;
+    const emoji1 = card1.dataset.emoji;
+    const emoji2 = card2.dataset.emoji;
 
-    obstacleTimer--;
-    if (obstacleTimer <= 0) {
-      const obstacleEmojis = ['🫘', '🍩', '🥐', '🧁'];
-      const chosenEmoji = obstacleEmojis[Math.floor(Math.random() * obstacleEmojis.length)];
-      obstacles.push({
-        x: 300,
-        y: 112,
-        width: 16,
-        height: 16,
-        emoji: chosenEmoji,
-        passed: false
-      });
-      obstacleTimer = 60 + Math.random() * 80;
-    }
-
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-      const obs = obstacles[i];
-      obs.x -= gameSpeed;
-
-      if (!obs.passed && obs.x < player.x) {
-        obs.passed = true;
-        gameScore += 10;
-        document.getElementById('game-score-val').textContent = gameScore;
-        if (gameScore % 50 === 0) {
-          gameSpeed += 0.35;
-          playAudioTone(880, 0.1, 'sine');
+    if (emoji1 === emoji2) {
+      setTimeout(() => {
+        card1.classList.add('matched');
+        card2.classList.add('matched');
+        matchedPairs++;
+        flippedCards = [];
+        playAudioTone(784.00, 0.15, 'triangle');
+        
+        if (matchedPairs === CARD_EMOJIS.length) {
+          gameOver();
         }
-      }
-
-      const inset = 3;
-      if (
-        player.x + inset < obs.x + obs.width - inset &&
-        player.x + player.width - inset > obs.x + inset &&
-        player.y + inset < obs.y + obs.height - inset &&
-        player.y + player.height - inset > obs.y + inset
-      ) {
-        gameOver();
-        return;
-      }
-
-      if (obs.x < -30) {
-        obstacles.splice(i, 1);
-      }
+      }, 300);
+    } else {
+      setTimeout(() => {
+        card1.classList.remove('flipped');
+        card2.classList.remove('flipped');
+        flippedCards = [];
+        playAudioTone(261.63, 0.12, 'sawtooth');
+      }, 1000);
     }
-  }
-
-  function drawGameFrame() {
-    if (!gameCtx) return;
-    gameCtx.clearRect(0, 0, 300, 150);
-
-    gameCtx.beginPath();
-    gameCtx.moveTo(0, 128);
-    gameCtx.lineTo(300, 128);
-    gameCtx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
-    gameCtx.lineWidth = 2;
-    gameCtx.stroke();
-
-    gameCtx.font = '14px serif';
-    gameCtx.textBaseline = 'top';
-    for (const obs of obstacles) {
-      gameCtx.fillText(obs.emoji, obs.x, obs.y);
-    }
-
-    gameCtx.font = '18px serif';
-    gameCtx.textBaseline = 'top';
-    gameCtx.fillText(player.emoji, player.x, player.y);
   }
 
   function gameOver() {
     gameActive = false;
-    cancelAnimationFrame(gameFrameId);
-    playAudioTone(150, 0.3, 'sawtooth');
+    playAudioTone(523.25, 0.1, 'sine');
+    setTimeout(() => playAudioTone(659.25, 0.1, 'sine'), 100);
+    setTimeout(() => playAudioTone(784.00, 0.1, 'sine'), 200);
+    setTimeout(() => playAudioTone(1046.50, 0.3, 'sine'), 300);
 
-    if (gameScore > gameBest) {
-      gameBest = gameScore;
-      localStorage.setItem('cafe_jump_best', gameBest.toString());
+    if (gameBest === 0 || moveCount < gameBest) {
+      gameBest = moveCount;
+      localStorage.setItem('cafe_match_best', gameBest.toString());
       document.getElementById('game-best-val').textContent = gameBest;
     }
 
@@ -2524,7 +2518,7 @@
     const instruction = overlay.querySelector('.game-instruction');
     const startBtn = overlay.querySelector('.game-start-btn');
     
-    instruction.innerHTML = `💥 Game Over! Score: <strong>${gameScore}</strong>`;
+    instruction.innerHTML = `🎉 Victory! Matched in <strong>${moveCount}</strong> moves`;
     startBtn.textContent = 'Play Again';
     overlay.classList.remove('hidden');
   }
@@ -2554,7 +2548,7 @@
       for (let i = 0; i < ORDER_STATES.length; i++) {
         const el = document.getElementById(`track-state-${i}`);
         if (!el) continue;
-        if (i < targetState) {
+        if (i < targetState || (targetState === 3 && i === 3)) {
           el.className = 'track-state state-done';
         } else if (i === targetState) {
           el.className = 'track-state state-active';
@@ -2646,7 +2640,6 @@
       orderSubscription = null;
     }
     gameActive = false;
-    if (gameFrameId) cancelAnimationFrame(gameFrameId);
     
     cart = {};
     updateOrderBar();
