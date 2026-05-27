@@ -7742,3 +7742,92 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
         padding: 4px 8px;
     }
 }
+
+/* ──────────────────────────────────────────────────────────
+   MOBILE HORIZONTAL SCROLL FOR STACKED CARDS
+   ────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    /* 1. Hero cards horizontal scroll */
+    .hero-cards-wrap {
+        padding-inline: 0 !important; /* Allow edge-to-edge scroll container */
+        overflow: visible !important;
+    }
+    .hero-cards {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        scroll-snap-type: x mandatory !important;
+        -webkit-overflow-scrolling: touch !important;
+        gap: 16px !important;
+        padding: 10px 1.5rem 24px !important; /* Keep nice padding inside scroll */
+        width: 100% !important;
+        box-sizing: border-box !important;
+        scrollbar-width: none !important; /* Hide scrollbar Firefox */
+    }
+    .hero-cards::-webkit-scrollbar {
+        display: none !important; /* Hide scrollbar Webkit */
+    }
+    .hero-card-float-wrapper {
+        flex: 0 0 85vw !important;
+        max-width: 320px !important;
+        min-width: 260px !important;
+        scroll-snap-align: center !important;
+        margin: 0 !important;
+    }
+    .hero-intel-card {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    /* 2. Problem cards horizontal scroll */
+    .cards-grid {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        scroll-snap-type: x mandatory !important;
+        -webkit-overflow-scrolling: touch !important;
+        gap: 16px !important;
+        padding: 10px 1.5rem 24px !important; /* Keep nice padding inside scroll */
+        margin-left: -1.5rem !important;
+        margin-right: -1.5rem !important;
+        width: calc(100% + 3rem) !important;
+        box-sizing: border-box !important;
+        scrollbar-width: none !important;
+    }
+    .cards-grid::-webkit-scrollbar {
+        display: none !important;
+    }
+    .problem-card {
+        flex: 0 0 85vw !important;
+        max-width: 320px !important;
+        min-width: 260px !important;
+        scroll-snap-align: center !important;
+        margin: 0 !important;
+    }
+
+    /* 3. Value cards (About section) horizontal scroll */
+    .about-values {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        scroll-snap-type: x mandatory !important;
+        -webkit-overflow-scrolling: touch !important;
+        gap: 16px !important;
+        padding: 10px 1.5rem 24px !important;
+        margin-left: -1.5rem !important;
+        margin-right: -1.5rem !important;
+        width: calc(100% + 3rem) !important;
+        box-sizing: border-box !important;
+        scrollbar-width: none !important;
+    }
+    .about-values::-webkit-scrollbar {
+        display: none !important;
+    }
+    .value-card {
+        flex: 0 0 85vw !important;
+        max-width: 320px !important;
+        min-width: 260px !important;
+        scroll-snap-align: center !important;
+        margin: 0 !important;
+    }
+}
