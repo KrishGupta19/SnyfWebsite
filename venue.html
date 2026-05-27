@@ -2354,6 +2354,18 @@
     const total    = subtotal + gst + sc;
     const instrEl  = document.getElementById('cart-custom-input');
 
+    // Combine chips and custom text instruction
+    const customInstr = instrEl?.value?.trim() || '';
+    const allChips = selectedChips.join(', ');
+    let finalInstructions = null;
+    if (allChips && customInstr) {
+      finalInstructions = `${allChips} | ${customInstr}`;
+    } else if (allChips) {
+      finalInstructions = allChips;
+    } else if (customInstr) {
+      finalInstructions = customInstr;
+    }
+
     try {
       if (VENUE_DATA?.id) {
         // Capture order ID for review linkage
@@ -2367,7 +2379,7 @@
             gst,
             service_charge:       sc,
             total,
-            special_instructions: instrEl?.value?.trim() || null,
+            special_instructions: finalInstructions,
             status:               'received',
             session_id:           snyfSessionId(),
             source:               'snyf',

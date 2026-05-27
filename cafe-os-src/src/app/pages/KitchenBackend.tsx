@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { Clock, ChefHat, CheckCircle, Wifi, WifiOff } from 'lucide-react';
+import { Clock, ChefHat, CheckCircle, Wifi, WifiOff, Edit, Plus, Minus, Trash2, X } from 'lucide-react';
 import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
 import {
-  Order, OrderStatus,
+  Order, OrderStatus, MenuItem,
   ORDER_STATUS_LABELS, ORDER_STATUS_FLOW,
 } from '../../lib/types';
 
 export function KitchenBackend() {
   const { venue }                   = useVenue();
   const [orders,    setOrders]      = useState<Order[]>([]);
+  const [menuItems, setMenuItems]   = useState<MenuItem[]>([]);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [loading,   setLoading]     = useState(true);
   const [connected, setConnected]   = useState(false);
   const [newOrderId, setNewOrderId] = useState<string | null>(null);
@@ -18,11 +20,27 @@ export function KitchenBackend() {
   useEffect(() => {
     if (!venue?.id) return;
     fetchOrders();
+    fetchMenuItems();
     subscribeToOrders();
     return () => {
       if (channelRef.current) db.removeChannel(channelRef.current);
     };
   }, [venue?.id]);
+
+  async function fetchMenuItems() {
+    try {
+      const { data, error } = await db
+        .from('menu_items')
+        .select('*')
+        .eq('venue_id', venue.id)
+        .eq('available', true)
+        .order('name');
+      if (error) throw error;
+      setMenuItems((data || []) as MenuItem[]);
+    } catch (err) {
+      console.error('[Kitchen] fetchMenuItems:', err);
+    }
+  }
 
   // ── Fetch active orders ──────────────────────────────────────
   async function fetchOrders() {
@@ -120,6 +138,94 @@ export function KitchenBackend() {
       console.error('[Kitchen] updateStatus:', err);
       fetchOrders(); // revert on failure
     }
+  }
+
+  // ── Edit Modal Actions ─────────────────────────────────────────
+  function openEditModal(order: Order) {
+    setEditingOrder(JSON.parse(JSON.stringify(order)));
+  }
+
+  function updateItemQty(itemId: string, delta: number) {
+    if (!editingOrder) return;
+    const updatedItems = editingOrder.items.map(item => {
+      if (item.id === itemId) {
+        const newQty = Math.max(1, item.qty + delta);
+        return { ...item, qty: newQty };
+      }
+      return item;
+    });
+    setEditingOrder({ ...editingOrder, items: updatedItems });
+  }
+
+  function removeItemFromOrder(itemId: string) {
+    if (!editingOrder) return;
+    const updatedItems = editingOrder.items.filter(item => item.id !== itemId);
+    setEditingOrder({ ...editingOrder, items: updatedItems });
+  }
+
+  function addItemToOrder(menuItem: MenuItem) {
+    if (!editingOrder) return;
+    const exists = editingOrder.items.some(item => item.id === menuItem.id);
+    if (exists) {
+      updateItemQty(menuItem.id, 1);
+      return;
+    }
+    const newItem = {
+      id: menuItem.id,
+      name: menuItem.name,
+      price: menuItem.price,
+      qty: 1
+    };
+    setEditingOrder({
+      ...editingOrder,
+      items: [...editingOrder.items, newItem]
+    });
+  }
+
+  async function saveEditedOrder() {
+    if (!editingOrder) return;
+    const { subtotal, gst, service_charge, total } = recalculateOrderTotals(editingOrder.items);
+    
+    // Optimistic update
+    setOrders(prev => prev.map(o => o.id === editingOrder.id ? {
+      ...o,
+      items: editingOrder.items,
+      special_instructions: editingOrder.special_instructions,
+      subtotal,
+      gst,
+      service_charge,
+      total
+    } : o));
+
+    const orderToSave = editingOrder;
+    setEditingOrder(null);
+
+    try {
+      const { error } = await db
+        .from('orders')
+        .update({
+          items: orderToSave.items,
+          special_instructions: orderToSave.special_instructions,
+          subtotal,
+          gst,
+          service_charge,
+          total,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderToSave.id);
+      if (error) throw error;
+    } catch (err) {
+      console.error('[Kitchen] saveEditedOrder:', err);
+      fetchOrders(); // revert
+    }
+  }
+
+  function recalculateOrderTotals(items: any[]) {
+    const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const gst = Math.round(subtotal * 0.18); // 18% GST
+    const service_charge = 0;
+    const total = subtotal + gst;
+    return { subtotal, gst, service_charge, total };
   }
 
   const KITCHEN_FLOW: OrderStatus[] = ['received', 'delivered', 'ready'];
@@ -255,21 +361,30 @@ export function KitchenBackend() {
                 }`} />
 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2 flex-wrap">
-                    <h2 className="font-bold">
-                      Order #{order.id.slice(-6).toUpperCase()}
-                    </h2>
-                    {order.table_num && (
-                      <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                        Table {order.table_num}
+                  <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h2 className="font-bold">
+                        Order #{order.id.slice(-6).toUpperCase()}
+                      </h2>
+                      {order.table_num && (
+                        <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                          Table {order.table_num}
+                        </span>
+                      )}
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                        {ORDER_STATUS_LABELS[order.status]}
                       </span>
-                    )}
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                      {ORDER_STATUS_LABELS[order.status]}
-                    </span>
-                    <span className="text-sm font-bold text-primary">
-                      ₹{(order.total || 0).toLocaleString('en-IN')}
-                    </span>
+                      <span className="text-sm font-bold text-primary">
+                        ₹{(order.total || 0).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => openEditModal(order)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-accent-foreground rounded-lg text-xs font-semibold hover:bg-accent/70 transition-all border border-border"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                      Edit Order
+                    </button>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="w-4 h-4 flex-shrink-0" />
@@ -377,6 +492,153 @@ export function KitchenBackend() {
                 </div>
               )
             }
+          </div>
+        </div>
+      )}
+
+      {/* Edit Order Modal */}
+      {editingOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-background border border-border rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-border flex items-center justify-between bg-accent/20">
+              <div>
+                <h3 className="font-bold text-lg">Edit Order #{editingOrder.id.slice(-6).toUpperCase()}</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Modify items, quantities, and instructions</p>
+              </div>
+              <button
+                onClick={() => setEditingOrder(null)}
+                className="p-1 rounded-lg hover:bg-accent transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              {/* Order Items */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm flex items-center gap-2">
+                  <ChefHat className="w-4 h-4 text-primary" />
+                  Order Items
+                </h4>
+                <div className="space-y-2">
+                  {editingOrder.items.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic py-2">No items in this order.</p>
+                  ) : (
+                    editingOrder.items.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-accent/30 rounded-xl border border-border/50">
+                        <div className="min-w-0 flex-1 pr-2">
+                          <p className="font-medium text-sm truncate">{item.name}</p>
+                          <p className="text-xs text-muted-foreground">₹{item.price} each</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {/* Qty controls */}
+                          <div className="flex items-center border border-border rounded-lg overflow-hidden bg-background">
+                            <button
+                              type="button"
+                              onClick={() => updateItemQty(item.id, -1)}
+                              className="p-1.5 hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="w-8 text-center text-sm font-semibold">{item.qty}</span>
+                            <button
+                              type="button"
+                              onClick={() => updateItemQty(item.id, 1)}
+                              className="p-1.5 hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          
+                          {/* Remove */}
+                          <button
+                            type="button"
+                            onClick={() => removeItemFromOrder(item.id)}
+                            className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Add New Item */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm">Add Item to Order</h4>
+                <div className="flex gap-2">
+                  <select
+                    className="flex-1 bg-background border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    defaultValue=""
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      if (!selectedId) return;
+                      const item = menuItems.find(mi => mi.id === selectedId);
+                      if (item) addItemToOrder(item);
+                      e.target.value = ""; // reset selection
+                    }}
+                  >
+                    <option value="" disabled>Select an item to add...</option>
+                    {menuItems
+                      .filter(mi => !editingOrder.items.some(oi => oi.id === mi.id))
+                      .map(mi => (
+                        <option key={mi.id} value={mi.id}>
+                          {mi.name} — ₹{mi.price}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Special Instructions */}
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">Special Instructions</h4>
+                <textarea
+                  className="w-full bg-background border border-border rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary min-h-[80px]"
+                  placeholder="No onion, extra spicy, etc..."
+                  value={editingOrder.special_instructions || ''}
+                  onChange={(e) => setEditingOrder({ ...editingOrder, special_instructions: e.target.value || null })}
+                />
+              </div>
+
+              {/* Recalculated Cost Summary */}
+              <div className="border-t border-border pt-4 space-y-2 text-sm bg-accent/10 -mx-6 px-6 py-4">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Subtotal:</span>
+                  <span>₹{recalculateOrderTotals(editingOrder.items).subtotal.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>GST (18%):</span>
+                  <span>₹{recalculateOrderTotals(editingOrder.items).gst.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between font-bold text-base border-t border-border/50 pt-2 text-foreground">
+                  <span>New Total:</span>
+                  <span>₹{recalculateOrderTotals(editingOrder.items).total.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-border flex gap-3 bg-accent/10">
+              <button
+                type="button"
+                onClick={() => setEditingOrder(null)}
+                className="flex-1 py-2.5 border border-border hover:bg-accent text-accent-foreground font-semibold rounded-xl text-sm transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveEditedOrder}
+                className="flex-1 py-2.5 bg-primary hover:bg-primary/95 text-primary-foreground font-semibold rounded-xl text-sm transition-colors"
+              >
+                Save Changes
+              </button>
+            </div>
           </div>
         </div>
       )}
