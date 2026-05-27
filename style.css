@@ -7780,9 +7780,9 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
         display: none !important; /* Hide scrollbar Webkit */
     }
     .hero-card-float-wrapper {
-        flex: 0 0 85vw !important;
-        max-width: 320px !important;
-        min-width: 260px !important;
+        flex: 0 0 88vw !important;
+        max-width: 360px !important;
+        min-width: 280px !important;
         scroll-snap-align: center !important;
         margin: 0 !important;
     }
@@ -7810,9 +7810,9 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
         display: none !important;
     }
     .problem-card {
-        flex: 0 0 85vw !important;
-        max-width: 320px !important;
-        min-width: 260px !important;
+        flex: 0 0 88vw !important;
+        max-width: 360px !important;
+        min-width: 280px !important;
         scroll-snap-align: center !important;
         margin: 0 !important;
     }
@@ -7836,9 +7836,9 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
         display: none !important;
     }
     .value-card {
-        flex: 0 0 85vw !important;
-        max-width: 320px !important;
-        min-width: 260px !important;
+        flex: 0 0 88vw !important;
+        max-width: 360px !important;
+        min-width: 280px !important;
         scroll-snap-align: center !important;
         margin: 0 !important;
     }
