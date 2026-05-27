@@ -3020,6 +3020,8 @@ async function submitReviewAndReturn() {
 }
 
 // ── WAITER CALL HELP LOGIC ──────────────────────────────────
+let _helpResetTimer = null; // track the auto-reset timer
+
 async function callForHelp() {
   const btn = document.getElementById('track-help-btn');
   if (!btn || btn.classList.contains('called') || btn.classList.contains('loading')) return;
@@ -3069,6 +3071,42 @@ async function callForHelp() {
     btn.className = 'track-help-btn called';
     if (btnText) btnText.textContent = 'Help Called!';
     showToast('Help call sent to the kitchen!');
+
+    // 5. Auto-reset after 2 minutes — clears the flag and re-enables the button
+    if (_helpResetTimer) clearTimeout(_helpResetTimer);
+    _helpResetTimer = setTimeout(async () => {
+      try {
+        // Remove [HELP REQUESTED] from special_instructions in DB
+        const { data: freshOrder } = await db
+          .from('orders')
+          .select('special_instructions')
+          .eq('id', orderId)
+          .single();
+
+        if (freshOrder) {
+          const cleared = (freshOrder.special_instructions || '')
+            .replace(' | [HELP REQUESTED]', '')
+            .replace('[HELP REQUESTED]', '')
+            .trim();
+
+          await db
+            .from('orders')
+            .update({ special_instructions: cleared || null })
+            .eq('id', orderId);
+        }
+      } catch (e) {
+        console.warn('Auto-reset help flag failed silently:', e);
+      }
+
+      // Revert button regardless of DB success
+      const resetBtn = document.getElementById('track-help-btn');
+      if (resetBtn) {
+        resetBtn.className = 'track-help-btn';
+        const resetText = resetBtn.querySelector('span');
+        if (resetText) resetText.textContent = 'Call Waiter';
+      }
+    }, 2 * 60 * 1000); // 2 minutes
+
   } catch (err) {
     console.error('Error calling for help:', err);
     btn.classList.remove('loading');
@@ -3088,8 +3126,17 @@ function syncHelpButtonState(specialInstructions) {
   } else {
     // Only revert if we are not currently loading
     if (!btn.classList.contains('loading')) {
-      btn.className = 'track-help-btn';
-      if (btnText) btnText.textContent = 'Call Waiter';
+      // Don't revert if auto-reset timer is still pending (waiter may have dismissed)
+      if (!_helpResetTimer) {
+        btn.className = 'track-help-btn';
+        if (btnText) btnText.textContent = 'Call Waiter';
+      } else {
+        // The flag was cleared (waiter dismissed), revert and cancel timer
+        clearTimeout(_helpResetTimer);
+        _helpResetTimer = null;
+        btn.className = 'track-help-btn';
+        if (btnText) btnText.textContent = 'Call Waiter';
+      }
     }
   }
 }

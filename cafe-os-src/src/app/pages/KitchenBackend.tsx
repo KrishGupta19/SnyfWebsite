@@ -290,6 +290,35 @@ export function KitchenBackend() {
     }
   }
 
+  async function dismissHelpCall(order: Order) {
+    // Strip the [HELP REQUESTED] flag from special_instructions
+    const cleared = (order.special_instructions || '')
+      .replace(' | [HELP REQUESTED]', '')
+      .replace('[HELP REQUESTED]', '')
+      .trim();
+
+    // Optimistically update local state immediately
+    setOrders(prev => prev.map(o =>
+      o.id === order.id
+        ? { ...o, special_instructions: cleared || null }
+        : o
+    ));
+
+    try {
+      const { error } = await db
+        .from('orders')
+        .update({
+          special_instructions: cleared || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', order.id);
+      if (error) throw error;
+    } catch (err) {
+      console.error('[Kitchen] dismissHelpCall:', err);
+      fetchOrders(); // revert on error
+    }
+  }
+
   function recalculateOrderTotals(items: any[]) {
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
     const gst = Math.round(subtotal * 0.18); // 18% GST
@@ -329,6 +358,7 @@ export function KitchenBackend() {
 
   const pendingCount   = orders.filter(o => o.status === 'received' || o.status === 'delivered').length;
   const completedCount = orders.filter(o => o.status === 'ready').length;
+  const helpCount      = orders.filter(o => o.special_instructions?.includes('[HELP REQUESTED]')).length;
   const lateCount      = orders.filter(o => isLate(o.created_at) && o.status !== 'ready').length;
 
   const filteredOrders = orders.filter(order => {
@@ -338,6 +368,9 @@ export function KitchenBackend() {
       return order.status === 'ready';
     }
   });
+
+  // Orders needing help — always from ALL orders regardless of active tab
+  const helpOrders = orders.filter(o => o.special_instructions?.includes('[HELP REQUESTED]'));
 
   return (
     <div className="p-8 space-y-8">
@@ -393,6 +426,14 @@ export function KitchenBackend() {
               <span className="text-xl font-extrabold leading-none mt-0.5">{completedCount}</span>
             </div>
           </button>
+
+          {/* Help indicator pill — appears only when ≥1 orders need help */}
+          {helpCount > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl border border-yellow-300 bg-yellow-400 dark:bg-yellow-500 text-black font-bold text-sm animate-pulse shadow-md shadow-yellow-300/40">
+              <Bell className="w-4 h-4 animate-bounce" />
+              {helpCount === 1 ? '1 Table Needs Help' : `${helpCount} Tables Need Help`}
+            </div>
+          )}
 
           <button
             onClick={fetchOrders}
