@@ -955,8 +955,8 @@ body::before {
 
 .slider-row {
   display: grid;
-  grid-template-columns: 160px minmax(0, 1fr) 48px;
-  gap: 14px;
+  grid-template-columns: 140px minmax(0, 1fr) 40px;
+  gap: 12px;
   align-items: center;
   padding: 12px 0;
   border-bottom: 1px solid var(--border);
@@ -972,6 +972,13 @@ body::before {
   color: var(--cyan);
   font-weight: 900;
   text-align: right;
+}
+
+@media (max-width: 600px) {
+  .slider-row {
+    grid-template-columns: 90px minmax(0, 1fr) 30px;
+    gap: 8px;
+  }
 }
 
 .form-actions {

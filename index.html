@@ -1767,10 +1767,11 @@
             const snippetEl = document.querySelector('.hero-snippets .snippets-inner');
             if (snippetEl) {
                 let currentSnippet = 0;
-                const totalSnippets = 5;
+                const totalSnippets = snippetEl.children.length || 5;
+                const percentStep = 100 / totalSnippets;
                 setInterval(() => {
                     currentSnippet = (currentSnippet + 1) % totalSnippets;
-                    snippetEl.style.transform = `translateY(-${currentSnippet * 28}px)`;
+                    snippetEl.style.transform = `translateY(-${currentSnippet * percentStep}%)`;
                 }, 3200);
             }
         });
