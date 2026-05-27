@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Clock, ChefHat, CheckCircle, Wifi, WifiOff, Edit, Plus, Minus, Trash2, X } from 'lucide-react';
+import { Clock, ChefHat, CheckCircle, Wifi, WifiOff, Edit, Plus, Minus, Trash2, X, Bell } from 'lucide-react';
 import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
 import {
@@ -82,7 +82,12 @@ export function KitchenBackend() {
           setOrders(prev => [newOrder, ...prev]);
           setNewOrderId(newOrder.id);
           setTimeout(() => setNewOrderId(null), 4000);
-          playAlert();
+          
+          if (newOrder.special_instructions?.includes('[HELP REQUESTED]')) {
+            playHelpCallAlarm();
+          } else {
+            playAlert();
+          }
         }
       )
       .on(
@@ -95,7 +100,16 @@ export function KitchenBackend() {
         },
         (payload) => {
           const updated = payload.new as Order;
-          setOrders(prev => prev.map(o => o.id === updated.id ? updated : o));
+          setOrders(prev => {
+            const existing = prev.find(o => o.id === updated.id);
+            const wasHelping = existing?.special_instructions?.includes('[HELP REQUESTED]');
+            const isHelping = updated.special_instructions?.includes('[HELP REQUESTED]');
+            
+            if (isHelping && !wasHelping) {
+              playHelpCallAlarm();
+            }
+            return prev.map(o => o.id === updated.id ? updated : o);
+          });
         }
       )
       .subscribe(status => setConnected(status === 'SUBSCRIBED'));
@@ -117,6 +131,67 @@ export function KitchenBackend() {
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.3);
     } catch { /* silent if audio unavailable */ }
+  }
+
+  function playHelpCallAlarm() {
+    try {
+      const ctx  = new AudioContext();
+      const playBeep = (time: number, freq: number, dur: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(freq, time);
+        gain.gain.setValueAtTime(0.4, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+        osc.start(time);
+        osc.stop(time + dur);
+      };
+
+      const now = ctx.currentTime;
+      playBeep(now, 987.77, 0.15);      // B5
+      playBeep(now + 0.18, 1318.51, 0.25); // E6
+      playBeep(now + 0.4, 987.77, 0.15);   // B5
+      playBeep(now + 0.58, 1318.51, 0.35); // E6
+    } catch { /* silent if audio unavailable */ }
+  }
+
+  async function dismissHelpCall(order: Order) {
+    if (!order.special_instructions) return;
+    
+    let updatedInstr = order.special_instructions
+      .replace('| [HELP REQUESTED]', '')
+      .replace('[HELP REQUESTED]', '')
+      .trim();
+    
+    if (updatedInstr.endsWith('|')) {
+      updatedInstr = updatedInstr.slice(0, -1).trim();
+    }
+    if (updatedInstr.startsWith('|')) {
+      updatedInstr = updatedInstr.slice(1).trim();
+    }
+    
+    try {
+      const { error } = await db
+        .from('orders')
+        .update({
+          special_instructions: updatedInstr || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', order.id);
+      
+      if (error) throw error;
+      
+      // Update local state so UI updates immediately
+      setOrders(prev => prev.map(o => o.id === order.id ? {
+        ...o,
+        special_instructions: updatedInstr || null,
+        updated_at: new Date().toISOString()
+      } : o));
+      
+    } catch (err) {
+      console.error('Failed to dismiss help call:', err);
+    }
   }
 
   // ── Advance status ────────────────────────────────────────────
@@ -351,142 +426,163 @@ export function KitchenBackend() {
         </div>
       )}
 
-      {/* Order cards */}
       {!loading && (
         <div className="grid grid-cols-1 gap-6">
-          {filteredOrders.map(order => (
-            <div
-              key={order.id}
-              className={`bg-card rounded-2xl border overflow-hidden transition-all ${
-                order.id === newOrderId
-                  ? 'border-primary shadow-lg shadow-primary/20 ring-2 ring-primary/30'
-                  : 'border-border hover:shadow-lg'
-              }`}
-            >
-              {/* New order banner */}
-              {order.id === newOrderId && (
-                <div className="bg-primary text-primary-foreground text-center text-xs font-bold py-2 tracking-widest uppercase animate-pulse">
-                  ⚡ New Order Received
-                </div>
-              )}
+          {filteredOrders.map(order => {
+            const needsHelp = order.special_instructions?.includes('[HELP REQUESTED]');
+            const displayInstructions = order.special_instructions
+              ?.replace('| [HELP REQUESTED]', '')
+              ?.replace('[HELP REQUESTED]', '')
+              ?.trim();
 
-              {/* Order header */}
-              <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border">
-                <div className={`w-2 h-16 rounded-full flex-shrink-0 ${
-                  isLate(order.created_at)   ? 'bg-red-500'    :
-                  order.status === 'received'  ? 'bg-blue-500'   :
-                  order.status === 'preparing' ? 'bg-yellow-500' :
-                                                 'bg-green-500'
-                }`} />
+            return (
+              <div
+                key={order.id}
+                className={`bg-card rounded-2xl border overflow-hidden transition-all ${
+                  order.id === newOrderId
+                    ? 'border-primary shadow-lg shadow-primary/20 ring-2 ring-primary/30'
+                    : 'border-border hover:shadow-lg'
+                }`}
+              >
+                {/* Help Request Banner */}
+                {needsHelp && (
+                  <div className="bg-yellow-400 dark:bg-yellow-500 text-black text-center text-sm font-extrabold py-3 tracking-widest uppercase animate-pulse flex items-center justify-center gap-2 border-b border-yellow-500">
+                    <Bell className="w-4 h-4 animate-bounce" />
+                    <span>Table {order.table_num || 'N/A'} is calling for help!</span>
+                    <button
+                      onClick={() => dismissHelpCall(order)}
+                      className="ml-4 px-3 py-1 bg-black text-white hover:bg-neutral-800 text-xs font-semibold rounded-lg transition-colors shadow-sm"
+                    >
+                      Dismiss Call
+                    </button>
+                  </div>
+                )}
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <h2 className="font-bold">
-                        Order #{order.id.slice(-6).toUpperCase()}
-                      </h2>
-                      {order.table_num && (
-                        <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                          Table {order.table_num}
+                {/* New order banner */}
+                {order.id === newOrderId && (
+                  <div className="bg-primary text-primary-foreground text-center text-xs font-bold py-2 tracking-widest uppercase animate-pulse">
+                    ⚡ New Order Received
+                  </div>
+                )}
+
+                {/* Order header */}
+                <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border">
+                  <div className={`w-2 h-16 rounded-full flex-shrink-0 ${
+                    isLate(order.created_at)   ? 'bg-red-500'    :
+                    order.status === 'received'  ? 'bg-blue-500'   :
+                    order.status === 'preparing' ? 'bg-yellow-500' :
+                                                   'bg-green-500'
+                  }`} />
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h2 className="font-bold">
+                          Order #{order.id.slice(-6).toUpperCase()}
+                        </h2>
+                        {order.table_num && (
+                          <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                            Table {order.table_num}
+                          </span>
+                        )}
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                          {ORDER_STATUS_LABELS[order.status]}
+                        </span>
+                        <span className="text-sm font-bold text-primary">
+                          ₹{(order.total || 0).toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => openEditModal(order)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-accent-foreground rounded-lg text-xs font-semibold hover:bg-accent/70 transition-all border border-border"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                        Edit Order
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="w-4 h-4 flex-shrink-0" />
+                      <span>{timeElapsed(order.created_at)}</span>
+                      {isLate(order.created_at) && (
+                        <span className="text-red-600 dark:text-red-400 font-medium">
+                          • Running late
                         </span>
                       )}
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                        {ORDER_STATUS_LABELS[order.status]}
-                      </span>
-                      <span className="text-sm font-bold text-primary">
-                        ₹{(order.total || 0).toLocaleString('en-IN')}
-                      </span>
                     </div>
-                    <button
-                      onClick={() => openEditModal(order)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-accent-foreground rounded-lg text-xs font-semibold hover:bg-accent/70 transition-all border border-border"
-                    >
-                      <Edit className="w-3.5 h-3.5" />
-                      Edit Order
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="w-4 h-4 flex-shrink-0" />
-                    <span>{timeElapsed(order.created_at)}</span>
-                    {isLate(order.created_at) && (
-                      <span className="text-red-600 dark:text-red-400 font-medium">
-                        • Running late
-                      </span>
-                    )}
                   </div>
                 </div>
-              </div>
 
-              {/* Order body */}
-              <div className="p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Order body */}
+                <div className="p-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
 
-                  {/* ── Items — uses item.qty (NOT dish.quantity) ── */}
-                  <div>
-                    <h4 className="mb-3 flex items-center gap-2">
-                      <ChefHat className="w-4 h-4 text-primary" />
-                      Dishes Ordered
-                    </h4>
-                    <div className="space-y-2">
-                      {(order.items || []).map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between p-3 bg-accent/30 rounded-lg"
-                        >
-                          <span className="font-medium">{item.name}</span>
-                          <span className="px-3 py-1 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
-                            ×{item.qty}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Special instructions */}
-                  {order.special_instructions && (
+                    {/* ── Items — uses item.qty (NOT dish.quantity) ── */}
                     <div>
-                      <h4 className="mb-3">Special Instructions</h4>
-                      <div className="p-4 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded-xl text-sm border border-yellow-200 dark:border-yellow-800">
-                        {order.special_instructions}
+                      <h4 className="mb-3 flex items-center gap-2">
+                        <ChefHat className="w-4 h-4 text-primary" />
+                        Dishes Ordered
+                      </h4>
+                      <div className="space-y-2">
+                        {(order.items || []).map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between p-3 bg-accent/30 rounded-lg"
+                          >
+                            <span className="font-medium">{item.name}</span>
+                            <span className="px-3 py-1 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
+                              ×{item.qty}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  )}
-                </div>
 
-                {/* Status workflow */}
-                <div className="border-t border-border pt-6 space-y-4">
-                  <h4 className="text-sm font-medium text-muted-foreground">Order Controls</h4>
-                  <div className="flex gap-4">
-                    <button
-                      onClick={() => updateOrderStatus(order.id, 'delivered')}
-                      disabled={order.status !== 'received'}
-                      className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 border ${
-                        order.status === 'received'
-                          ? 'bg-blue-600 hover:bg-blue-700 text-white border-transparent'
-                          : 'bg-accent/30 text-muted-foreground border-border cursor-not-allowed'
-                      }`}
-                    >
-                      <CheckCircle className="w-5 h-5" />
-                      {order.status === 'received' ? 'Advance to Delivered' : 'Delivered ✓'}
-                    </button>
+                    {/* Special instructions */}
+                    {displayInstructions && (
+                      <div>
+                        <h4 className="mb-3">Special Instructions</h4>
+                        <div className="p-4 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded-xl text-sm border border-yellow-200 dark:border-yellow-800">
+                          {displayInstructions}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-                    <button
-                      onClick={() => updateOrderStatus(order.id, 'ready')}
-                      disabled={order.status !== 'delivered'}
-                      className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 border ${
-                        order.status === 'delivered'
-                          ? 'bg-green-600 hover:bg-green-700 text-white border-transparent shadow-lg shadow-green-600/20'
-                          : 'bg-accent/30 text-muted-foreground border-border cursor-not-allowed'
-                      }`}
-                    >
-                      <CheckCircle className="w-5 h-5" />
-                      Payment Received
-                    </button>
+                  {/* Status workflow */}
+                  <div className="border-t border-border pt-6 space-y-4">
+                    <h4 className="text-sm font-medium text-muted-foreground">Order Controls</h4>
+                    <div className="flex gap-4">
+                      <button
+                        onClick={() => updateOrderStatus(order.id, 'delivered')}
+                        disabled={order.status !== 'received'}
+                        className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 border ${
+                          order.status === 'received'
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white border-transparent'
+                            : 'bg-accent/30 text-muted-foreground border-border cursor-not-allowed'
+                        }`}
+                      >
+                        <CheckCircle className="w-5 h-5" />
+                        {order.status === 'received' ? 'Advance to Delivered' : 'Delivered ✓'}
+                      </button>
+
+                      <button
+                        onClick={() => updateOrderStatus(order.id, 'ready')}
+                        disabled={order.status !== 'delivered'}
+                        className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 border ${
+                          order.status === 'delivered'
+                            ? 'bg-green-600 hover:bg-green-700 text-white border-transparent shadow-lg shadow-green-600/20'
+                            : 'bg-accent/30 text-muted-foreground border-border cursor-not-allowed'
+                        }`}
+                      >
+                        <CheckCircle className="w-5 h-5" />
+                        Payment Received
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

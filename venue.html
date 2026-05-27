@@ -1639,7 +1639,87 @@
       display: flex;
       justify-content: space-between;
     }
-  
+
+    /* ── Help & Back Navigation Topbar ── */
+    .track-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      position: relative;
+      z-index: 10;
+    }
+    
+    .track-home-btn {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.18s;
+    }
+    .track-home-btn:hover {
+      color: var(--ink);
+    }
+
+    .track-help-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #F59E0B; /* warm amber/yellow */
+      color: #FFFFFF;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25);
+      transition: all 0.2s ease;
+    }
+
+    .track-help-btn:hover {
+      background: #D97706;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(217, 119, 6, 0.35);
+    }
+
+    .track-help-btn:active {
+      transform: translateY(0);
+    }
+
+    .track-help-btn.called {
+      background: #10B981; /* emerald green */
+      color: #FFFFFF;
+      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    
+    .track-help-btn.loading {
+      background: var(--hover);
+      color: var(--muted);
+      box-shadow: none;
+      pointer-events: none;
+    }
+
+    .bell-icon {
+      animation: bell-swing 2.5s ease-in-out infinite;
+      transform-origin: 50% 0;
+    }
+
+    .track-help-btn.called .bell-icon {
+      animation: none;
+    }
+
+    @keyframes bell-swing {
+      0%, 100% { transform: rotate(0); }
+      15% { transform: rotate(12deg); }
+      30% { transform: rotate(-10deg); }
+      45% { transform: rotate(8deg); }
+      60% { transform: rotate(-5deg); }
+      75% { transform: rotate(3deg); }
+      90% { transform: rotate(-1deg); }
+    }
   </style>
 </head>
 <body>
@@ -1745,6 +1825,17 @@
     ══════════════════════════════════════ -->
     <div class="vp-screen" id="screen-track">
       <div class="track-root">
+
+        <!-- Help / Navigation top bar -->
+        <div class="track-topbar">
+          <button class="track-home-btn" onclick="showMenu()">← Menu</button>
+          <button class="track-help-btn" id="track-help-btn" onclick="callForHelp()" title="Call waiter for help">
+            <svg class="bell-icon" viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
+            </svg>
+            <span>Call Waiter</span>
+          </button>
+        </div>
 
         <!-- Ambient dots -->
         <div class="track-dots" id="track-dots"></div>
@@ -2685,7 +2776,7 @@
     
     if (window._lastOrderId) {
       db.from('orders')
-        .select('created_at, status, items, subtotal, gst, service_charge, total, table_num')
+        .select('created_at, status, items, subtotal, gst, service_charge, total, table_num, special_instructions')
         .eq('id', window._lastOrderId)
         .single()
         .then(({ data }) => {
@@ -2695,6 +2786,7 @@
             originalOrderItems = data.items;
             originalTotal = data.total;
             renderOrderDetailsUI(data);
+            syncHelpButtonState(data.special_instructions);
           }
         });
     }
@@ -2728,6 +2820,7 @@
             const updated = payload.new;
             syncStatus(updated.status);
             renderOrderDetailsUI(updated);
+            syncHelpButtonState(updated.special_instructions);
           }
         )
         .subscribe();
@@ -2921,6 +3014,81 @@ async function submitReviewAndReturn() {
   window._lastVenueName = null;
 
   resetToMenu();
+}
+
+// ── WAITER CALL HELP LOGIC ──────────────────────────────────
+async function callForHelp() {
+  const btn = document.getElementById('track-help-btn');
+  if (!btn || btn.classList.contains('called') || btn.classList.contains('loading')) return;
+
+  const orderId = window._lastOrderId;
+  if (!orderId) {
+    showToast('No active order found to call help for.');
+    return;
+  }
+
+  btn.classList.add('loading');
+  const btnText = btn.querySelector('span');
+  if (btnText) btnText.textContent = 'Calling...';
+
+  try {
+    // 1. Fetch current order to get its special_instructions
+    const { data: order, error: fetchErr } = await db
+      .from('orders')
+      .select('special_instructions')
+      .eq('id', orderId)
+      .single();
+
+    if (fetchErr || !order) {
+      throw new Error(fetchErr?.message || 'Order not found');
+    }
+
+    // 2. Append '[HELP REQUESTED]' to special_instructions
+    let currentInstructions = order.special_instructions || '';
+    if (!currentInstructions.includes('[HELP REQUESTED]')) {
+      if (currentInstructions) {
+        currentInstructions += ' | [HELP REQUESTED]';
+      } else {
+        currentInstructions = '[HELP REQUESTED]';
+      }
+
+      // 3. Update in Supabase
+      const { error: updateErr } = await db
+        .from('orders')
+        .update({ special_instructions: currentInstructions })
+        .eq('id', orderId);
+
+      if (updateErr) throw updateErr;
+    }
+
+    // 4. Update UI to success called state
+    btn.classList.remove('loading');
+    btn.className = 'track-help-btn called';
+    if (btnText) btnText.textContent = 'Help Called!';
+    showToast('Help call sent to the kitchen!');
+  } catch (err) {
+    console.error('Error calling for help:', err);
+    btn.classList.remove('loading');
+    btn.className = 'track-help-btn';
+    if (btnText) btnText.textContent = 'Call Waiter';
+    showToast('Failed to call help. Please try again.');
+  }
+}
+
+function syncHelpButtonState(specialInstructions) {
+  const btn = document.getElementById('track-help-btn');
+  if (!btn) return;
+  const btnText = btn.querySelector('span');
+  if (specialInstructions && specialInstructions.includes('[HELP REQUESTED]')) {
+    btn.className = 'track-help-btn called';
+    if (btnText) btnText.textContent = 'Help Called!';
+  } else {
+    // Only revert if we are not currently loading
+    if (!btn.classList.contains('loading')) {
+      btn.className = 'track-help-btn';
+      if (btnText) btnText.textContent = 'Call Waiter';
+    }
+  }
 }
 
 // ── DIRECT RATING BOX LOGIC ──────────────────────────────────

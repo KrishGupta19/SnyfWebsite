@@ -92,8 +92,26 @@ const server = http.createServer(async (req, res) => {
     }
 
     // Serve static files
-    let filePath = '.' + req.url;
-    if (filePath === './') filePath = './index.html';
+    let urlPath = req.url.split('?')[0];
+    let filePath = '.' + urlPath;
+    if (urlPath === '/') {
+        filePath = './index.html';
+    } else if (urlPath === '/community') {
+        filePath = './community.html';
+    } else if (urlPath === '/discover') {
+        filePath = './discover.html';
+    } else if (urlPath === '/admin') {
+        filePath = './admin/index.html';
+    } else if (urlPath === '/profile') {
+        filePath = './profile.html';
+    } else if (urlPath.endsWith('/admin')) {
+        filePath = './cafe-os/index.html';
+    } else {
+        const ext = path.extname(urlPath);
+        if (!ext && !fs.existsSync(filePath)) {
+            filePath = './venue.html';
+        }
+    }
 
     const ext = path.extname(filePath);
     const contentType = mimeTypes[ext] || 'application/octet-stream';
