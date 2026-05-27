@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { VenueProvider }    from '../context/VenueContext';
 import { Sidebar }          from './components/Sidebar';
 import { TopBar }           from './components/TopBar';
@@ -14,7 +14,7 @@ import { Placeholder }      from './pages/Placeholder';
 export default function App() {
   return (
     <VenueProvider>
-      <BrowserRouter>
+      <HashRouter>
         <div className="flex h-screen overflow-hidden bg-background">
           <Sidebar />
           <div className="flex-1 flex flex-col overflow-hidden">
@@ -35,7 +35,7 @@ export default function App() {
             </main>
           </div>
         </div>
-      </BrowserRouter>
+      </HashRouter>
     </VenueProvider>
   );
 }
