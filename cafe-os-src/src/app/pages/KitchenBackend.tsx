@@ -15,6 +15,7 @@ export function KitchenBackend() {
   const [loading,   setLoading]     = useState(true);
   const [connected, setConnected]   = useState(false);
   const [newOrderId, setNewOrderId] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<'pending' | 'completed'>('pending');
   const channelRef                  = useRef<ReturnType<typeof db.channel> | null>(null);
 
   useEffect(() => {
@@ -51,9 +52,8 @@ export function KitchenBackend() {
         .from('orders')
         .select('*')
         .eq('venue_id', venue.id)
-        .not('status', 'eq', 'ready')
         .order('created_at', { ascending: false })
-        .limit(30);
+        .limit(50);
       if (error) throw error;
       setOrders((data || []) as Order[]);
     } catch (err) {
@@ -96,11 +96,6 @@ export function KitchenBackend() {
         (payload) => {
           const updated = payload.new as Order;
           setOrders(prev => prev.map(o => o.id === updated.id ? updated : o));
-          if (updated.status === 'ready') {
-            setTimeout(() => {
-              setOrders(prev => prev.filter(o => o.id !== updated.id));
-            }, 5000);
-          }
         }
       )
       .subscribe(status => setConnected(status === 'SUBSCRIBED'));
@@ -257,10 +252,17 @@ export function KitchenBackend() {
     return Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000) > 15;
   }
 
-  const activeCount    = orders.length;
-  const receivedCount  = orders.filter(o => o.status === 'received').length;
-  const deliveredCount = orders.filter(o => o.status === 'delivered').length;
-  const lateCount      = orders.filter(o => isLate(o.created_at)).length;
+  const pendingCount   = orders.filter(o => o.status === 'received' || o.status === 'delivered').length;
+  const completedCount = orders.filter(o => o.status === 'ready').length;
+  const lateCount      = orders.filter(o => isLate(o.created_at) && o.status !== 'ready').length;
+
+  const filteredOrders = orders.filter(order => {
+    if (activeFilter === 'pending') {
+      return order.status === 'received' || order.status === 'delivered';
+    } else {
+      return order.status === 'ready';
+    }
+  });
 
   return (
     <div className="p-8 space-y-8">
@@ -287,27 +289,39 @@ export function KitchenBackend() {
             }
           </div>
 
-          <div className="bg-card rounded-lg px-4 py-2 border border-border text-center">
-            <p className="text-xs text-muted-foreground">Active</p>
-            <p className="text-2xl font-bold">{activeCount}</p>
-          </div>
-          <div className="bg-card rounded-lg px-4 py-2 border border-border text-center">
-            <p className="text-xs text-muted-foreground">Received</p>
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{receivedCount}</p>
-          </div>
-          <div className="bg-card rounded-lg px-4 py-2 border border-border text-center">
-            <p className="text-xs text-muted-foreground">Delivered</p>
-            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{deliveredCount}</p>
-          </div>
-          {lateCount > 0 && (
-            <div className="bg-red-100 dark:bg-red-900/30 rounded-lg px-4 py-2 border border-red-200 dark:border-red-800 text-center">
-              <p className="text-xs text-red-500">Late</p>
-              <p className="text-2xl font-bold text-red-600 dark:text-red-400">{lateCount}</p>
+          {/* Pending Filter Tab */}
+          <button
+            onClick={() => setActiveFilter('pending')}
+            className={`flex items-center gap-3 px-4 py-2 rounded-xl border text-left transition-all ${
+              activeFilter === 'pending'
+                ? 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900 ring-2 ring-orange-500/10 font-bold'
+                : 'bg-card text-muted-foreground border-border hover:bg-accent/50'
+            }`}
+          >
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase tracking-wider font-semibold opacity-75">Pending</span>
+              <span className="text-xl font-extrabold leading-none mt-0.5">{pendingCount}</span>
             </div>
-          )}
+          </button>
+
+          {/* Completed Filter Tab */}
+          <button
+            onClick={() => setActiveFilter('completed')}
+            className={`flex items-center gap-3 px-4 py-2 rounded-xl border text-left transition-all ${
+              activeFilter === 'completed'
+                ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-900 ring-2 ring-green-500/10 font-bold'
+                : 'bg-card text-muted-foreground border-border hover:bg-accent/50'
+            }`}
+          >
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase tracking-wider font-semibold opacity-75">Completed</span>
+              <span className="text-xl font-extrabold leading-none mt-0.5">{completedCount}</span>
+            </div>
+          </button>
+
           <button
             onClick={fetchOrders}
-            className="px-4 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:bg-accent/70 transition-colors"
+            className="px-4 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:bg-accent/70 transition-colors border border-border"
           >
             Refresh
           </button>
@@ -322,12 +336,17 @@ export function KitchenBackend() {
       )}
 
       {/* Empty state */}
-      {!loading && orders.length === 0 && (
+      {!loading && filteredOrders.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <ChefHat className="w-12 h-12 text-muted-foreground mb-4 opacity-30" />
-          <p className="text-lg font-medium text-muted-foreground">No active orders</p>
+          <p className="text-lg font-medium text-muted-foreground">
+            No {activeFilter} orders
+          </p>
           <p className="text-sm text-muted-foreground mt-1">
-            New orders will appear here instantly when customers order
+            {activeFilter === 'pending'
+              ? 'New orders will appear here instantly when customers place orders'
+              : 'Completed orders will appear here when you mark them as paid'
+            }
           </p>
         </div>
       )}
@@ -335,7 +354,7 @@ export function KitchenBackend() {
       {/* Order cards */}
       {!loading && (
         <div className="grid grid-cols-1 gap-6">
-          {orders.map(order => (
+          {filteredOrders.map(order => (
             <div
               key={order.id}
               className={`bg-card rounded-2xl border overflow-hidden transition-all ${
