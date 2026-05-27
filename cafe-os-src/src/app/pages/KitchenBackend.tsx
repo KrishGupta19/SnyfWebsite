@@ -33,7 +33,7 @@ export function KitchenBackend() {
         .from('orders')
         .select('*')
         .eq('venue_id', venue.id)
-        .not('status', 'eq', 'delivered')
+        .not('status', 'eq', 'ready')
         .order('created_at', { ascending: false })
         .limit(30);
       if (error) throw error;
@@ -78,7 +78,7 @@ export function KitchenBackend() {
         (payload) => {
           const updated = payload.new as Order;
           setOrders(prev => prev.map(o => o.id === updated.id ? updated : o));
-          if (updated.status === 'delivered') {
+          if (updated.status === 'ready') {
             setTimeout(() => {
               setOrders(prev => prev.filter(o => o.id !== updated.id));
             }, 5000);
@@ -122,9 +122,11 @@ export function KitchenBackend() {
     }
   }
 
+  const KITCHEN_FLOW: OrderStatus[] = ['received', 'delivered', 'ready'];
+
   function getNextStatus(current: OrderStatus): OrderStatus | null {
-    const idx = ORDER_STATUS_FLOW.indexOf(current);
-    return idx < ORDER_STATUS_FLOW.length - 1 ? ORDER_STATUS_FLOW[idx + 1] : null;
+    const idx = KITCHEN_FLOW.indexOf(current);
+    return idx >= 0 && idx < KITCHEN_FLOW.length - 1 ? KITCHEN_FLOW[idx + 1] : null;
   }
 
   function getStatusColor(status: OrderStatus): string {
@@ -134,7 +136,7 @@ export function KitchenBackend() {
       ready:     'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
       gathering: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
       serving:   'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
-      delivered: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400',
+      delivered: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
     };
     return map[status];
   }
@@ -151,7 +153,7 @@ export function KitchenBackend() {
 
   const activeCount    = orders.length;
   const receivedCount  = orders.filter(o => o.status === 'received').length;
-  const preparingCount = orders.filter(o => o.status === 'preparing').length;
+  const deliveredCount = orders.filter(o => o.status === 'delivered').length;
   const lateCount      = orders.filter(o => isLate(o.created_at)).length;
 
   return (
@@ -188,8 +190,8 @@ export function KitchenBackend() {
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{receivedCount}</p>
           </div>
           <div className="bg-card rounded-lg px-4 py-2 border border-border text-center">
-            <p className="text-xs text-muted-foreground">Preparing</p>
-            <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{preparingCount}</p>
+            <p className="text-xs text-muted-foreground">Delivered</p>
+            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{deliveredCount}</p>
           </div>
           {lateCount > 0 && (
             <div className="bg-red-100 dark:bg-red-900/30 rounded-lg px-4 py-2 border border-red-200 dark:border-red-800 text-center">
@@ -318,45 +320,35 @@ export function KitchenBackend() {
                 </div>
 
                 {/* Status workflow */}
-                <div className="border-t border-border pt-6">
-                  <h4 className="mb-3">Workflow</h4>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {ORDER_STATUS_FLOW.map(status => {
-                      const flowIdx    = ORDER_STATUS_FLOW.indexOf(status);
-                      const currentIdx = ORDER_STATUS_FLOW.indexOf(order.status);
-                      const isActive   = status === order.status;
-                      const isPast     = flowIdx < currentIdx;
-                      return (
-                        <button
-                          key={status}
-                          onClick={() => updateOrderStatus(order.id, status)}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                            isActive
-                              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                              : isPast
-                              ? 'bg-accent/50 text-accent-foreground opacity-50'
-                              : 'bg-accent text-accent-foreground hover:bg-accent/70'
-                          }`}
-                        >
-                          {ORDER_STATUS_LABELS[status]}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* One-tap advance */}
-                  {getNextStatus(order.status) && (
+                <div className="border-t border-border pt-6 space-y-4">
+                  <h4 className="text-sm font-medium text-muted-foreground">Order Controls</h4>
+                  <div className="flex gap-4">
                     <button
-                      onClick={() => {
-                        const next = getNextStatus(order.status);
-                        if (next) updateOrderStatus(order.id, next);
-                      }}
-                      className="w-full py-4 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 text-base"
+                      onClick={() => updateOrderStatus(order.id, 'delivered')}
+                      disabled={order.status !== 'received'}
+                      className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 border ${
+                        order.status === 'received'
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white border-transparent'
+                          : 'bg-accent/30 text-muted-foreground border-border cursor-not-allowed'
+                      }`}
                     >
                       <CheckCircle className="w-5 h-5" />
-                      Advance → {ORDER_STATUS_LABELS[getNextStatus(order.status)!]}
+                      {order.status === 'received' ? 'Advance to Delivered' : 'Delivered ✓'}
                     </button>
-                  )}
+
+                    <button
+                      onClick={() => updateOrderStatus(order.id, 'ready')}
+                      disabled={order.status !== 'delivered'}
+                      className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 border ${
+                        order.status === 'delivered'
+                          ? 'bg-green-600 hover:bg-green-700 text-white border-transparent shadow-lg shadow-green-600/20'
+                          : 'bg-accent/30 text-muted-foreground border-border cursor-not-allowed'
+                      }`}
+                    >
+                      <CheckCircle className="w-5 h-5" />
+                      Payment Received
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

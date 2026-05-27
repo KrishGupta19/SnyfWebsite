@@ -1026,39 +1026,101 @@
       z-index: 1;
     }
 
-    .track-circle {
-      width: 140px; height: 140px;
-      border-radius: 50%;
-      background: rgba(111,183,214,0.08);
-      border: 2px solid rgba(111,183,214,0.25);
+    .game-container {
+      width: 100%;
+      max-width: 320px;
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 20px;
+      padding: 12px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+    }
+    .dark .game-container {
+      background: rgba(30, 30, 30, 0.4);
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .game-title {
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .game-score {
+      font-family: var(--mono);
+      color: var(--primary);
+    }
+    .game-screen-wrapper {
+      position: relative;
+      width: 100%;
+      height: 140px;
+      background: rgba(0, 0, 0, 0.03);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    .dark .game-screen-wrapper {
+      background: rgba(0, 0, 0, 0.25);
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+    #game-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .game-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(4px);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin-bottom: 20px;
-      animation: track-pulse 2.5s ease-in-out infinite;
+      gap: 10px;
+      transition: opacity 0.3s ease;
+      z-index: 10;
     }
-
-    @keyframes track-pulse {
-      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(111,183,214,0.2); }
-      50%       { transform: scale(1.03); box-shadow: 0 0 0 12px rgba(111,183,214,0); }
+    .dark .game-overlay {
+      background: rgba(20, 20, 20, 0.9);
     }
-
-    .track-mins {
-      font-family: var(--display);
-      font-size: 2.8rem;
-      font-weight: 900;
-      color: var(--ink);
-      line-height: 1;
-      letter-spacing: -2px;
+    .game-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
     }
-
-    .track-mins-label {
-      font-family: var(--mono);
-      font-size: 9px;
-      letter-spacing: 0.14em;
+    .game-instruction {
+      font-size: 12px;
       color: var(--muted);
-      text-transform: uppercase;
+      font-weight: 500;
+      text-align: center;
+      margin: 0;
+    }
+    .game-start-btn {
+      background: var(--primary);
+      color: var(--primary-foreground, white);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    .game-start-btn:hover {
+      transform: scale(1.05);
+      opacity: 0.95;
     }
 
     .track-heading {
@@ -1534,11 +1596,20 @@
         <!-- Ambient dots -->
         <div class="track-dots" id="track-dots"></div>
 
-        <!-- Timer -->
+        <!-- Game console replacing timer -->
         <div class="track-timer-wrap">
-          <div class="track-circle">
-            <div class="track-mins" id="track-mins">24</div>
-            <div class="track-mins-label">mins left</div>
+          <div class="game-container">
+            <div class="game-header">
+              <span class="game-title">☕ Café Jump</span>
+              <span class="game-score">Score: <span id="game-score-val">0</span> | Best: <span id="game-best-val">0</span></span>
+            </div>
+            <div class="game-screen-wrapper">
+              <canvas id="game-canvas" width="300" height="150"></canvas>
+              <div id="game-overlay" class="game-overlay">
+                <p class="game-instruction">Tap screen or Space to JUMP</p>
+                <button class="game-start-btn" onclick="startCafeGame()">Start Game</button>
+              </div>
+            </div>
           </div>
           <div class="track-heading">Order is on its way</div>
           <div class="track-subhead">Sit back and relax</div>
@@ -1822,16 +1893,39 @@
   let cart = {}; // { id: { item, qty } }
   let activeCategory = 'Recommended';
   let trackInterval = null;
-  let trackTimeInterval = null;
   let trackState = 0;
-  let minsLeft = 24;
+  let orderSubscription = null;
 
   const ORDER_STATES = [
     { label: 'Order Received',   icon: '✓' },
     { label: 'Preparing',        icon: '🍳' },
-    { label: 'Plating',          icon: '🍽' },
-    { label: 'Ready to Serve',   icon: '✓' },
+    { label: 'Delivered',        icon: '🍽' },
+    { label: 'Payment Received', icon: '💳' },
   ];
+
+  // Cafe Game Variables
+  let gameCanvas = null;
+  let gameCtx = null;
+  let gameActive = false;
+  let gameScore = 0;
+  let gameBest = parseInt(localStorage.getItem('cafe_jump_best') || '0', 10);
+  let gameFrameId = null;
+
+  let player = {
+    x: 30,
+    y: 110,
+    vy: 0,
+    width: 20,
+    height: 20,
+    isJumping: false,
+    jumpForce: -6,
+    gravity: 0.35,
+    emoji: '☕'
+  };
+
+  let obstacles = [];
+  let obstacleTimer = 0;
+  let gameSpeed = 3.2;
 
   const SPECIAL_CHIPS = [
     'No capsicum', 'Less spicy', 'No onion',
@@ -2256,17 +2350,197 @@
     startTracking();
   }
 
+  // ── Vintage Synth Beep Helper ───────────────────────────────────
+  function playAudioTone(freq, duration, type = 'sine') {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {
+      // AudioContext blocked or not supported
+    }
+  }
+
+  // ── Café Play Zone Game logic ──────────────────────────────────
+  function initCafeGame() {
+    gameCanvas = document.getElementById('game-canvas');
+    if (!gameCanvas) return;
+    gameCtx = gameCanvas.getContext('2d');
+    
+    // Set initial display
+    drawGameFrame();
+    document.getElementById('game-best-val').textContent = gameBest;
+
+    const wrapper = gameCanvas.parentElement;
+    wrapper.addEventListener('touchstart', (e) => {
+      if (e.target.tagName === 'BUTTON') return;
+      handleGameAction();
+    });
+    wrapper.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') return;
+      handleGameAction();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if ((e.code === 'Space' || e.code === 'ArrowUp') && gameActive) {
+        e.preventDefault();
+        handleGameAction();
+      }
+    });
+  }
+
+  function handleGameAction() {
+    if (!gameActive) return;
+    if (!player.isJumping) {
+      player.vy = player.jumpForce;
+      player.isJumping = true;
+      playAudioTone(440, 0.08, 'triangle');
+    }
+  }
+
+  function startCafeGame() {
+    const overlay = document.getElementById('game-overlay');
+    overlay.classList.add('hidden');
+    
+    player.y = 110;
+    player.vy = 0;
+    player.isJumping = false;
+    obstacles = [];
+    obstacleTimer = 0;
+    gameScore = 0;
+    gameSpeed = 3.2;
+    document.getElementById('game-score-val').textContent = gameScore;
+    
+    gameActive = true;
+    if (gameFrameId) cancelAnimationFrame(gameFrameId);
+    gameLoop();
+  }
+
+  function gameLoop() {
+    if (!gameActive) return;
+    updateGame();
+    drawGameFrame();
+    gameFrameId = requestAnimationFrame(gameLoop);
+  }
+
+  function updateGame() {
+    player.vy += player.gravity;
+    player.y += player.vy;
+    
+    if (player.y >= 110) {
+      player.y = 110;
+      player.vy = 0;
+      player.isJumping = false;
+    }
+
+    obstacleTimer--;
+    if (obstacleTimer <= 0) {
+      const obstacleEmojis = ['🫘', '🍩', '🥐', '🧁'];
+      const chosenEmoji = obstacleEmojis[Math.floor(Math.random() * obstacleEmojis.length)];
+      obstacles.push({
+        x: 300,
+        y: 112,
+        width: 16,
+        height: 16,
+        emoji: chosenEmoji,
+        passed: false
+      });
+      obstacleTimer = 60 + Math.random() * 80;
+    }
+
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      const obs = obstacles[i];
+      obs.x -= gameSpeed;
+
+      if (!obs.passed && obs.x < player.x) {
+        obs.passed = true;
+        gameScore += 10;
+        document.getElementById('game-score-val').textContent = gameScore;
+        if (gameScore % 50 === 0) {
+          gameSpeed += 0.35;
+          playAudioTone(880, 0.1, 'sine');
+        }
+      }
+
+      const inset = 3;
+      if (
+        player.x + inset < obs.x + obs.width - inset &&
+        player.x + player.width - inset > obs.x + inset &&
+        player.y + inset < obs.y + obs.height - inset &&
+        player.y + player.height - inset > obs.y + inset
+      ) {
+        gameOver();
+        return;
+      }
+
+      if (obs.x < -30) {
+        obstacles.splice(i, 1);
+      }
+    }
+  }
+
+  function drawGameFrame() {
+    if (!gameCtx) return;
+    gameCtx.clearRect(0, 0, 300, 150);
+
+    gameCtx.beginPath();
+    gameCtx.moveTo(0, 128);
+    gameCtx.lineTo(300, 128);
+    gameCtx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+    gameCtx.lineWidth = 2;
+    gameCtx.stroke();
+
+    gameCtx.font = '14px serif';
+    gameCtx.textBaseline = 'top';
+    for (const obs of obstacles) {
+      gameCtx.fillText(obs.emoji, obs.x, obs.y);
+    }
+
+    gameCtx.font = '18px serif';
+    gameCtx.textBaseline = 'top';
+    gameCtx.fillText(player.emoji, player.x, player.y);
+  }
+
+  function gameOver() {
+    gameActive = false;
+    cancelAnimationFrame(gameFrameId);
+    playAudioTone(150, 0.3, 'sawtooth');
+
+    if (gameScore > gameBest) {
+      gameBest = gameScore;
+      localStorage.setItem('cafe_jump_best', gameBest.toString());
+      document.getElementById('game-best-val').textContent = gameBest;
+    }
+
+    const overlay = document.getElementById('game-overlay');
+    const instruction = overlay.querySelector('.game-instruction');
+    const startBtn = overlay.querySelector('.game-start-btn');
+    
+    instruction.innerHTML = `💥 Game Over! Score: <strong>${gameScore}</strong>`;
+    startBtn.textContent = 'Play Again';
+    overlay.classList.remove('hidden');
+  }
+
+  // ── Tracking progression ──────────────────────────────────────────
   function startTracking() {
-    trackState = 0;
-    minsLeft   = 24;
     const statesEl   = document.getElementById('track-states');
     const progressEl = document.getElementById('track-progress');
-    const minsEl     = document.getElementById('track-mins');
     const reviewEl   = document.getElementById('track-review');
 
     reviewEl.classList.remove('visible');
 
-    // Render states
+    // Initialize game
+    initCafeGame();
+
+    // Render states list
     statesEl.innerHTML = ORDER_STATES.map((s, i) => `
       <div class="track-state ${i === 0 ? 'state-active' : ''}" id="track-state-${i}">
         <div class="track-state-icon">${s.icon}</div>
@@ -2276,41 +2550,88 @@
 
     progressEl.style.width = '0%';
 
-    // Timer countdown
-    if (trackTimeInterval) clearInterval(trackTimeInterval);
-    trackTimeInterval = setInterval(() => {
-      if (minsLeft > 0) {
-        minsLeft--;
-        minsEl.textContent = minsLeft;
+    function updateProgressUI(targetState) {
+      for (let i = 0; i < ORDER_STATES.length; i++) {
+        const el = document.getElementById(`track-state-${i}`);
+        if (!el) continue;
+        if (i < targetState) {
+          el.className = 'track-state state-done';
+        } else if (i === targetState) {
+          el.className = 'track-state state-active';
+        } else {
+          el.className = 'track-state';
+        }
       }
-    }, 60000); // every real minute — for demo purposes advance faster
+      const pct = (targetState / (ORDER_STATES.length - 1)) * 100;
+      progressEl.style.width = pct + '%';
 
-    // State progression — advance every 6 seconds for demo
+      if (targetState >= 1) {
+        setTimeout(() => reviewEl.classList.add('visible'), 300);
+      }
+    }
+
+    updateProgressUI(0);
+
+    let orderCreatedAt = new Date();
+    
+    if (window._lastOrderId) {
+      db.from('orders').select('created_at, status').eq('id', window._lastOrderId).single()
+        .then(({ data }) => {
+          if (data) {
+            orderCreatedAt = new Date(data.created_at);
+            syncStatus(data.status);
+          }
+        });
+    }
+
     if (trackInterval) clearInterval(trackInterval);
     trackInterval = setInterval(() => {
-      if (trackState < ORDER_STATES.length - 1) {
-        // Mark current as done
-        const curr = document.getElementById(`track-state-${trackState}`);
-        if (curr) { curr.classList.remove('state-active'); curr.classList.add('state-done'); }
-
-        trackState++;
-
-        // Mark next as active
-        const next = document.getElementById(`track-state-${trackState}`);
-        if (next) next.classList.add('state-active');
-
-        // Update progress bar
-        const pct = (trackState / (ORDER_STATES.length - 1)) * 100;
-        progressEl.style.width = pct + '%';
-
-        // Show review when order received (first state done)
-        if (trackState >= 1) {
-          setTimeout(() => reviewEl.classList.add('visible'), 300);
+      if (trackState < 2) {
+        const elapsedMins = (Date.now() - orderCreatedAt.getTime()) / 60000;
+        if (elapsedMins >= 3 && trackState === 0) {
+          trackState = 1;
+          updateProgressUI(1);
         }
-      } else {
-        clearInterval(trackInterval);
       }
-    }, 6000);
+    }, 5000);
+
+    if (window._lastOrderId) {
+      if (orderSubscription) {
+        db.removeChannel(orderSubscription);
+      }
+      orderSubscription = db
+        .channel(`order-track-${window._lastOrderId}`)
+        .on(
+          'postgres_changes',
+          {
+            event:  'UPDATE',
+            schema: 'public',
+            table:  'orders',
+            filter: `id=eq.${window._lastOrderId}`,
+          },
+          (payload) => {
+            const updated = payload.new;
+            syncStatus(updated.status);
+          }
+        )
+        .subscribe();
+    }
+
+    function syncStatus(dbStatus) {
+      let targetState = 0;
+      
+      if (dbStatus === 'delivered') {
+        targetState = 2;
+      } else if (dbStatus === 'ready') {
+        targetState = 3;
+      } else {
+        const elapsedMins = (Date.now() - orderCreatedAt.getTime()) / 60000;
+        targetState = (elapsedMins >= 3) ? 1 : 0;
+      }
+
+      trackState = targetState;
+      updateProgressUI(targetState);
+    }
   }
 
   function updateSlider(dim, val) {
@@ -2319,8 +2640,14 @@
   }
 
   function resetToMenu() {
-    if (trackInterval)     clearInterval(trackInterval);
-    if (trackTimeInterval) clearInterval(trackTimeInterval);
+    if (trackInterval) clearInterval(trackInterval);
+    if (orderSubscription) {
+      db.removeChannel(orderSubscription);
+      orderSubscription = null;
+    }
+    gameActive = false;
+    if (gameFrameId) cancelAnimationFrame(gameFrameId);
+    
     cart = {};
     updateOrderBar();
     renderDishes();

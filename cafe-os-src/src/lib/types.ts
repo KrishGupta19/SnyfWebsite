@@ -65,8 +65,8 @@ export interface VenuePhoto {
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   received:  'Order Received',
-  preparing: 'Culinary Prep',
-  ready:     'Food Prepared',
+  preparing: 'Preparing',
+  ready:     'Payment Received',
   gathering: 'Gathering Cutlery',
   serving:   'Coming to Table',
   delivered: 'Delivered',

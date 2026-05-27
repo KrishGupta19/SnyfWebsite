@@ -78,7 +78,7 @@ export function Dashboard() {
         todayOrders:  todayOrders.length,
         todayRevenue: todayOrders.reduce((s, o) => s + (o.total || 0), 0),
         activeOrders: todayOrders.filter(o =>
-          o.status !== 'delivered' && o.status !== 'received'
+          o.status === 'received' || o.status === 'delivered'
         ).length,
         totalOrders:  allOrders.length,
         totalRevenue: allOrders.reduce((s, o) => s + (o.total || 0), 0),
