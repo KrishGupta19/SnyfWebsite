@@ -133,7 +133,7 @@
           <div class="wr-score-preview">
             <span class="wsp-label">Composite Trust Score</span>
             <span class="wsp-score" id="wr-composite-score">5.0</span>
-            <span class="wsp-label">/10</span>
+            <span class="wsp-label">/7</span>
           </div>
           <div class="wr-step-nav">
             <button type="button" class="btn btn-ghost wr-back-btn" data-back="1">Back</button>
@@ -232,10 +232,10 @@
             <span class="wr-slider-desc">${dim.desc}</span>
           </div>
           <div class="wr-slider-control">
-            <input type="range" class="wr-slider" id="slider-${dim.key}" min="1" max="10" step="0.1" value="5" data-dim="${dim.key}">
+            <input type="range" class="wr-slider" id="slider-${dim.key}" min="1" max="7" step="0.1" value="5" data-dim="${dim.key}">
             <div class="wr-slider-value-wrap">
               <span class="wr-slider-value" id="slider-val-${dim.key}">5.0</span>
-              <span class="wr-slider-qual" id="slider-qual-${dim.key}">Average</span>
+              <span class="wr-slider-qual" id="slider-qual-${dim.key}">Good</span>
             </div>
           </div>
         </div>
@@ -248,7 +248,7 @@
           const dim = slider.dataset.dim;
           formData.scores[dim] = value;
           el(`slider-val-${dim}`).textContent = value.toFixed(1);
-          el(`slider-qual-${dim}`).textContent = value >= 9 ? 'Exceptional' : value >= 7.5 ? 'Good' : value >= 6 ? 'Average' : value >= 4 ? 'Below Avg' : 'Poor';
+          el(`slider-qual-${dim}`).textContent = value >= 6.3 ? 'Exceptional' : value >= 5.25 ? 'Good' : value >= 4.2 ? 'Average' : value >= 2.8 ? 'Below Avg' : 'Poor';
           updateCompositeScore();
         });
       });
@@ -331,7 +331,7 @@
       el('wr-success-terminal').innerHTML = `
         <div class="wr-terminal-line visible t-dim">&gt; SNYF Intelligence Engine v2.1</div>
         <div class="wr-terminal-line visible">&gt; Field report indexed for: <span class="t-cyan">${formData.place}</span></div>
-        <div class="wr-terminal-line visible">&gt; Trust Score: <span class="t-cyan">${el('wr-composite-score').textContent}/10</span></div>
+        <div class="wr-terminal-line visible">&gt; Trust Score: <span class="t-cyan">${el('wr-composite-score').textContent}/7</span></div>
         <div class="wr-terminal-line visible t-green">&gt; Report submitted successfully to database.</div>
       `;
     }
@@ -429,12 +429,13 @@
           const profile = await snyfGetProfile(user.id);
           const handle = profile?.handle || '';
           const name = profile?.name || user.user_metadata?.name || '';
+          const fallback = user.email ? user.email.split('@')[0] : 'scout';
           
           const handleInput = el('wr-handle');
           const emailInput = el('wr-email');
           
           if (handleInput) {
-            handleInput.value = handle ? `@${handle}` : name;
+            handleInput.value = handle ? `@${handle}` : (name ? name : `@${fallback}`);
           }
           if (emailInput) {
             emailInput.value = user.email || '';

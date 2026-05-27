@@ -1034,7 +1034,7 @@ sections.forEach(s => navObs.observe(s));
 
         function getCaféScores(cafeName) {
             const rand = seededRandom(cafeName.toLowerCase().trim());
-            const base = () => 4.0 + rand() * 5.5; // range 4.0–9.5
+            const base = () => 2.5 + rand() * 4.3; // range 2.5–6.8
             return {
                 foodQuality:    parseFloat(base().toFixed(1)),
                 ambience:       parseFloat(base().toFixed(1)),
@@ -1146,7 +1146,7 @@ sections.forEach(s => navObs.observe(s));
 
             // Start rapid score randomizer ticker
             let tickerInterval = setInterval(() => {
-                scoreTicker.textContent = (4.0 + Math.random() * 5.5).toFixed(1);
+                scoreTicker.textContent = (1.0 + Math.random() * 6.0).toFixed(1);
             }, 60);
 
             // Simulation finishes after 1.8 seconds of beautiful visual feedback
@@ -1175,14 +1175,14 @@ sections.forEach(s => navObs.observe(s));
                 // Color configuration matching the overall confidence
                 let themeColor = 'rgba(111, 183, 214, 0.8)';
                 
-                if (scores.overall >= 7.5) {
+                if (scores.overall >= 5.25) {
                     verdictBadge.textContent = 'HIGH CONFIDENCE';
                     verdictBadge.style.background = 'rgba(100, 200, 120, 0.08)';
                     verdictBadge.style.borderColor = 'rgba(100, 200, 120, 0.2)';
                     verdictBadge.style.color = 'var(--vm-green)';
                     scoreTicker.style.color = 'var(--vm-green)';
                     themeColor = 'rgba(100, 200, 120, 0.8)';
-                } else if (scores.overall >= 6.0) {
+                } else if (scores.overall >= 4.2) {
                     verdictBadge.textContent = 'MODERATE CONFIDENCE';
                     verdictBadge.style.background = 'rgba(111, 183, 214, 0.08)';
                     verdictBadge.style.borderColor = 'rgba(111, 183, 214, 0.2)';
@@ -1220,16 +1220,16 @@ sections.forEach(s => navObs.observe(s));
 
                         fill.classList.remove('scanning-wave');
                         fill.style.width = '0%';
-                        fill.dataset.fill = Math.round(scores[m] * 10);
+                        fill.dataset.fill = Math.round((scores[m] / 7) * 100);
                         
                         // Set colors based on individual category scores
                         let itemColor = 'rgba(100, 200, 120, 0.8)';
                         let itemTextClass = 'vmc-score--good';
                         
-                        if (scores[m] < 5.0) {
+                        if (scores[m] < 3.5) {
                             itemColor = 'rgba(217, 122, 74, 0.8)';
                             itemTextClass = 'vmc-score--warn';
-                        } else if (scores[m] < 7.5) {
+                        } else if (scores[m] < 5.25) {
                             itemColor = 'rgba(220, 160, 60, 0.8)';
                             itemTextClass = 'vmc-score--warn';
                         }
@@ -1241,7 +1241,7 @@ sections.forEach(s => navObs.observe(s));
                         // Trigger visual sliding animation
                         setTimeout(() => {
                             fill.style.setProperty('--fill-color', itemColor);
-                            fill.style.width = (scores[m] * 10) + '%';
+                            fill.style.width = ((scores[m] / 7) * 100) + '%';
                         }, 50);
                     }
                 });
@@ -1250,7 +1250,7 @@ sections.forEach(s => navObs.observe(s));
                 const waitingRow = metricsContainer.querySelector(`.vmc-metric[data-metric="waitingTime"]`);
                 if (waitingRow) {
                     const flagBadge = waitingRow.querySelector('.vm-flagged-tag');
-                    if (scores.waitingTime < 5.0) {
+                    if (scores.waitingTime < 3.5) {
                         if (flagBadge) flagBadge.style.display = 'inline-block';
                     } else {
                         if (flagBadge) flagBadge.style.display = 'none';
@@ -1259,9 +1259,9 @@ sections.forEach(s => navObs.observe(s));
 
                 // Dynamic Synthesis assessments
                 let reviewSynthesis = '';
-                if (scores.overall >= 7.5) {
+                if (scores.overall >= 5.25) {
                     reviewSynthesis = `"${cafeName} demonstrates consistent quality across verified dimensions. Authentic experience with strong community trust signals."`;
-                } else if (scores.overall >= 6.0) {
+                } else if (scores.overall >= 4.2) {
                     let lowestMetric = 'foodQuality';
                     let lowestVal = scores.foodQuality;
                     metricsList.forEach(m => {

@@ -188,6 +188,16 @@ body::before {
   transform: translateY(-1px);
 }
 
+.ch-btn:disabled,
+.ch-btn--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  pointer-events: none;
+  box-shadow: none !important;
+}
+
+
 /* ── Pulse dot ──────────────────────────────────────────────── */
 .ch-pulse {
   display: inline-block;

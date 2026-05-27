@@ -223,6 +223,17 @@ label,
     box-shadow: 0 8px 20px rgba(111, 183, 214, 0.08);
 }
 
+.btn:disabled,
+.btn-primary:disabled,
+.btn-ghost:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    pointer-events: none;
+    box-shadow: none !important;
+}
+
+
 /* ============================================================
    AMBIENT GLOW BLOBS & TEXTURE (HTML Injected)
    ============================================================ */

@@ -224,7 +224,7 @@
           <div id="sliders"></div>
           <div class="live-row" style="background:var(--ink);border-radius:14px;border:0;padding:16px;margin-top:18px;display:flex;justify-content:space-between;color:white;font-family:var(--mono);">
             <span>Composite trust score</span>
-            <strong><span id="composite-score">5.0</span>/10</strong>
+            <strong><span id="composite-score">5.0</span>/7</strong>
           </div>
           <div class="form-actions">
             <button class="ch-btn back-step" type="button" data-back="1">Back</button>
@@ -316,8 +316,8 @@
     function renderReport(r) {
       const tl = TRUST_LEVELS[r.trustLevel] || TRUST_LEVELS.standard;
       const overall = ((r.scores.food*0.3)+(r.scores.ambience*0.2)+(r.scores.service*0.2)+(r.scores.value*0.2)+(r.scores.wait*0.1)).toFixed(1);
-      const isLow = parseFloat(overall) < 5.5;
-      const scoreColor = isLow ? '#D97A4A' : parseFloat(overall) >= 8 ? '#7BC6A4' : '#6FB7D6';
+      const isLow = parseFloat(overall) < 3.85;
+      const scoreColor = isLow ? '#D97A4A' : parseFloat(overall) >= 5.6 ? '#7BC6A4' : '#6FB7D6';
 
       return `
       <article class="ch-card ${r.flagged ? 'ch-card--flagged' : ''}" data-id="${r.id}"
@@ -335,7 +335,7 @@
           </div>
           <div class="ch-card-score-wrap">
             <div class="ch-card-score" style="color:${scoreColor}">${overall}</div>
-            <div class="ch-card-score-label">/10</div>
+            <div class="ch-card-score-label">/7</div>
           </div>
         </div>
 
@@ -378,8 +378,8 @@
     }
 
     function renderDimBar(label, score) {
-      const isFlagged = score < 5.0;
-      const pct = (score / 10 * 100).toFixed(0);
+      const isFlagged = score < 3.5;
+      const pct = (score / 7 * 100).toFixed(0);
       return `
       <div class="ch-dim">
         <span class="ch-dim-label">${label}</span>
@@ -439,7 +439,7 @@
       
       $('#stat-total').textContent = reports.length;
       $('#stat-verified').textContent = verified;
-      $('#stat-average').textContent = (average * 10).toFixed(0) + '%';
+      $('#stat-average').textContent = (average / 7 * 100).toFixed(0) + '%';
     }
 
     function showBrowse() {
@@ -466,7 +466,7 @@
       $('#sliders').innerHTML = dimensions.map(dim => `
         <div class="slider-row" style="display:grid;grid-template-columns:160px minmax(0, 1fr) 48px;gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid rgba(30,30,27,0.12);">
           <strong>${dim.label}</strong>
-          <input type="range" min="1" max="10" step="0.1" value="${state.form.scores[dim.key]}" data-score="${dim.key}" style="accent-color:var(--cyan);width:100%;">
+          <input type="range" min="1" max="7" step="0.1" value="${state.form.scores[dim.key]}" data-score="${dim.key}" style="accent-color:var(--cyan);width:100%;">
           <span class="slider-value" id="value-${dim.key}" style="font-family:var(--mono);color:var(--cyan);font-weight:900;text-align:right;">${state.form.scores[dim.key].toFixed(1)}</span>
         </div>
       `).join('');
@@ -510,8 +510,9 @@
           const profile = await snyfGetProfile(user.id);
           const handle = profile?.handle || '';
           const name = profile?.name || user.user_metadata?.name || '';
+          const fallback = user.email ? user.email.split('@')[0] : 'scout';
           
-          $('#handle-input').value = handle ? `@${handle}` : name;
+          $('#handle-input').value = handle ? `@${handle}` : (name ? name : `@${fallback}`);
           $('#email-input').value = user.email || '';
           
           if (wrapper) {
@@ -661,7 +662,7 @@
       $('#success-box').innerHTML = `
         &gt; Report submitted<br>
         &gt; Place: ${place}<br>
-        &gt; Trust score: ${score.toFixed(1)}/10<br>
+        &gt; Trust score: ${score.toFixed(1)}/7<br>
         &gt; Status: indexed in the Commons
       `;
       $$('.form-step').forEach(p => p.classList.toggle('active', p.dataset.step === 'success'));
