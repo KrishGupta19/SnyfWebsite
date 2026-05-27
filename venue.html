@@ -2607,6 +2607,12 @@
   }
 
   function showMenu() {
+    // Clean up live tracking when leaving the tracking screen
+    if (document.getElementById('screen-track')?.classList.contains('active')) {
+      if (trackInterval) { clearInterval(trackInterval); trackInterval = null; }
+      if (orderSubscription) { db.removeChannel(orderSubscription); orderSubscription = null; }
+      gameActive = false;
+    }
     showScreen('screen-menu');
     refreshActiveOrderBar();
   }
@@ -2823,7 +2829,8 @@
 
   // ── Café Play Zone Game logic ──────────────────────────────────
   function initCafeGame() {
-    const grid = document.getElementById('memory-grid');
+    const grid    = document.getElementById('memory-grid');
+    const overlay = document.getElementById('game-overlay');
     if (!grid) return;
     grid.innerHTML = Array.from({ length: 12 }, (_, i) => `
       <div class="memory-card">
@@ -2834,6 +2841,18 @@
       </div>
     `).join('');
     document.getElementById('game-best-val').textContent = gameBest || 0;
+    // Reset overlay so a fresh game can be started
+    if (overlay) {
+      overlay.classList.remove('hidden');
+      const instruction = overlay.querySelector('.game-instruction');
+      const startBtn    = overlay.querySelector('.game-start-btn');
+      if (instruction) instruction.textContent = 'Match the Café Treats!';
+      if (startBtn)    startBtn.textContent    = 'Start Game';
+    }
+    gameActive   = false;
+    moveCount    = 0;
+    matchedPairs = 0;
+    flippedCards = [];
   }
 
   function startCafeGame() {
@@ -2937,6 +2956,13 @@
     const statesEl   = document.getElementById('track-states');
     const progressEl = document.getElementById('track-progress');
     const reviewEl   = document.getElementById('track-review');
+
+    // Reset all per-order state so switching orders starts clean
+    trackState = 0;
+    originalOrderItems = null;
+    originalTotal = null;
+    const detailsEl = document.getElementById('track-order-details');
+    if (detailsEl) detailsEl.style.display = 'none';
 
     reviewEl.classList.remove('visible');
 
