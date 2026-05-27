@@ -1722,6 +1722,93 @@
       75% { transform: rotate(3deg); }
       90% { transform: rotate(-1deg); }
     }
+
+    /* ── ACTIVE ORDER STICKY BAR (Zomato-style) ─────────────────── */
+    .active-order-bar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 32px);
+      max-width: calc(var(--max-w) - 32px);
+      background: #1E1E1B;
+      color: #F6F5F2;
+      border-radius: 18px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+      z-index: 9999;
+      box-shadow: 0 8px 32px rgba(30,30,27,0.45), 0 2px 8px rgba(30,30,27,0.2);
+      border: 1px solid rgba(246,245,242,0.08);
+      animation: aob-slidein 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .active-order-bar:hover {
+      transform: translateX(-50%) translateY(-2px);
+      box-shadow: 0 12px 40px rgba(30,30,27,0.55), 0 4px 12px rgba(30,30,27,0.25);
+    }
+    @keyframes aob-slidein {
+      from { transform: translateX(-50%) translateY(100px); opacity: 0; }
+      to   { transform: translateX(-50%) translateY(0);     opacity: 1; }
+    }
+    .aob-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+    .aob-pulse {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #4ade80;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 0 rgba(74,222,128,0.5);
+      animation: aob-pulse 1.8s ease-out infinite;
+    }
+    @keyframes aob-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0.6); }
+      70%  { box-shadow: 0 0 0 8px rgba(74,222,128,0); }
+      100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+    }
+    .aob-text {
+      min-width: 0;
+    }
+    .aob-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #F6F5F2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .aob-sub {
+      font-size: 11px;
+      color: rgba(246,245,242,0.55);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .aob-right {
+      font-size: 13px;
+      font-weight: 700;
+      color: #F6F5F2;
+      background: rgba(246,245,242,0.12);
+      border: 1px solid rgba(246,245,242,0.15);
+      padding: 6px 14px;
+      border-radius: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .active-order-bar:hover .aob-right {
+      background: rgba(246,245,242,0.2);
+    }
   </style>
 </head>
 <body>
@@ -1730,6 +1817,23 @@
 
     <!-- Toast notification -->
     <div class="vp-toast" id="vp-toast"></div>
+
+    <!-- ── Active Order Sticky Bar (Zomato-style) ──────────────────
+         Shown when user has active orders persisted in localStorage.
+         Survives page refresh. Hidden when no active orders exist.
+    ───────────────────────────────────────────────────────────── -->
+    <div class="active-order-bar" id="active-order-bar" style="display:none;" onclick="openActiveOrder()">
+      <div class="aob-left">
+        <div class="aob-pulse"></div>
+        <div class="aob-text">
+          <div class="aob-title" id="aob-title">Order is being prepared</div>
+          <div class="aob-sub" id="aob-sub">Tap to track your order</div>
+        </div>
+      </div>
+      <div class="aob-right">
+        <span id="aob-cta">Track →</span>
+      </div>
+    </div>
 
     <!-- ══════════════════════════════════════
          SCREEN 1 — MENU
@@ -2223,6 +2327,7 @@
     if (backBtn) backBtn.href = 'discover.html';
 
     loadVenueData();
+    initActiveOrderBar();
   });
 
   // ══════════════════════════════════════════
@@ -2422,6 +2527,7 @@
 
   function showMenu() {
     showScreen('screen-menu');
+    refreshActiveOrderBar();
   }
 
   // ══════════════════════════════════════════
@@ -2588,6 +2694,19 @@
         window._lastOrderId  = insertedOrder?.id  || null;
         window._lastVenueId  = VENUE_DATA.id;
         window._lastVenueName = VENUE_DATA.name;
+
+        // ── Persist to localStorage so bar survives refresh ──
+        if (insertedOrder?.id) {
+          saveActiveOrder({
+            id:        insertedOrder.id,
+            venueSlug: VENUE_SLUG,
+            venueName: VENUE_DATA.name,
+            items:     orderItems,
+            total,
+            status:    'received',
+            createdAt: new Date().toISOString(),
+          });
+        }
       }
     } catch (err) {
       dbError('confirmOrder', err);
@@ -3016,7 +3135,186 @@ async function submitReviewAndReturn() {
   window._lastVenueId   = null;
   window._lastVenueName = null;
 
+  // Clear from localStorage on completion
+  if (window._completingOrderId) {
+    removeActiveOrder(window._completingOrderId);
+    window._completingOrderId = null;
+  }
+  refreshActiveOrderBar();
+
   resetToMenu();
+}
+
+// ── ACTIVE ORDER BAR — localStorage persistence ──────────────
+const AOB_KEY = () => `snyf_active_orders_${VENUE_SLUG}`;
+
+function saveActiveOrder(order) {
+  try {
+    const existing = getActiveOrders();
+    const filtered = existing.filter(o => o.id !== order.id);
+    filtered.unshift(order); // newest first
+    localStorage.setItem(AOB_KEY(), JSON.stringify(filtered));
+    refreshActiveOrderBar();
+  } catch (e) {
+    console.warn('AOB: save failed', e);
+  }
+}
+
+function getActiveOrders() {
+  try {
+    const raw = localStorage.getItem(AOB_KEY());
+    if (!raw) return [];
+    const orders = JSON.parse(raw);
+    // Prune orders older than 3 hours (stale)
+    const cutoff = Date.now() - 3 * 60 * 60 * 1000;
+    return orders.filter(o => new Date(o.createdAt).getTime() > cutoff);
+  } catch (e) {
+    return [];
+  }
+}
+
+function removeActiveOrder(orderId) {
+  try {
+    const filtered = getActiveOrders().filter(o => o.id !== orderId);
+    localStorage.setItem(AOB_KEY(), JSON.stringify(filtered));
+  } catch (e) {}
+}
+
+function updateActiveOrderStatus(orderId, status) {
+  try {
+    const orders = getActiveOrders().map(o =>
+      o.id === orderId ? { ...o, status } : o
+    );
+    localStorage.setItem(AOB_KEY(), JSON.stringify(orders));
+    refreshActiveOrderBar();
+  } catch (e) {}
+}
+
+const STATUS_LABEL = {
+  received:  'Order received 🟡',
+  preparing: 'Being prepared 🍳',
+  delivered: 'On your table 🍽️',
+  ready:     'Payment due 💳',
+};
+
+function refreshActiveOrderBar() {
+  const bar   = document.getElementById('active-order-bar');
+  const title = document.getElementById('aob-title');
+  const sub   = document.getElementById('aob-sub');
+  const cta   = document.getElementById('aob-cta');
+  if (!bar) return;
+
+  const orders = getActiveOrders();
+
+  // Hide if on tracking screen already or no orders
+  const trackScreen = document.getElementById('screen-track');
+  const onTrack = trackScreen && trackScreen.classList.contains('active');
+  if (!orders.length || onTrack) {
+    bar.style.display = 'none';
+    return;
+  }
+
+  bar.style.display = 'flex';
+
+  if (orders.length === 1) {
+    const o = orders[0];
+    const itemCount = (o.items || []).reduce((s, i) => s + i.qty, 0);
+    title.textContent = STATUS_LABEL[o.status] || 'Order in progress';
+    sub.textContent   = `${itemCount} item${itemCount !== 1 ? 's' : ''} · ₹${o.total?.toLocaleString('en-IN') || '—'}`;
+    cta.textContent   = 'Track →';
+  } else {
+    title.textContent = `${orders.length} Active Orders`;
+    sub.textContent   = orders.map(o => STATUS_LABEL[o.status] || '').join(' · ');
+    cta.textContent   = 'View →';
+  }
+}
+
+function openActiveOrder() {
+  const orders = getActiveOrders();
+  if (!orders.length) return;
+
+  // Use the most recent order
+  const o = orders[0];
+  window._lastOrderId   = o.id;
+  window._lastVenueId   = VENUE_DATA?.id || null;
+  window._lastVenueName = o.venueName || VENUE_DATA?.name || '';
+
+  showScreen('screen-track');
+  startTracking();
+
+  // Hide bar while on track screen
+  const bar = document.getElementById('active-order-bar');
+  if (bar) bar.style.display = 'none';
+}
+
+// Subscribe to realtime updates for all persisted active orders
+let _aobChannels = [];
+function subscribeActiveOrderBar() {
+  const orders = getActiveOrders();
+  if (!orders.length) return;
+
+  // Clear any previous subscriptions
+  _aobChannels.forEach(ch => db.removeChannel(ch));
+  _aobChannels = [];
+
+  orders.forEach(order => {
+    const ch = db
+      .channel(`aob-${order.id}`)
+      .on('postgres_changes', {
+        event:  'UPDATE',
+        schema: 'public',
+        table:  'orders',
+        filter: `id=eq.${order.id}`,
+      }, (payload) => {
+        const updated = payload.new;
+        if (updated.status === 'ready') {
+          // Order complete — remove from bar
+          removeActiveOrder(order.id);
+        } else {
+          updateActiveOrderStatus(order.id, updated.status);
+        }
+        refreshActiveOrderBar();
+      })
+      .subscribe();
+    _aobChannels.push(ch);
+  });
+}
+
+async function initActiveOrderBar() {
+  // Restore persisted orders after refresh
+  const savedOrders = getActiveOrders();
+  if (!savedOrders.length) return;
+
+  // Fetch fresh status for all persisted orders from DB
+  const ids = savedOrders.map(o => o.id);
+  try {
+    const { data: freshOrders } = await db
+      .from('orders')
+      .select('id, status, items, total, special_instructions')
+      .in('id', ids);
+
+    if (freshOrders) {
+      freshOrders.forEach(fresh => {
+        if (fresh.status === 'ready') {
+          removeActiveOrder(fresh.id);
+        } else {
+          updateActiveOrderStatus(fresh.id, fresh.status);
+        }
+      });
+    }
+  } catch (e) {
+    console.warn('AOB: could not refresh order status', e);
+  }
+
+  // Restore _lastOrderId from most recent active order
+  const current = getActiveOrders();
+  if (current.length > 0) {
+    window._lastOrderId   = current[0].id;
+    window._lastVenueName = current[0].venueName;
+  }
+
+  refreshActiveOrderBar();
+  subscribeActiveOrderBar();
 }
 
 // ── WAITER CALL HELP LOGIC ──────────────────────────────────
