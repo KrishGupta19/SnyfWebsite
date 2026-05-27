@@ -3175,6 +3175,21 @@ body.visual-mode-on .nav-inner {
     color: rgba(110, 106, 100, 0.5);
 }
 
+.footer-linkedin {
+    display: inline-flex;
+    align-items: center;
+    color: rgba(110, 106, 100, 0.5);
+    text-decoration: none;
+    font-size: 10px;
+    font-family: var(--font-mono, monospace);
+    letter-spacing: 0.05em;
+    transition: color 0.2s;
+}
+
+.footer-linkedin:hover {
+    color: #0A66C2; /* LinkedIn blue */
+}
+
 /* ============================================================
    MAP / GOOGLE MAP
    ============================================================ */
@@ -4340,6 +4355,10 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
         grid-template-columns: 1fr;
         gap: 40px;
     }
+
+    /* Swap: show text (Institutional Remedy) above the card on phones */
+    .solution-layout .solution-text  { order: 1; }
+    .solution-layout .solution-visual { order: 2; }
     
     .vm-grid {
         grid-template-columns: 1fr 1fr;
