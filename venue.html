@@ -1541,6 +1541,104 @@
     .cart-body {
       -webkit-overflow-scrolling: touch;
     }
+
+    /* Order summary on tracking screen */
+    .track-order-details {
+      max-width: 340px;
+      width: 100%;
+      margin: 20px auto 0;
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      z-index: 1;
+    }
+    .dark .track-order-details {
+      background: rgba(30, 30, 30, 0.4);
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    .track-order-header {
+      font-size: 13px;
+      font-weight: 700;
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--primary);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .track-order-items {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .track-order-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--ink);
+    }
+    .track-order-item-qty {
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .track-order-divider {
+      height: 1px;
+      background: rgba(0, 0, 0, 0.05);
+      margin: 10px 0;
+    }
+    .dark .track-order-divider {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .track-order-total {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--ink);
+    }
+    .track-order-update-alert {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px dashed rgba(245, 158, 11, 0.3);
+      color: #d97706;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      line-height: 1.4;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .dark .track-order-update-alert {
+      background: rgba(245, 158, 11, 0.05);
+      color: #fbbf24;
+    }
+    .track-order-original-list {
+      margin-top: 8px;
+      border-top: 1px dotted rgba(245, 158, 11, 0.2);
+      padding-top: 6px;
+    }
+    .track-order-original-title {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      opacity: 0.8;
+      margin-bottom: 4px;
+    }
+    .track-order-original-item {
+      font-size: 10px;
+      text-decoration: line-through;
+      opacity: 0.6;
+      display: flex;
+      justify-content: space-between;
+    }
   
   </style>
 </head>
@@ -1680,6 +1778,9 @@
           </div>
           <div class="track-states" id="track-states"></div>
         </div>
+
+        <!-- Order Summary Details -->
+        <div class="track-order-details" id="track-order-details" style="display: none;"></div>
 
         <!-- Inline review sliders — shown after order received -->
         <div class="track-review" id="track-review">
@@ -1977,6 +2078,8 @@
 
   let selectedChips = [];
   let tableNum = null;
+  let originalOrderItems = null;
+  let originalTotal = null;
 
   // ══════════════════════════════════════════
   // INIT
@@ -2582,11 +2685,17 @@
     let orderCreatedAt = new Date();
     
     if (window._lastOrderId) {
-      db.from('orders').select('created_at, status').eq('id', window._lastOrderId).single()
+      db.from('orders')
+        .select('created_at, status, items, subtotal, gst, service_charge, total, table_num')
+        .eq('id', window._lastOrderId)
+        .single()
         .then(({ data }) => {
           if (data) {
             orderCreatedAt = new Date(data.created_at);
             syncStatus(data.status);
+            originalOrderItems = data.items;
+            originalTotal = data.total;
+            renderOrderDetailsUI(data);
           }
         });
     }
@@ -2619,6 +2728,7 @@
           (payload) => {
             const updated = payload.new;
             syncStatus(updated.status);
+            renderOrderDetailsUI(updated);
           }
         )
         .subscribe();
@@ -2639,6 +2749,78 @@
       trackState = targetState;
       updateProgressUI(targetState);
     }
+  }
+
+  function renderOrderDetailsUI(order) {
+    const container = document.getElementById('track-order-details');
+    if (!container || !order) return;
+
+    container.style.display = 'block';
+
+    const orderIdShort = order.id ? order.id.slice(-6).toUpperCase() : '';
+
+    // Check if the order has been updated by comparing items/total
+    let isUpdated = false;
+    if (originalOrderItems && order.items) {
+      isUpdated = JSON.stringify(originalOrderItems) !== JSON.stringify(order.items);
+    }
+
+    let alertHtml = '';
+    let originalListHtml = '';
+
+    if (isUpdated) {
+      alertHtml = `
+        <div class="track-order-update-alert">
+          <span>⚠️ Your order was modified by the staff! See updated list below.</span>
+        </div>
+      `;
+
+      const origItemsHtml = (originalOrderItems || []).map(item => `
+        <div class="track-order-original-item">
+          <span>${item.name} x${item.qty}</span>
+          <span>${formatINR(item.price * item.qty)}</span>
+        </div>
+      `).join('');
+
+      originalListHtml = `
+        <div class="track-order-original-list">
+          <div class="track-order-original-title">Original Order</div>
+          ${origItemsHtml}
+          <div class="track-order-original-item" style="font-weight: 700;">
+            <span>Original Total</span>
+            <span>${formatINR(originalTotal)}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    const itemsHtml = (order.items || []).map(item => `
+      <div class="track-order-item">
+        <span><span class="track-order-item-qty">${item.qty}x</span> ${item.name}</span>
+        <span>${formatINR(item.price * item.qty)}</span>
+      </div>
+    `).join('');
+
+    container.innerHTML = `
+      <div class="track-order-header">
+        <span>Order #${orderIdShort}</span>
+      </div>
+      
+      ${alertHtml}
+
+      <div class="track-order-items">
+        ${itemsHtml}
+      </div>
+
+      <div class="track-order-divider"></div>
+
+      <div class="track-order-total">
+        <span>${isUpdated ? 'New Total' : 'Estimated Total'}</span>
+        <span>${formatINR(order.total)}</span>
+      </div>
+
+      ${originalListHtml}
+    `;
   }
 
   function updateSlider(dim, val) {
