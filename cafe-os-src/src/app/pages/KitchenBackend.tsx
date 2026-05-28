@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Clock, ChefHat, CheckCircle, Wifi, WifiOff, Edit, Plus, Minus, Trash2, X, Bell } from 'lucide-react';
+import { Clock, ChefHat, CheckCircle, Wifi, WifiOff, Edit, Plus, Minus, Trash2, X, Bell, Lock, ShieldAlert } from 'lucide-react';
 import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
+import { useLock } from '../../context/LockContext';
 import {
   Order, OrderStatus, MenuItem,
   ORDER_STATUS_LABELS, ORDER_STATUS_FLOW,
@@ -9,6 +10,7 @@ import {
 
 export function KitchenBackend() {
   const { venue }                   = useVenue();
+  const { isLockedToKitchen, lockInterface, setShowUnlockModal } = useLock();
   const [orders,    setOrders]      = useState<Order[]>([]);
   const [menuItems, setMenuItems]   = useState<MenuItem[]>([]);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
@@ -447,9 +449,31 @@ export function KitchenBackend() {
             </div>
           )}
 
+          {/* Parental Lock Toggle Button */}
+          <button
+            onClick={() => {
+              if (isLockedToKitchen) {
+                setShowUnlockModal(true);
+              } else {
+                lockInterface();
+              }
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border cursor-pointer ${
+              isLockedToKitchen
+                ? 'bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20'
+                : 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20'
+            }`}
+          >
+            {isLockedToKitchen ? (
+              <><ShieldAlert className="w-4 h-4" /> Locked</>
+            ) : (
+              <><Lock className="w-4 h-4" /> Lock OS</>
+            )}
+          </button>
+
           <button
             onClick={fetchOrders}
-            className="px-4 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:bg-accent/70 transition-colors border border-border"
+            className="px-4 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:bg-accent/70 transition-colors border border-border cursor-pointer"
           >
             Refresh
           </button>

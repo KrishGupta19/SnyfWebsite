@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Save, Trash2, GripVertical } from 'lucide-react';
+import { Save, Trash2, GripVertical, KeyRound, Eye, EyeOff, Lock, Unlock, ShieldAlert } from 'lucide-react';
 import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
+import { useLock } from '../../context/LockContext';
 import { VenuePhoto } from '../../lib/types';
 import { ImageUploader } from '../components/ImageUploader';
 
@@ -10,6 +11,11 @@ export function VenueInfo() {
   const [saving,   setSaving]    = useState(false);
   const [saved,    setSaved]     = useState(false);
   const [photos,   setPhotos]    = useState<VenuePhoto[]>([]);
+
+  const { isLockedToKitchen, lockPIN, setLockPIN, lockInterface, setShowUnlockModal } = useLock();
+  const [newPIN, setNewPIN] = useState('');
+  const [showPIN, setShowPIN] = useState(false);
+  const [pinSaved, setPinSaved] = useState(false);
 
   const [form, setForm] = useState({
     name: '', description: '', tagline: '',
@@ -238,6 +244,108 @@ export function VenueInfo() {
             label={`Add Photo ${photos.length + 1} of 4`}
           />
         )}
+      </div>
+
+      {/* Parental Lock Settings */}
+      <div className="bg-card rounded-2xl border border-border p-6 space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+            <KeyRound className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-base text-foreground">Kitchen Parental Lock</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Restrict tablet or kitchen screens to Kitchen View. Protect your dashboard and settings.
+            </p>
+          </div>
+        </div>
+
+        {/* PIN Configuration */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Current Lock PIN</label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 px-4 py-3 bg-input-background rounded-lg font-mono text-sm tracking-widest font-bold flex items-center justify-between border border-border">
+                <span>{showPIN ? lockPIN : '••••'}</span>
+                <button
+                  type="button"
+                  onClick={() => setShowPIN(!showPIN)}
+                  className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  {showPIN ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Change PIN (4 digits)</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                pattern="[0-9]*"
+                maxLength={4}
+                value={newPIN}
+                onChange={e => setNewPIN(e.target.value.replace(/\D/g, ''))}
+                placeholder="e.g. 5678"
+                className="flex-1 px-4 py-3 bg-input-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm font-mono tracking-widest"
+              />
+              <button
+                onClick={() => {
+                  if (newPIN.length !== 4) {
+                    alert('PIN must be exactly 4 digits');
+                    return;
+                  }
+                  setLockPIN(newPIN);
+                  setNewPIN('');
+                  setPinSaved(true);
+                  setTimeout(() => setPinSaved(false), 2000);
+                }}
+                className="px-4 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+              >
+                {pinSaved ? 'Updated!' : 'Update'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Kiosk Mode Lock/Unlock Toggle */}
+        <div className="border-t border-border/60 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-0.5">
+            <div className="text-xs font-bold text-foreground">Lock Status</div>
+            <p className="text-[11px] text-muted-foreground">
+              {isLockedToKitchen 
+                ? 'Device is currently locked to Kitchen view. Only admins can escape.' 
+                : 'Device is unlocked. Chefs or staff can navigate anywhere.'}
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              if (isLockedToKitchen) {
+                setShowUnlockModal(true);
+              } else {
+                lockInterface();
+              }
+            }}
+            className={`px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
+              isLockedToKitchen
+                ? 'bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20'
+                : 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20'
+            }`}
+          >
+            {isLockedToKitchen ? (
+              <>
+                <Lock className="w-4 h-4" />
+                Locked (Click to Unlock)
+              </>
+            ) : (
+              <>
+                <Unlock className="w-4 h-4" />
+                Unlock Mode (Click to Lock)
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

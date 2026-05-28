@@ -2,10 +2,12 @@ import { Bell, Search, Sun, Moon, LogOut, Copy, Check, ExternalLink } from 'luci
 import { useState, useEffect } from 'react';
 import { useVenue } from '../../context/VenueContext';
 import { db } from '../../lib/supabase';
+import { useLock } from '../../context/LockContext';
 
 export function TopBar() {
   const [isDark, setIsDark] = useState(false);
   const { venue, slug, logout } = useVenue();
+  const { isLockedToKitchen, setShowUnlockModal, setOnUnlockSuccess } = useLock();
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -285,7 +287,17 @@ export function TopBar() {
                   </a>
 
                   <button
-                    onClick={logout}
+                    onClick={(e) => {
+                      if (isLockedToKitchen) {
+                        e.stopPropagation();
+                        setOnUnlockSuccess(() => {
+                          logout();
+                        });
+                        setShowUnlockModal(true);
+                      } else {
+                        logout();
+                      }
+                    }}
                     className="w-full flex items-center justify-between p-2.5 hover:bg-red-500/10 text-red-500 rounded-xl text-xs font-semibold transition-colors text-left cursor-pointer"
                   >
                     <span>Log Out</span>
