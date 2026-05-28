@@ -2514,7 +2514,7 @@
         const newCount = (data.scan_count || 0) + 1;
         await db
           .from('qr_codes')
-          .update({ scan_count: newCount, updated_at: new Date().toISOString() })
+          .update({ scan_count: newCount })
           .eq('id', data.id);
       }
     } catch (err) {

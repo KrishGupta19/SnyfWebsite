@@ -1956,7 +1956,6 @@ async function submitNewVenue() {
         table_num:  i + 1,
         url:        `https://snyf.co.in/${slug}?table=${i + 1}`,
         scan_count: 0,
-        active:     true,
       }));
       const { error: qrErr } = await db.from('qr_codes').insert(qrRows);
       if (qrErr) console.warn('[QR] Auto-generate failed:', qrErr.message);
@@ -2144,7 +2143,6 @@ async function loadVenueTableQRs() {
       .from('qr_codes')
       .select('*')
       .eq('venue_id', venueId)
-      .eq('active', true)
       .order('table_num');
 
     if (error) throw error;
@@ -2232,8 +2230,7 @@ async function addTablesToVenue() {
     const { data: existing } = await db
       .from('qr_codes')
       .select('table_num')
-      .eq('venue_id', venueId)
-      .eq('active', true);
+      .eq('venue_id', venueId);
 
     const usedNums = new Set((existing || []).map(r => r.table_num));
     const toInsert = [];
@@ -2246,7 +2243,6 @@ async function addTablesToVenue() {
           table_num:  next,
           url:        `https://snyf.co.in/${slug}?table=${next}`,
           scan_count: 0,
-          active:     true,
         });
       }
       next++;
@@ -2281,7 +2277,7 @@ async function removeTableQR(qrId, tableNum) {
   try {
     const { error } = await db
       .from('qr_codes')
-      .update({ active: false })
+      .delete()
       .eq('id', qrId);
     if (error) throw error;
     document.getElementById(`qr-card-${qrId}`)?.remove();

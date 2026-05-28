@@ -9,7 +9,6 @@ interface QRCodeRow {
   table_num:  number;
   url:        string;
   scan_count: number;
-  active:     boolean;
   created_at: string;
 }
 
@@ -53,7 +52,6 @@ export function QRCodes() {
         .from('qr_codes')
         .select('*')
         .eq('venue_id', venue.id)
-        .eq('active', true)
         .order('table_num');
       if (error) throw error;
       setQrCodes((data || []) as QRCodeRow[]);
@@ -93,7 +91,6 @@ export function QRCodes() {
             table_num:  next,
             url:        `https://snyf.co.in/${venue.slug}?table=${next}`,
             scan_count: 0,
-            active:     true,
           });
         }
         next++;
@@ -112,7 +109,8 @@ export function QRCodes() {
   async function removeQR(id: string, tableNum: number) {
     if (!confirm(`Remove QR code for Table ${tableNum}? This cannot be undone.`)) return;
     try {
-      await db.from('qr_codes').update({ active: false }).eq('id', id);
+      const { error } = await db.from('qr_codes').delete().eq('id', id);
+      if (error) throw error;
       setQrCodes(prev => prev.filter(q => q.id !== id));
     } catch (err) {
       console.error('[QRCodes] remove:', err);
