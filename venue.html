@@ -2016,19 +2016,17 @@
             </div>
           </div>
 
-          <!-- Go to Profile CTA -->
-          <button id="popup-profile-link" onclick="navigateToProfileWithSignOut()" style="
-            display: block; width: 100%;
-            background: var(--ink); color: var(--paper);
-            font-weight: 700; font-size: 14px;
-            text-align: center; text-decoration: none;
-            padding: 14px 20px;
-            border-radius: 14px;
-            border: none;
-            cursor: pointer;
-            letter-spacing: 0.02em;
-            margin-bottom: 10px;
-          ">Go to Your Profile →</button>
+          <!-- View profile link -->
+          <div style="text-align: center; margin-bottom: 20px; margin-top: 10px;">
+            <a href="profile.html" style="
+              color: var(--cyan);
+              font-weight: 700;
+              font-size: 14px;
+              text-decoration: none;
+              display: inline-block;
+              transition: opacity 0.2s;
+            " onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">View Profile Details →</a>
+          </div>
 
           <button onclick="handleSignOut()" style="
             display: block; width: 100%;
@@ -2619,13 +2617,6 @@
     }
   }
 
-  async function navigateToProfileWithSignOut() {
-    await snyfSignOut();
-    window._currentUser    = null;
-    window._currentProfile = null;
-    const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search);
-    window.location.href = `profile.html?redirect=${redirectUrl}`;
-  }
 
   function closeProfilePopup(event) {
     const overlay = document.getElementById('profile-popup-overlay');
