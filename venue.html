@@ -141,6 +141,25 @@
 
     .menu-back-btn:hover { background: var(--paper); }
 
+    .menu-profile-btn {
+      width: 36px; height: 36px;
+      background: rgba(246,245,242,0.88);
+      backdrop-filter: blur(8px);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+      text-decoration: none;
+      border: 1px solid rgba(30,30,27,0.1);
+      transition: all 0.18s;
+      text-transform: uppercase;
+    }
+
+    .menu-profile-btn:hover { background: var(--paper); }
+
     .menu-snyf-badge {
       font-family: var(--mono);
       font-size: 8px;
@@ -1923,6 +1942,12 @@
         <img class="menu-hero-img" id="hero-img" src="" alt="" loading="eager">
         <div class="menu-topbar">
           <a href="discover.html" class="menu-back-btn" aria-label="Back to Discover">←</a>
+          <a href="profile.html" class="menu-profile-btn" id="menu-profile-btn" aria-label="Account">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </a>
         </div>
       </div>
 
@@ -2222,6 +2247,34 @@
           img:      item.image_url || item.photo_url || item.img || '',
         })),
       };
+
+      // Check if current user has already rated this venue
+      window._hasRatedVenue = false;
+      try {
+        const user = await snyfGetUser();
+        const profBtn = document.getElementById('menu-profile-btn');
+        if (profBtn) {
+          const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search);
+          profBtn.href = `profile.html?redirect=${redirectUrl}`;
+        }
+        if (user) {
+          const profile = await snyfGetProfile(user.id);
+          const name = profile?.name || user.email?.split('@')[0] || 'S';
+          if (profBtn) {
+            profBtn.textContent = name[0].toUpperCase();
+          }
+
+          const { data: userReport } = await db
+            .from('field_reports')
+            .select('id')
+            .eq('venue_id', venue.id)
+            .eq('user_id', user.id)
+            .limit(1);
+          window._hasRatedVenue = userReport && userReport.length > 0;
+        }
+      } catch (e) {
+        console.warn('Could not query user rating on load:', e);
+      }
 
       // Update page title and meta
       document.title = `${venue.name} — Snyf`;
@@ -2615,6 +2668,7 @@
     }
     showScreen('screen-menu');
     refreshActiveOrderBar();
+    subscribeActiveOrderBar();
   }
 
   // ══════════════════════════════════════════
@@ -2969,6 +3023,9 @@
     // Initialize game
     initCafeGame();
 
+    // Set completing order reference
+    window._completingOrderId = window._lastOrderId;
+
     // Render states list
     statesEl.innerHTML = ORDER_STATES.map((s, i) => `
       <div class="track-state ${i === 0 ? 'state-active' : ''}" id="track-state-${i}">
@@ -2995,7 +3052,24 @@
       progressEl.style.width = pct + '%';
 
       if (targetState >= 1) {
-        setTimeout(() => reviewEl.classList.add('visible'), 300);
+        setTimeout(() => {
+          const sliders = reviewEl.querySelectorAll('.track-slider-row');
+          const title = reviewEl.querySelector('.track-review-title');
+          const btn = reviewEl.querySelector('.track-back-btn');
+          
+          if (window._hasRatedVenue) {
+            if (title) title.textContent = "Order Tracking Complete";
+            sliders.forEach(s => s.style.display = 'none');
+            if (btn) btn.textContent = 'Back to Menu';
+            reviewEl.style.padding = '16px';
+          } else {
+            if (title) title.textContent = "How's Everything?";
+            sliders.forEach(s => s.style.display = 'block');
+            if (btn) btn.textContent = 'Submit & Back to Menu';
+            reviewEl.style.padding = '22px';
+          }
+          reviewEl.classList.add('visible');
+        }, 300);
       }
     }
 
@@ -3230,6 +3304,7 @@ async function submitReviewAndReturn() {
 
       // Recompute trust level silently if logged in
       if (user?.id) recomputeTrustLevel(user.id);
+      window._hasRatedVenue = true;
 
     } catch (err) {
       dbError('submitReview', err);
@@ -3248,6 +3323,7 @@ async function submitReviewAndReturn() {
     window._completingOrderId = null;
   }
   refreshActiveOrderBar();
+  subscribeActiveOrderBar();
 
   resetToMenu();
 }
@@ -3262,6 +3338,7 @@ function saveActiveOrder(order) {
     filtered.unshift(order); // newest first
     localStorage.setItem(AOB_KEY(), JSON.stringify(filtered));
     refreshActiveOrderBar();
+    subscribeActiveOrderBar();
   } catch (e) {
     console.warn('AOB: save failed', e);
   }
@@ -3416,12 +3493,12 @@ function _timeAgo(isoStr) {
 // Subscribe to realtime updates for all persisted active orders
 let _aobChannels = [];
 function subscribeActiveOrderBar() {
-  const orders = getActiveOrders();
-  if (!orders.length) return;
-
   // Clear any previous subscriptions
   _aobChannels.forEach(ch => db.removeChannel(ch));
   _aobChannels = [];
+
+  const orders = getActiveOrders();
+  if (!orders.length) return;
 
   orders.forEach(order => {
     const ch = db
@@ -3436,10 +3513,12 @@ function subscribeActiveOrderBar() {
         if (updated.status === 'ready') {
           // Order complete — remove from bar
           removeActiveOrder(order.id);
+          refreshActiveOrderBar();
+          subscribeActiveOrderBar();
         } else {
           updateActiveOrderStatus(order.id, updated.status);
+          refreshActiveOrderBar();
         }
-        refreshActiveOrderBar();
       })
       .subscribe();
     _aobChannels.push(ch);
