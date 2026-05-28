@@ -3,7 +3,7 @@ import { useState } from "react";
 
 const campaigns = [
   {
-    budget: "₹8,000",
+    tier: "Standard",
     estimatedDiners: "120-180",
     reach: "15,000+",
     repeatProbability: "72%",
@@ -13,7 +13,7 @@ const campaigns = [
     trustScore: 8.5,
   },
   {
-    budget: "₹10,000",
+    tier: "Growth",
     estimatedDiners: "220-300",
     reach: "28,000+",
     repeatProbability: "68%",
@@ -23,7 +23,7 @@ const campaigns = [
     trustScore: 9.2,
   },
   {
-    budget: "Premium",
+    tier: "Premium",
     estimatedDiners: "400-550",
     reach: "50,000+",
     repeatProbability: "75%",
@@ -74,9 +74,9 @@ export function GrowthPlans() {
             <div className="relative z-10">
               <div className="flex items-start justify-between mb-6">
                 <div>
-                  <h2 className="text-3xl font-bold">{campaign.budget}</h2>
+                  <h2 className="text-3xl font-bold">{campaign.tier}</h2>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Campaign Budget
+                    Campaign Tier
                   </p>
                 </div>
                 <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium flex items-center gap-1">
@@ -150,9 +150,9 @@ export function GrowthPlans() {
                 </div>
               </div>
 
-              <button className="w-full mt-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity">
-                Launch Campaign
-              </button>
+              <div className="w-full mt-6 py-3 px-4 bg-muted/40 text-muted-foreground rounded-xl text-center font-medium text-xs border border-border select-none">
+                Collecting data for now
+              </div>
             </div>
           </div>
         ))}
@@ -288,10 +288,67 @@ export function GrowthPlans() {
             )}
           </div>
         </div>
+      </div>
 
-        <button className="mt-6 px-8 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity">
-          Create Custom Campaign
-        </button>
+      <div className="bg-card rounded-2xl p-6 sm:p-8 border border-border mt-8 overflow-hidden relative">
+        {/* Animated gradient top border */}
+        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-primary via-accent to-primary animate-[shimmer_3s_infinite_linear] bg-[length:200%_auto]" />
+        
+        <style>{`
+          @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
+        `}</style>
+
+        <div className="flex flex-col lg:flex-row gap-6 lg:items-center justify-between">
+          <div className="space-y-3 max-w-3xl">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent"></span>
+              </span>
+              <span className="text-xs font-semibold tracking-wider text-accent uppercase">
+                Future Feature: Snyf Growth Engine
+              </span>
+            </div>
+            
+            <h3 className="text-xl font-bold text-foreground">
+              Collecting Data for Predictive Campaign Targeting
+            </h3>
+            
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              We are currently gathering visit metrics, average order tickets, and peak hourly traffic from your live database. Once fully initialized, this growth engine will allow you to design custom push notifications, tailored discounts, and peak-hour incentives that target relevant customer profiles to optimize your cafe's daily table occupancy.
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-[11px] text-muted-foreground">
+              <div className="flex items-center gap-2 bg-accent/5 p-2 rounded-xl border border-border/40">
+                <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                <span>Behavior-matched Targeting</span>
+              </div>
+              <div className="flex items-center gap-2 bg-accent/5 p-2 rounded-xl border border-border/40">
+                <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                <span>Automated Push Campaigns</span>
+              </div>
+              <div className="flex items-center gap-2 bg-accent/5 p-2 rounded-xl border border-border/40">
+                <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                <span>Guaranteed ROI Tracking</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-shrink-0 flex flex-col items-center justify-center p-5 bg-accent/5 rounded-2xl border border-border/80 min-w-[240px]">
+            <span className="text-[11px] text-muted-foreground font-medium mb-1.5">System Status</span>
+            <span className="text-xs font-semibold text-primary mb-3 flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+              Ingesting Visit Metrics
+            </span>
+            <div className="w-full bg-border rounded-full h-1 overflow-hidden">
+              <div className="bg-primary h-1 rounded-full animate-[shimmer_2s_infinite_linear] bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_auto]" />
+            </div>
+            <span className="text-[10px] text-muted-foreground mt-2">Collecting live feedback data...</span>
+          </div>
+        </div>
       </div>
     </div>
   );
