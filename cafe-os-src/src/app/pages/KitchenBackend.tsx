@@ -725,8 +725,13 @@ export function KitchenBackend() {
                           Order #{order.id.slice(-6).toUpperCase()}
                         </h2>
                         {order.table_num && (
-                          <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 ${
+                            order.table_verified
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                              : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                          }`}>
                             Table {order.table_num}
+                            <span className="font-bold">{order.table_verified ? '✓' : '?'}</span>
                           </span>
                         )}
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>

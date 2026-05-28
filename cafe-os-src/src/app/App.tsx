@@ -11,6 +11,7 @@ import { GrowthPlans }      from './pages/GrowthPlans';
 import { KitchenBackend }   from './pages/KitchenBackend';
 import { MenuManager }      from './pages/MenuManager';
 import { VenueInfo }        from './pages/VenueInfo';
+import { QRCodes }          from './pages/QRCodes';
 import { Placeholder }      from './pages/Placeholder';
 import { UnlockModal }      from './components/UnlockModal';
 
@@ -54,7 +55,7 @@ function AppContent() {
             <Route path="/customers" element={<CustomerInsights />} />
             <Route path="/growth"    element={<GrowthPlans />}      />
             <Route path="/campaigns" element={<Placeholder title="Campaign Engine"  description="Coming soon" />} />
-            <Route path="/qr"        element={<Placeholder title="QR Analytics"     description="Coming soon" />} />
+            <Route path="/qr"        element={<QRCodes />} />
             <Route path="/rewards"   element={<Placeholder title="Rewards Program"  description="Coming soon" />} />
           </Routes>
         </main>

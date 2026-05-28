@@ -214,6 +214,62 @@
       .sidebar-brand { justify-content: center; }
       .nav-item { justify-content: center; padding: 12px; }
     }
+
+    /* ── QR Table Cards ── */
+    .qr-table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.2s;
+    }
+    .qr-table-card:hover { border-color: var(--border-hi); }
+    .qr-table-card-header {
+      padding: 12px 14px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .qr-table-num {
+      font-family: var(--display);
+      font-size: 1.1rem;
+      font-weight: 900;
+      letter-spacing: -0.3px;
+      color: var(--cyan);
+    }
+    .qr-table-scans {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+    .qr-canvas-wrap {
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #F6F5F2;
+    }
+    .qr-canvas-wrap canvas { display: block; border-radius: 4px; }
+    .qr-url-text {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--muted);
+      padding: 6px 14px;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-top: 1px solid var(--border);
+    }
+    .qr-table-actions {
+      padding: 8px 10px;
+      display: flex;
+      gap: 6px;
+    }
   </style>
 </head>
 <body>
@@ -573,36 +629,83 @@
         <!-- QR CODES -->
         <div id="section-qr" class="admin-section" style="display:none;">
           <div class="sec-head">
-            <div><div class="sec-title">QR Code Generator</div><div class="sec-sub">Generate Snyf-branded QR codes for partner venues</div></div>
-          </div>
-          <div style="display:grid;grid-template-columns:340px 1fr;gap:24px;align-items:start;">
-            <div class="card">
-              <div class="field" style="margin-bottom:16px;">
-                <label class="input-label">Select Venue</label>
-                <select class="select" id="qr-venue-select" onchange="updateQRPreview()">
-                  <option value="">— Select a venue —</option>
-                </select>
-              </div>
-              <div class="field" style="margin-bottom:16px;">
-                <label class="input-label">QR Type</label>
-                <select class="select" id="qr-type">
-                  <option value="venue">Single Venue QR — snyf.co.in/[slug]</option>
-                  <option value="table" disabled>Per-Table QR (Coming Phase 2)</option>
-                </select>
-              </div>
-              <div id="qr-url-preview" style="font-family:var(--mono);font-size:11px;color:var(--cyan);background:rgba(111,183,214,0.07);border:1px solid rgba(111,183,214,0.2);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:16px;display:none;"></div>
-              <div style="display:flex;flex-direction:column;gap:8px;">
-                <button class="btn btn--primary" style="justify-content:center;" onclick="downloadQR('png')">↓ Download PNG (1000×1000px)</button>
-                <button class="btn btn--ghost" style="justify-content:center;" onclick="downloadQR('svg')">↓ Download SVG</button>
-              </div>
-              <div style="margin-top:14px;font-size:11px;color:var(--dim);line-height:1.7;">Print at minimum 4×4cm for reliable scanning. Laminate for table use.</div>
+            <div>
+              <div class="sec-title">QR Codes</div>
+              <div class="sec-sub">Venue QR for discovery · Per-table QRs for ordering</div>
             </div>
-            <div style="display:flex;flex-direction:column;align-items:center;">
-              <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:16px;text-align:center;">Preview</div>
+          </div>
+
+          <!-- Shared venue selector -->
+          <div class="field" style="max-width:320px;margin-bottom:28px;">
+            <label class="input-label">Select Venue</label>
+            <select class="select" id="qr-venue-select" onchange="onQRVenueChange()">
+              <option value="">— Select a venue —</option>
+            </select>
+          </div>
+
+          <!-- ── PART 1: Combined Venue QR ── -->
+          <div style="margin-bottom:32px;">
+            <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;">
+              Venue QR · Entrance · Flyers · Social media
+            </div>
+            <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;">
               <div class="qr-preview-wrap" id="qr-preview-wrap">
-                <div class="qr-mock" id="qr-mock-display">Select a venue to preview QR code</div>
+                <div class="qr-mock" id="qr-mock-display">Select a venue to preview</div>
                 <div class="qr-venue-label" id="qr-venue-label-display" style="display:none;"></div>
-                <div class="qr-hint-label" id="qr-hint-display" style="display:none;">Scan to discover &amp; order</div>
+                <div class="qr-hint-label"  id="qr-hint-display"         style="display:none;">Scan to discover &amp; order</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;padding-top:4px;">
+                <div id="qr-url-preview" style="font-family:var(--mono);font-size:11px;color:var(--cyan);background:rgba(111,183,214,0.07);border:1px solid rgba(111,183,214,0.2);border-radius:var(--r-sm);padding:10px 12px;display:none;max-width:280px;word-break:break-all;"></div>
+                <button class="btn btn--primary" style="justify-content:center;" onclick="downloadVenueQR('png')">↓ Download PNG (1000×1000)</button>
+                <button class="btn btn--ghost"   style="justify-content:center;" onclick="downloadVenueQR('svg')">↓ Download SVG</button>
+                <div style="font-size:11px;color:var(--dim);line-height:1.7;max-width:240px;">
+                  No table number — use at entrance, on flyers, social bio links.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <div style="height:1px;background:var(--border);margin-bottom:28px;"></div>
+
+          <!-- ── PART 2: Per-Table QRs ── -->
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;">
+              Per-Table QRs · One per table · Includes table number
+            </div>
+
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+              <input
+                class="input"
+                type="number"
+                id="qr-add-count"
+                placeholder="Number of tables to add"
+                min="1"
+                max="100"
+                style="width:220px;"
+              >
+              <button class="btn btn--cyan btn--sm" onclick="addTablesToVenue()">+ Add Tables</button>
+              <button class="btn btn--primary btn--sm" onclick="downloadAllTableQRs()" id="download-all-btn" style="display:none;">
+                ↓ Download All Tables
+              </button>
+            </div>
+
+            <div id="qr-tables-grid" style="
+              display:grid;
+              grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+              gap:14px;
+            ">
+              <div id="qr-tables-empty" style="
+                grid-column:1/-1;
+                text-align:center;
+                padding:48px 20px;
+                color:var(--muted);
+                border:1px dashed var(--border);
+                border-radius:var(--r-lg);
+              ">
+                <div style="font-size:1.6rem;margin-bottom:10px;opacity:.3;">📱</div>
+                <div style="font-weight:700;margin-bottom:4px;">Select a venue to manage table QR codes</div>
+                <div style="font-size:12px;opacity:.6;">Each table gets its own unique QR code</div>
               </div>
             </div>
           </div>
@@ -738,6 +841,13 @@
         <div class="field"><label class="input-label">Category</label><select class="select" id="av-category"><option value="">Select category</option><option>Café</option><option>Restaurant</option><option>Bar</option></select></div>
         <div class="field" style="grid-column:1/-1;"><label class="input-label">Description</label><textarea class="input" id="av-desc" rows="2" placeholder="What makes this place unique..."></textarea></div>
         <div class="field" style="grid-column:1/-1;"><label class="input-label">One-liner tagline</label><input class="input" type="text" id="av-tagline" placeholder="e.g. NCR's best specialty coffee"></div>
+        <div class="field" style="grid-column:1/-1;">
+          <label class="input-label">
+            Number of Tables
+            <span style="color:var(--dim);font-size:10px;margin-left:4px;">(auto-generates table QR codes)</span>
+          </label>
+          <input class="input" type="number" id="av-table-count" placeholder="e.g. 12" min="1" max="100" style="max-width:160px;">
+        </div>
       </div>
       <div id="av-url-preview" style="margin-top:14px;font-family:var(--mono);font-size:11px;color:var(--muted);background:rgba(246,245,242,0.03);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;display:none;">
         Venue URL: <span id="av-url-text" style="color:var(--cyan);"></span><br>
@@ -1132,18 +1242,7 @@ async function initAdminApp() {
   populateQRVenues();
 }
 
-// QR VENUE POPULATE
-function populateQRVenues() {
-  const sel = document.getElementById('qr-venue-select');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">— Select a venue —</option>';
-  VENUES_DATA.forEach(v => {
-    const opt = document.createElement('option');
-    opt.value = v.slug;
-    opt.textContent = v.name;
-    sel.appendChild(opt);
-  });
-}
+// QR VENUE POPULATE - Legacy location (defined at bottom instead)
 
 // NAV
 function navTo(section, btnEl) {
@@ -1737,6 +1836,8 @@ function openAddVenueModal() {
   document.getElementById('av-step-2').style.display = 'none';
   document.getElementById('av-name').value = '';
   document.getElementById('av-slug').value = '';
+  const tcEl = document.getElementById('av-table-count');
+  if (tcEl) tcEl.value = '';
   document.getElementById('av-url-preview').style.display = 'none';
   updateStepDots(1);
   openModal('add-venue-modal');
@@ -1847,6 +1948,24 @@ async function submitNewVenue() {
 
     if (reportError) throw reportError;
 
+    // Auto-generate per-table QR codes if table count entered
+    const tableCount = parseInt(document.getElementById('av-table-count')?.value) || 0;
+    if (tableCount > 0 && inserted?.id) {
+      const qrRows = Array.from({ length: tableCount }, (_, i) => ({
+        venue_id:   inserted.id,
+        table_num:  i + 1,
+        url:        `https://snyf.co.in/${slug}?table=${i + 1}`,
+        scan_count: 0,
+        active:     true,
+      }));
+      const { error: qrErr } = await db.from('qr_codes').insert(qrRows);
+      if (qrErr) console.warn('[QR] Auto-generate failed:', qrErr.message);
+      else showToast(`✓ ${tableCount} table QR codes generated`, 'success');
+    }
+
+    const tcEl = document.getElementById('av-table-count');
+    if (tcEl) tcEl.value = '';
+
     const mapped = mapVenueFromRow(inserted);
     mapped.username = username;
     mapped.password = password;
@@ -1887,114 +2006,396 @@ function generatePassword() {
   return pass;
 }
 
-// QR CODES
-function setQRVenue(slug) {
-  const sel = document.getElementById('qr-venue-select');
-  if (sel) { sel.value = slug; updateQRPreview(); }
+// ── QR CODES ──────────────────────────────────────────────────
+
+// Called when venue dropdown changes — updates both sections
+function onQRVenueChange() {
+  updateQRPreview();
+  loadVenueTableQRs();
 }
 
+// Populate venue dropdown (called after venues load)
 function populateQRVenues() {
   const sel = document.getElementById('qr-venue-select');
   if (!sel) return;
   const currentVal = sel.value;
-  sel.innerHTML = '<option value="">— Select a venue —</option>' + 
-    VENUES_DATA.map(v => `<option value="${v.slug}">${v.name}</option>`).join('');
-  if (VENUES_DATA.some(v => v.slug === currentVal)) {
-    sel.value = currentVal;
-  } else {
-    sel.value = '';
-    updateQRPreview();
-  }
+  sel.innerHTML = '<option value="">— Select a venue —</option>' +
+    VENUES_DATA.map(v =>
+      `<option value="${v.id}" data-slug="${v.slug}" data-name="${encodeURIComponent(v.name)}">${v.name}</option>`
+    ).join('');
+  if (currentVal) sel.value = currentVal;
 }
 
+// ── VENUE QR (combined — no table number) ─────────────────────
+
 function updateQRPreview() {
-  const slug     = document.getElementById('qr-venue-select').value;
+  const sel      = document.getElementById('qr-venue-select');
+  const slug     = sel.options[sel.selectedIndex]?.dataset?.slug || '';
   const urlPrev  = document.getElementById('qr-url-preview');
   const mockDisp = document.getElementById('qr-mock-display');
   const label    = document.getElementById('qr-venue-label-display');
   const hint     = document.getElementById('qr-hint-display');
+
   if (!slug) {
-    urlPrev.style.display = 'none'; mockDisp.textContent = 'Select a venue to preview QR code';
-    label.style.display = 'none'; hint.style.display = 'none'; return;
+    urlPrev.style.display = 'none';
+    mockDisp.textContent = 'Select a venue to preview';
+    label.style.display = 'none';
+    hint.style.display  = 'none';
+    return;
   }
-  const venue = VENUES_DATA.find(v => v.slug === slug);
+
+  const venueName = decodeURIComponent(sel.options[sel.selectedIndex]?.dataset?.name || slug);
   urlPrev.style.display = 'block';
   urlPrev.textContent   = `https://snyf.co.in/${slug}`;
   label.style.display   = 'block';
   hint.style.display    = 'block';
-  label.textContent     = venue ? venue.name.toUpperCase() : slug.toUpperCase();
-  
-  mockDisp.innerHTML    = `<canvas id="qr-preview-canvas" style="width: 100%; height: 100%; display: block; border-radius: 4px;"></canvas>`;
+  label.textContent     = venueName.toUpperCase();
+
+  mockDisp.innerHTML = `<canvas id="qr-preview-canvas" style="width:100%;height:100%;display:block;border-radius:4px;"></canvas>`;
   const canvas = document.getElementById('qr-preview-canvas');
   QRCode.toCanvas(canvas, `https://snyf.co.in/${slug}`, {
-    width: 180,
-    margin: 2,
-    color: {
-      dark: '#1E1E1B',
-      light: '#FFFFFF'
-    }
-  }, function (error) {
-    if (error) console.error('[QR Generator] Error rendering preview:', error);
-  });
+    width: 180, margin: 2,
+    color: { dark: '#1E1E1B', light: '#F6F5F2' },
+  }, err => { if (err) console.error('[QR preview]', err); });
 }
 
-function openQRForVenue() {
-  const venue = VENUES_DATA.find(v => String(v.id) === String(currentVenueId));
-  if (venue) { setQRVenue(venue.slug); navTo('qr', document.querySelector('[data-section=qr]')); }
-}
-
-function downloadQR(format) {
-  const slug = document.getElementById('qr-venue-select').value;
+function downloadVenueQR(format) {
+  const sel  = document.getElementById('qr-venue-select');
+  const slug = sel.options[sel.selectedIndex]?.dataset?.slug || '';
   if (!slug) { showToast('⚠ Select a venue first', 'error'); return; }
-  
-  const url = `https://snyf.co.in/${slug}`;
+
+  const url      = `https://snyf.co.in/${slug}`;
   const filename = `snyf-qr-${slug}`;
-  
+
   if (format === 'png') {
     QRCode.toDataURL(url, {
-      width: 1000,
-      margin: 2,
-      color: {
-        dark: '#1E1E1B',
-        light: '#FFFFFF'
-      }
-    }, function (err, dataUrl) {
-      if (err) {
-        showToast('⚠ Failed to generate PNG', 'error');
-        return;
-      }
+      width: 1000, margin: 2,
+      color: { dark: '#1E1E1B', light: '#F6F5F2' },
+    }, (err, dataUrl) => {
+      if (err) { showToast('⚠ Failed to generate PNG', 'error'); return; }
       const link = document.createElement('a');
       link.download = `${filename}.png`;
       link.href = dataUrl;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      showToast('✓ PNG QR Code downloaded', 'success');
+      showToast('✓ Venue QR PNG downloaded', 'success');
     });
-  } else if (format === 'svg') {
+  } else {
     QRCode.toString(url, {
-      type: 'svg',
-      width: 1000,
-      margin: 2,
-      color: {
-        dark: '#1E1E1B',
-        light: '#FFFFFF'
-      }
-    }, function (err, svgString) {
-      if (err) {
-        showToast('⚠ Failed to generate SVG', 'error');
-        return;
-      }
-      const blob = new Blob([svgString], { type: 'image/svg+xml' });
-      const downloadUrl = URL.createObjectURL(blob);
+      type: 'svg', width: 1000, margin: 2,
+      color: { dark: '#1E1E1B', light: '#F6F5F2' },
+    }, (err, svgStr) => {
+      if (err) { showToast('⚠ Failed to generate SVG', 'error'); return; }
+      const blob = new Blob([svgStr], { type: 'image/svg+xml' });
       const link = document.createElement('a');
       link.download = `${filename}.svg`;
-      link.href = downloadUrl;
+      link.href = URL.createObjectURL(blob);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(downloadUrl);
-      showToast('✓ SVG QR Code downloaded', 'success');
+      URL.revokeObjectURL(link.href);
+      showToast('✓ Venue QR SVG downloaded', 'success');
+    });
+  }
+}
+
+// Legacy function called from venue detail tab
+function setQRVenue(slug) {
+  const sel = document.getElementById('qr-venue-select');
+  if (!sel) return;
+  const opt = Array.from(sel.options).find(o => o.dataset.slug === slug);
+  if (opt) { sel.value = opt.value; onQRVenueChange(); }
+  navTo('qr', document.querySelector('[data-section=qr]'));
+}
+
+function openQRForVenue() {
+  const venue = VENUES_DATA.find(v => String(v.id) === String(currentVenueId));
+  if (venue) setQRVenue(venue.slug);
+}
+
+// ── PER-TABLE QRs ─────────────────────────────────────────────
+
+async function loadVenueTableQRs() {
+  const sel     = document.getElementById('qr-venue-select');
+  const venueId = sel.value;
+  const grid    = document.getElementById('qr-tables-grid');
+  const dlBtn   = document.getElementById('download-all-btn');
+  const emptyEl = document.getElementById('qr-tables-empty');
+
+  // Reset grid
+  grid.innerHTML = '';
+  const empty = document.createElement('div');
+  empty.id = 'qr-tables-empty';
+  empty.style.cssText = 'grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--muted);border:1px dashed var(--border);border-radius:var(--r-lg);';
+
+  if (!venueId) {
+    empty.innerHTML = `<div style="font-size:1.6rem;margin-bottom:10px;opacity:.3;">📱</div><div style="font-weight:700;margin-bottom:4px;">Select a venue to manage table QR codes</div><div style="font-size:12px;opacity:.6;">Each table gets its own unique QR code</div>`;
+    grid.appendChild(empty);
+    dlBtn.style.display = 'none';
+    return;
+  }
+
+  empty.innerHTML = `<div style="font-family:var(--mono);font-size:10px;letter-spacing:0.1em;color:var(--muted);">Loading...</div>`;
+  grid.appendChild(empty);
+
+  try {
+    const { data: qrData, error } = await db
+      .from('qr_codes')
+      .select('*')
+      .eq('venue_id', venueId)
+      .eq('active', true)
+      .order('table_num');
+
+    if (error) throw error;
+
+    grid.innerHTML = '';
+
+    if (!qrData || qrData.length === 0) {
+      const e = document.createElement('div');
+      e.id = 'qr-tables-empty';
+      e.style.cssText = 'grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--muted);border:1px dashed var(--border);border-radius:var(--r-lg);';
+      e.innerHTML = `<div style="font-size:1.6rem;margin-bottom:10px;opacity:.3;">📱</div><div style="font-weight:700;margin-bottom:4px;">No table QR codes yet</div><div style="font-size:12px;opacity:.6;">Enter a number above and click Add Tables to generate QR codes</div>`;
+      grid.appendChild(e);
+      dlBtn.style.display = 'none';
+      return;
+    }
+
+    dlBtn.style.display = 'flex';
+    const slug = sel.options[sel.selectedIndex]?.dataset?.slug || '';
+
+    qrData.forEach(qr => {
+      const card = document.createElement('div');
+      card.className = 'qr-table-card';
+      card.id = `qr-card-${qr.id}`;
+      card.innerHTML = `
+        <div class="qr-table-card-header">
+          <div>
+            <div class="qr-table-num">Table ${qr.table_num}</div>
+            <div class="qr-table-scans">${qr.scan_count} scan${qr.scan_count !== 1 ? 's' : ''}</div>
+          </div>
+          <button
+            class="btn btn--xs btn--danger"
+            onclick="removeTableQR('${qr.id}', ${qr.table_num})"
+            title="Remove Table ${qr.table_num}"
+          >✕</button>
+        </div>
+        <div class="qr-canvas-wrap">
+          <canvas id="qr-canvas-${qr.id}" width="140" height="140"></canvas>
+        </div>
+        <div class="qr-url-text">${qr.url}</div>
+        <div class="qr-table-actions">
+          <button
+            class="btn btn--xs btn--cyan"
+            style="flex:1;justify-content:center;"
+            onclick="downloadTableQR('${qr.id}', '${slug}', ${qr.table_num}, '${qr.url}')"
+          >↓ PNG</button>
+          <button
+            class="btn btn--xs btn--ghost"
+            style="flex:1;justify-content:center;"
+            onclick="downloadTableQRSVG('${qr.id}', '${slug}', ${qr.table_num}, '${qr.url}')"
+          >↓ SVG</button>
+        </div>`;
+      grid.appendChild(card);
+    });
+
+    // Render QR canvases after DOM update
+    requestAnimationFrame(() => {
+      qrData.forEach(qr => {
+        const canvas = document.getElementById(`qr-canvas-${qr.id}`);
+        if (canvas) {
+          QRCode.toCanvas(canvas, qr.url, {
+            width: 140, margin: 1,
+            color: { dark: '#1E1E1B', light: '#F6F5F2' },
+          }, err => { if (err) console.error('[QR table canvas]', err); });
+        }
+      });
+    });
+
+  } catch (err) {
+    console.error('[QR] loadVenueTableQRs:', err);
+    showToast('⚠ Could not load QR codes', 'error');
+  }
+}
+
+async function addTablesToVenue() {
+  const sel      = document.getElementById('qr-venue-select');
+  const venueId  = sel.value;
+  const slug     = sel.options[sel.selectedIndex]?.dataset?.slug || '';
+  const countEl  = document.getElementById('qr-add-count');
+  const count    = parseInt(countEl.value);
+
+  if (!venueId) { showToast('⚠ Select a venue first', 'error'); return; }
+  if (!count || count < 1 || count > 100) { showToast('⚠ Enter a number between 1 and 100', 'error'); return; }
+
+  try {
+    const { data: existing } = await db
+      .from('qr_codes')
+      .select('table_num')
+      .eq('venue_id', venueId)
+      .eq('active', true);
+
+    const usedNums = new Set((existing || []).map(r => r.table_num));
+    const toInsert = [];
+    let next = 1;
+
+    while (toInsert.length < count) {
+      if (!usedNums.has(next)) {
+        toInsert.push({
+          venue_id:   venueId,
+          table_num:  next,
+          url:        `https://snyf.co.in/${slug}?table=${next}`,
+          scan_count: 0,
+          active:     true,
+        });
+      }
+      next++;
+    }
+
+    const { error } = await db.from('qr_codes').insert(toInsert);
+    if (error) throw error;
+
+    countEl.value = '';
+    showToast(`✓ ${count} table QR code${count > 1 ? 's' : ''} created`, 'success');
+
+    // Log activity
+    await db.from('activity_log').insert({
+      type:        'qr_codes_created',
+      entity_type: 'venue',
+      entity_id:   venueId,
+      description: `${count} table QR code${count > 1 ? 's' : ''} added`,
+      actor:       'teams@snyf.co.in',
+      metadata:    { count, tables: toInsert.map(t => t.table_num) },
+    });
+
+    loadVenueTableQRs();
+
+  } catch (err) {
+    console.error('[QR] addTablesToVenue:', err);
+    showToast('⚠ Could not create QR codes: ' + (err.message || err), 'error');
+  }
+}
+
+async function removeTableQR(qrId, tableNum) {
+  if (!confirm(`Remove QR code for Table ${tableNum}? This cannot be undone.`)) return;
+  try {
+    const { error } = await db
+      .from('qr_codes')
+      .update({ active: false })
+      .eq('id', qrId);
+    if (error) throw error;
+    document.getElementById(`qr-card-${qrId}`)?.remove();
+    showToast(`✓ Table ${tableNum} QR removed`, 'success');
+    // Check if grid is now empty
+    const grid = document.getElementById('qr-tables-grid');
+    if (grid && grid.querySelectorAll('.qr-table-card').length === 0) {
+      loadVenueTableQRs();
+    }
+  } catch (err) {
+    console.error('[QR] removeTableQR:', err);
+    showToast('⚠ Could not remove QR code', 'error');
+  }
+}
+
+function downloadTableQR(qrId, slug, tableNum, url) {
+  QRCode.toDataURL(url, {
+    width: 1000, margin: 2,
+    color: { dark: '#1E1E1B', light: '#F6F5F2' },
+  }, (err, dataUrl) => {
+    if (err) { showToast('⚠ PNG generation failed', 'error'); return; }
+
+    // Build branded card: QR + venue name + table number
+    const canvas  = document.createElement('canvas');
+    canvas.width  = 1000;
+    canvas.height = 1200;
+    const ctx     = canvas.getContext('2d');
+
+    ctx.fillStyle = '#F6F5F2';
+    ctx.fillRect(0, 0, 1000, 1200);
+
+    const img = new Image();
+    img.onload = () => {
+      // QR code centred
+      ctx.drawImage(img, 0, 100, 1000, 1000);
+
+      // "SNYF" at top
+      ctx.fillStyle  = '#6E6A64';
+      ctx.font       = '600 36px Inter, sans-serif';
+      ctx.textAlign  = 'center';
+      ctx.fillText('SNYF', 500, 60);
+
+      // Table number at bottom
+      ctx.fillStyle  = '#1E1E1B';
+      ctx.font       = 'bold 72px sans-serif';
+      ctx.fillText(`TABLE ${tableNum}`, 500, 1150);
+
+      const link = document.createElement('a');
+      link.download = `snyf-${slug}-table-${tableNum}.png`;
+      link.href = canvas.toDataURL('image/png');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast(`✓ Table ${tableNum} PNG downloaded`, 'success');
+    };
+    img.src = dataUrl;
+  });
+}
+
+function downloadTableQRSVG(qrId, slug, tableNum, url) {
+  QRCode.toString(url, {
+    type: 'svg', width: 1000, margin: 2,
+    color: { dark: '#1E1E1B', light: '#F6F5F2' },
+  }, (err, svgStr) => {
+    if (err) { showToast('⚠ SVG generation failed', 'error'); return; }
+
+    const inner   = svgStr.replace(/<\?xml[^>]*\?>/,'').replace(/<svg[^>]*>/,'').replace('</svg>','');
+    const branded = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1200" viewBox="0 0 1000 1200">
+  <rect width="1000" height="1200" fill="#F6F5F2"/>
+  <text x="500" y="60" font-family="Inter,sans-serif" font-size="36" font-weight="600" fill="#6E6A64" text-anchor="middle">SNYF</text>
+  <g transform="translate(0,100)">${inner}</g>
+  <text x="500" y="1150" font-family="sans-serif" font-size="72" font-weight="bold" fill="#1E1E1B" text-anchor="middle">TABLE ${tableNum}</text>
+</svg>`;
+
+    const blob = new Blob([branded], { type: 'image/svg+xml' });
+    const link = document.createElement('a');
+    link.download = `snyf-${slug}-table-${tableNum}.svg`;
+    link.href = URL.createObjectURL(blob);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+    showToast(`✓ Table ${tableNum} SVG downloaded`, 'success');
+  });
+}
+
+async function downloadAllTableQRs() {
+  const sel = document.getElementById('qr-venue-select');
+  const venueId = sel.value;
+  const slug = sel.options[sel.selectedIndex]?.dataset?.slug || '';
+  if (!venueId) { showToast('⚠ Select a venue first', 'error'); return; }
+
+  const { data: qrData } = await db
+    .from('qr_codes')
+    .select('*')
+    .eq('venue_id', venueId)
+    .eq('active', true)
+    .order('table_num');
+
+  if (!qrData || qrData.length === 0) {
+    showToast('⚠ No table QR codes to download', 'error');
+    return;
+  }
+
+  showToast(`↓ Downloading ${qrData.length} QR codes...`, 'success');
+
+  for (let i = 0; i < qrData.length; i++) {
+    await new Promise(resolve => {
+      setTimeout(() => {
+        const qr = qrData[i];
+        downloadTableQR(qr.id, slug, qr.table_num, qr.url);
+        resolve();
+      }, i * 350);
     });
   }
 }

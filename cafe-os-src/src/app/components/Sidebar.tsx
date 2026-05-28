@@ -17,7 +17,7 @@ const navItems = [
   { path: '/customers', icon: Users,           label: 'Customer Insights' },
   { path: '/growth',    icon: Target,          label: 'Growth Engine'     },
   { path: '/campaigns', icon: Megaphone,       label: 'Campaigns'         },
-  { path: '/qr',        icon: QrCode,          label: 'QR Analytics'      },
+  { path: '/qr',        icon: QrCode,          label: 'QR Codes'          },
   { path: '/rewards',   icon: Gift,            label: 'Rewards'           },
 ];
 

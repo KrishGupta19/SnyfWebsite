@@ -2347,6 +2347,13 @@
                         .filter(i => i.available !== false)
                         .sort((a, b)   => (a.sort_order || 0) - (b.sort_order || 0));
 
+      // Silent scan count increment if table QR was scanned
+      const params = new URLSearchParams(window.location.search);
+      const urlTable = params.get('table') || params.get('t') || params.get('tableNum') || params.get('table_num');
+      if (urlTable && venue.id) {
+        silentlyIncrementScanCount(venue.id, urlTable.trim());
+      }
+
       // Build unique category list from menu items
       const cats = [...new Set(items.map(i => i.category).filter(Boolean))];
 
@@ -2480,10 +2487,39 @@
     const params = new URLSearchParams(window.location.search);
     const urlTable = params.get('table') || params.get('t') || params.get('tableNum') || params.get('table_num');
     if (urlTable) {
-      localStorage.setItem('snyf_table_num', urlTable.trim());
-      return urlTable.trim();
+      const cleanTable = urlTable.trim();
+      sessionStorage.setItem('snyf_table_num', cleanTable);
+      sessionStorage.setItem('snyf_verified_table_num', cleanTable);
+      return cleanTable;
     }
-    return localStorage.getItem('snyf_table_num');
+    return sessionStorage.getItem('snyf_table_num');
+  }
+
+  function isTableVerified() {
+    const verifiedTable = sessionStorage.getItem('snyf_verified_table_num');
+    const currentTable = getSavedTableNumber();
+    return !!(verifiedTable && currentTable && verifiedTable === currentTable);
+  }
+
+  async function silentlyIncrementScanCount(venueId, tableNum) {
+    try {
+      const { data, error } = await db
+        .from('qr_codes')
+        .select('id, scan_count')
+        .eq('venue_id', venueId)
+        .eq('table_num', tableNum)
+        .maybeSingle();
+        
+      if (!error && data) {
+        const newCount = (data.scan_count || 0) + 1;
+        await db
+          .from('qr_codes')
+          .update({ scan_count: newCount, updated_at: new Date().toISOString() })
+          .eq('id', data.id);
+      }
+    } catch (err) {
+      console.warn('Silent scan increment failed:', err);
+    }
   }
 
   function showTablePrompt(callback) {
@@ -2618,7 +2654,7 @@
           showToast('Please enter a valid table number.');
           return;
         }
-        localStorage.setItem('snyf_table_num', val);
+        sessionStorage.setItem('snyf_table_num', val);
         overlay.style.opacity = '0';
         overlay.firstElementChild.style.transform = 'scale(0.92) translateY(10px)';
         setTimeout(() => {
@@ -2653,9 +2689,7 @@
 
     const tableNum = getSavedTableNumber();
     if (!tableNum) {
-      showTablePrompt((enteredTable) => {
-        callWaiterWithoutOrder();
-      });
+      showToast('Please scan a table QR code to request assistance.');
       return;
     }
 
@@ -3517,6 +3551,7 @@
                   special_instructions: newInstructions || null,
                   status:               'received', // notify kitchen by setting back to received
                   table_num:            getSavedTableNumber() || null,
+                  table_verified:       isTableVerified(),
                 })
                 .eq('id', existingActiveOrder.id);
 
@@ -3546,6 +3581,7 @@
             .insert({
               venue_id:             VENUE_DATA.id,
               table_num:            getSavedTableNumber() || null,
+              table_verified:       isTableVerified(),
               items:                orderItems,
               subtotal,
               gst,

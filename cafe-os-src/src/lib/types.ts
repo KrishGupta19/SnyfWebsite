@@ -25,6 +25,7 @@ export interface Order {
   special_instructions: string | null;
   status:               OrderStatus;
   session_id:           string | null;
+  table_verified?:      boolean;
   created_at:           string;
   updated_at:           string;
 }
