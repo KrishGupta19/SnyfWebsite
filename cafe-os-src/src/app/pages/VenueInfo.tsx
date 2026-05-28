@@ -310,45 +310,6 @@ export function VenueInfo() {
             </div>
           </div>
         </div>
-
-        {/* Kiosk Mode Lock/Unlock Toggle */}
-        <div className="border-t border-border/60 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-0.5">
-            <div className="text-xs font-bold text-foreground">Lock Status</div>
-            <p className="text-[11px] text-muted-foreground">
-              {isLockedToKitchen 
-                ? 'Device is currently locked to Kitchen view. Only admins can escape.' 
-                : 'Device is unlocked. Chefs or staff can navigate anywhere.'}
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              if (isLockedToKitchen) {
-                setShowUnlockModal(true);
-              } else {
-                lockInterface();
-                navigate('/kitchen');
-              }
-            }}
-            className={`px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
-              isLockedToKitchen
-                ? 'bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20'
-                : 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20'
-            }`}
-          >
-            {isLockedToKitchen ? (
-              <>
-                <Lock className="w-4 h-4" />
-                Locked (Click to Unlock)
-              </>
-            ) : (
-              <>
-                <Unlock className="w-4 h-4" />
-                Unlocked (Click to Lock)
-              </>
-            )}
-          </button>
-        </div>
       </div>
     </div>
   );

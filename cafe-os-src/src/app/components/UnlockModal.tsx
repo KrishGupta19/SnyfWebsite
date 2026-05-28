@@ -68,14 +68,15 @@ export function UnlockModal() {
 
       <div className="w-full max-w-sm bg-card border border-border rounded-3xl p-6 shadow-2xl relative space-y-6">
         
-        {onUnlockSuccess && (
-          <button 
-            onClick={() => setShowUnlockModal(false)}
-            className="absolute top-4 right-4 p-2 hover:bg-accent rounded-full text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        )}
+        <button 
+          onClick={() => {
+            setShowUnlockModal(false);
+            setOnUnlockSuccess(null);
+          }}
+          className="absolute top-4 right-4 p-2 hover:bg-accent rounded-full text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+        >
+          <X className="w-5 h-5" />
+        </button>
 
         <div className="text-center space-y-2">
           <div className="w-12 h-12 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mx-auto mb-1">
@@ -138,6 +139,18 @@ export function UnlockModal() {
             className="w-16 h-16 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-95 transition-all cursor-pointer"
           >
             <Delete className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="pt-2 text-center border-t border-border/50">
+          <button
+            onClick={() => {
+              setShowUnlockModal(false);
+              setOnUnlockSuccess(null);
+            }}
+            className="text-xs font-semibold text-muted-foreground hover:text-foreground py-2 px-4 rounded-xl hover:bg-accent transition-all cursor-pointer"
+          >
+            Back to Kitchen
           </button>
         </div>
       </div>
