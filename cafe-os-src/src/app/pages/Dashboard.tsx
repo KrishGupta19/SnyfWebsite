@@ -100,7 +100,7 @@ export function Dashboard() {
         todayOrders:  todayOrders.length,
         todayRevenue: todayOrders.reduce((s, o) => s + (o.total || 0), 0),
         activeOrders: todayOrders.filter(o =>
-          o.status === 'received' || o.status === 'prepared'
+          o.status === 'received' || o.status === 'delivered' || o.status === 'serving'
         ).length,
         totalOrders:  allOrders.length,
         totalRevenue: allOrders.reduce((s, o) => s + (o.total || 0), 0),
@@ -409,12 +409,12 @@ export function Dashboard() {
             : rawData.allOrders;
 
         const displayOrders = isActive 
-          ? rawData.todayOrders.filter(o => o.status === 'received' || o.status === 'prepared')
+          ? rawData.todayOrders.filter(o => o.status === 'received' || o.status === 'delivered' || o.status === 'serving')
           : targetOrders;
 
         const countReceived = targetOrders.filter(o => o.status === 'received').length;
-        const countPrepared = targetOrders.filter(o => o.status === 'prepared').length;
-        const countDelivered = targetOrders.filter(o => o.status === 'delivered').length;
+        const countServing = targetOrders.filter(o => o.status === 'serving' || o.status === 'delivered').length;
+        const countReady = targetOrders.filter(o => o.status === 'ready').length;
         const countCancelled = targetOrders.filter(o => o.status === 'cancelled').length;
 
         return (
@@ -425,12 +425,12 @@ export function Dashboard() {
                 <span className="text-[10px] text-muted-foreground block mt-0.5 font-medium">Received</span>
               </div>
               <div className="bg-amber-500/10 rounded-xl p-3 border border-amber-500/20">
-                <span className="text-2xl font-bold text-amber-500">{countPrepared}</span>
-                <span className="text-[10px] text-muted-foreground block mt-0.5 font-medium">Prepared</span>
+                <span className="text-2xl font-bold text-amber-500">{countServing}</span>
+                <span className="text-[10px] text-muted-foreground block mt-0.5 font-medium">Serving</span>
               </div>
               <div className="bg-green-500/10 rounded-xl p-3 border border-green-500/20">
-                <span className="text-2xl font-bold text-green-500">{countDelivered}</span>
-                <span className="text-[10px] text-muted-foreground block mt-0.5 font-medium">Delivered</span>
+                <span className="text-2xl font-bold text-green-500">{countReady}</span>
+                <span className="text-[10px] text-muted-foreground block mt-0.5 font-medium">Ready</span>
               </div>
               <div className="bg-red-500/10 rounded-xl p-3 border border-red-500/20">
                 <span className="text-2xl font-bold text-red-500">{countCancelled}</span>
@@ -452,8 +452,8 @@ export function Dashboard() {
                     const tableText = o.table_num ? `Table ${o.table_num}` : 'Self Pickup';
                     let badgeColor = 'bg-gray-100 text-gray-700';
                     if (o.status === 'received') badgeColor = 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
-                    else if (o.status === 'prepared') badgeColor = 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
-                    else if (o.status === 'delivered') badgeColor = 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+                    else if (o.status === 'serving' || o.status === 'delivered') badgeColor = 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+                    else if (o.status === 'ready') badgeColor = 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
                     else if (o.status === 'cancelled') badgeColor = 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
 
                     return (
