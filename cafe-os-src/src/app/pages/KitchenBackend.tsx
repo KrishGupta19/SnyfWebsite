@@ -15,6 +15,7 @@ export function KitchenBackend() {
   const [loading,   setLoading]     = useState(true);
   const [connected, setConnected]   = useState(false);
   const [newOrderId, setNewOrderId] = useState<string | null>(null);
+  const [updatedOrderId, setUpdatedOrderId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<'pending' | 'completed'>('pending');
   const channelRef                  = useRef<ReturnType<typeof db.channel> | null>(null);
 
@@ -108,6 +109,17 @@ export function KitchenBackend() {
             if (isHelping && !wasHelping) {
               playHelpCallAlarm();
             }
+
+            if (existing) {
+              const prevQty = (existing.items || []).reduce((sum: number, item: any) => sum + (item.qty || 0), 0);
+              const newQty = (updated.items || []).reduce((sum: number, item: any) => sum + (item.qty || 0), 0);
+              if (newQty > prevQty) {
+                playAlert();
+                setUpdatedOrderId(updated.id);
+                setTimeout(() => setUpdatedOrderId(null), 4000);
+              }
+            }
+
             return prev.map(o => o.id === updated.id ? updated : o);
           });
         }
@@ -482,6 +494,8 @@ export function KitchenBackend() {
                 className={`bg-card rounded-2xl border overflow-hidden transition-all ${
                   order.id === newOrderId
                     ? 'border-primary shadow-lg shadow-primary/20 ring-2 ring-primary/30'
+                    : order.id === updatedOrderId
+                    ? 'border-blue-500 shadow-lg shadow-blue-500/20 ring-2 ring-blue-500/30'
                     : 'border-border hover:shadow-lg'
                 }`}
               >
@@ -503,6 +517,13 @@ export function KitchenBackend() {
                 {order.id === newOrderId && (
                   <div className="bg-primary text-primary-foreground text-center text-xs font-bold py-2 tracking-widest uppercase animate-pulse">
                     ⚡ New Order Received
+                  </div>
+                )}
+
+                {/* Updated order banner */}
+                {order.id === updatedOrderId && (
+                  <div className="bg-blue-600 text-white text-center text-xs font-bold py-2 tracking-widest uppercase animate-pulse">
+                    ⚡ Add-on Items Added
                   </div>
                 )}
 
