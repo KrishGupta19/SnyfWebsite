@@ -7,20 +7,22 @@ export function CustomerInsights() {
   const { venue } = useVenue();
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState({
-    repeatPercent: 68.5,
-    repeatDiff: 5.2,
-    avgVisitTime: 42,
-    avgVisitDiff: 8,
-    avgSpending: 1650,
-    avgSpendingDiff: 12.3,
+    repeatPercent: 0,
+    repeatDiff: 0,
+    avgVisitTime: 0,
+    avgVisitDiff: 0,
+    avgSpending: 0,
+    avgSpendingDiff: 0,
     reviewCount: 0,
   });
   const [visitTimings, setVisitTimings] = useState<{ hour: string; value: number; visits: number }[]>([]);
   const [spendingBehavior, setSpendingBehavior] = useState<{ range: string; count: number; percent: number }[]>([]);
   const [repeatCustomersList, setRepeatCustomersList] = useState<any[]>([]);
   const [peakHours, setPeakHours] = useState({ lunch: 0, dinner: 0, morning: 0 });
-  const [groupPatterns, setGroupPatterns] = useState({ solo: 18, couples: 42, medium: 32, large: 8 });
-  const [sentiment, setSentiment] = useState({ food: 9.1, ambience: 9.2, service: 8.8, value: 8.5 });
+  const [groupPatterns, setGroupPatterns] = useState({ solo: 0, couples: 0, medium: 0, large: 0 });
+  const [sentiment, setSentiment] = useState({ food: 0, ambience: 0, service: 0, value: 0 });
+  const [hasHistory, setHasHistory] = useState(false);
+  const [hasOrders, setHasOrders] = useState(false);
 
   useEffect(() => {
     if (!venue?.id) return;
@@ -35,6 +37,7 @@ export function CustomerInsights() {
 
         if (ordersErr) throw ordersErr;
         const allOrders = orders || [];
+        setHasOrders(allOrders.length > 0);
 
         // Fetch all verified reviews for this venue
         const { data: reviews, error: reviewsErr } = await db
@@ -46,6 +49,20 @@ export function CustomerInsights() {
         if (reviewsErr) throw reviewsErr;
         const allReviews = reviews || [];
 
+        // Divide orders into historical periods to compute diffs dynamically
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+        const currentOrders = allOrders.filter(o => new Date(o.created_at) >= thirtyDaysAgo);
+        const previousOrders = allOrders.filter(o => {
+          const d = new Date(o.created_at);
+          return d >= sixtyDaysAgo && d < thirtyDaysAgo;
+        });
+
+        const hasPrevPeriod = previousOrders.length > 0;
+        setHasHistory(hasPrevPeriod);
+
         // 1. Repeat Customers Calculation
         const ordersWithUsers = allOrders.filter(o => o.user_id);
         const userCounts: Record<string, number> = {};
@@ -54,39 +71,62 @@ export function CustomerInsights() {
         });
         const uniqueUsers = Object.keys(userCounts).length;
         const repeatUsers = Object.values(userCounts).filter(count => count > 1).length;
-        const repeatPercent = uniqueUsers > 0 ? (repeatUsers / uniqueUsers) * 100 : 68.5;
+        const repeatPercent = uniqueUsers > 0 ? (repeatUsers / uniqueUsers) * 100 : 0;
+
+        // Diffs calculation for repeat percentage
+        const curUsers = new Set(currentOrders.map(o => o.user_id).filter(Boolean));
+        const curUserCounts: Record<string, number> = {};
+        currentOrders.filter(o => o.user_id).forEach(o => {
+          curUserCounts[o.user_id] = (curUserCounts[o.user_id] || 0) + 1;
+        });
+        const curRepeatCount = Object.values(curUserCounts).filter(c => c > 1).length;
+        const curRepeatPercent = curUsers.size > 0 ? (curRepeatCount / curUsers.size) * 100 : 0;
+
+        const prevUsers = new Set(previousOrders.map(o => o.user_id).filter(Boolean));
+        const prevUserCounts: Record<string, number> = {};
+        previousOrders.filter(o => o.user_id).forEach(o => {
+          prevUserCounts[o.user_id] = (prevUserCounts[o.user_id] || 0) + 1;
+        });
+        const prevRepeatCount = Object.values(prevUserCounts).filter(c => c > 1).length;
+        const prevRepeatPercent = prevUsers.size > 0 ? (prevRepeatCount / prevUsers.size) * 100 : 0;
+
+        const repeatDiff = hasPrevPeriod ? curRepeatPercent - prevRepeatPercent : 0;
 
         // 2. Average Visit Time Calculation
-        const completedOrders = allOrders.filter(o => o.status === 'delivered' || o.status === 'ready' || o.status === 'completed');
-        let totalMinutes = 0;
-        let compCount = 0;
-        completedOrders.forEach(o => {
-          if (o.updated_at && o.created_at) {
-            const diffMs = new Date(o.updated_at).getTime() - new Date(o.created_at).getTime();
-            const diffMins = diffMs / (1000 * 60);
-            if (diffMins > 0 && diffMins < 240) {
-              totalMinutes += diffMins;
-              compCount++;
+        const calculateAvgVisit = (ordersList: typeof allOrders) => {
+          const completed = ordersList.filter(o => o.status === 'delivered' || o.status === 'ready' || o.status === 'completed');
+          let totalMins = 0;
+          let compC = 0;
+          completed.forEach(o => {
+            if (o.updated_at && o.created_at) {
+              const diffMs = new Date(o.updated_at).getTime() - new Date(o.created_at).getTime();
+              const diffMins = diffMs / (1000 * 60);
+              if (diffMins > 0 && diffMins < 240) {
+                totalMins += diffMins;
+                compC++;
+              }
             }
-          }
-        });
-        const avgOrderTimeMins = compCount > 0 ? totalMinutes / compCount : 17;
-        const avgVisitTime = Math.round(avgOrderTimeMins + 25); // 25 minute dining offset
+          });
+          return compC > 0 ? Math.round(totalMins / compC + 25) : 0;
+        };
+
+        const avgVisitTime = calculateAvgVisit(allOrders);
+        const curAvgVisit = calculateAvgVisit(currentOrders);
+        const prevAvgVisit = calculateAvgVisit(previousOrders);
+        const avgVisitDiff = hasPrevPeriod ? curAvgVisit - prevAvgVisit : 0;
 
         // 3. Average Spending
         const avgSpending = allOrders.length > 0
           ? allOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0) / allOrders.length
-          : 1650;
+          : 0;
 
-        // Calculate average spend in previous periods for dynamic comparison
-        const oneMonthAgo = new Date();
-        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-        const prevMonthOrders = allOrders.filter(o => new Date(o.created_at) < oneMonthAgo);
-        const prevAvgSpending = prevMonthOrders.length > 0
-          ? prevMonthOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0) / prevMonthOrders.length
-          : avgSpending * 0.95;
-
-        const avgSpendingDiff = prevAvgSpending > 0 ? ((avgSpending - prevAvgSpending) / prevAvgSpending) * 100 : 12.3;
+        const curAvgSpending = currentOrders.length > 0
+          ? currentOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0) / currentOrders.length
+          : 0;
+        const prevAvgSpending = previousOrders.length > 0
+          ? previousOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0) / previousOrders.length
+          : 0;
+        const avgSpendingDiff = hasPrevPeriod && prevAvgSpending > 0 ? ((curAvgSpending - prevAvgSpending) / prevAvgSpending) * 100 : 0;
 
         // 4. Visit Timings Heatmap
         const hours = [
@@ -175,16 +215,7 @@ export function CustomerInsights() {
         });
 
         repeats.sort((a, b) => b.visits - a.visits);
-
-        // Fill with mock data fallbacks only if there aren't enough actual registered repeats
-        const fallbackRepeats = [
-          { name: "Rajesh Kumar", visits: 12, lastVisit: "Today", avgSpend: "₹1,850", status: "ANCHOR" },
-          { name: "Priya Sharma", visits: 9, lastVisit: "Yesterday", avgSpend: "₹1,420", status: "VERIFIED" },
-          { name: "Amit Patel", visits: 7, lastVisit: "2 days ago", avgSpend: "₹2,150", status: "EXPLORER" },
-          { name: "Sneha Reddy", visits: 6, lastVisit: "Today", avgSpend: "₹1,680", status: "VERIFIED" },
-          { name: "Vikram Singh", visits: 5, lastVisit: "3 days ago", avgSpend: "₹1,940", status: "EXPLORER" },
-        ];
-        const finalRepeats = repeats.length >= 2 ? repeats.slice(0, 5) : repeats.concat(fallbackRepeats.slice(repeats.length, 5));
+        const finalRepeats = repeats.slice(0, 5); // 100% database-derived, no mock additions
 
         // 7. Peak Hours counts
         const morningCount = allOrders.filter(o => {
@@ -229,19 +260,18 @@ export function CustomerInsights() {
           if (r.value != null) { valSum += Number(r.value); valCount++; }
         });
 
-        // Convert Snyf 1.0-7.0 trust scale values to 10-point dashboard scale
         const sentimentScores = {
-          food: foodCount > 0 ? Number(((foodSum / foodCount / 7) * 10).toFixed(1)) : 9.1,
-          ambience: ambCount > 0 ? Number(((ambSum / ambCount / 7) * 10).toFixed(1)) : 9.2,
-          service: servCount > 0 ? Number(((servSum / servCount / 7) * 10).toFixed(1)) : 8.8,
-          value: valCount > 0 ? Number(((valSum / valCount / 7) * 10).toFixed(1)) : 8.5,
+          food: foodCount > 0 ? Number(((foodSum / foodCount / 7) * 10).toFixed(1)) : 0,
+          ambience: ambCount > 0 ? Number(((ambSum / ambCount / 7) * 10).toFixed(1)) : 0,
+          service: servCount > 0 ? Number(((servSum / servCount / 7) * 10).toFixed(1)) : 0,
+          value: valCount > 0 ? Number(((valSum / valCount / 7) * 10).toFixed(1)) : 0,
         };
 
         setMetrics({
           repeatPercent,
-          repeatDiff: 5.2,
+          repeatDiff,
           avgVisitTime,
-          avgVisitDiff: 8,
+          avgVisitDiff,
           avgSpending,
           avgSpendingDiff,
           reviewCount: allReviews.length,
@@ -287,20 +317,28 @@ export function CustomerInsights() {
           </div>
           <h3 className="text-3xl font-bold">{metrics.repeatPercent.toFixed(1)}%</h3>
           <p className="text-sm text-muted-foreground mt-1">Repeat Customers</p>
-          <p className="text-xs text-green-600 dark:text-green-400 mt-2">
-            +{metrics.repeatDiff.toFixed(1)}% from last month
-          </p>
+          {hasHistory ? (
+            <p className={`text-xs mt-2 ${metrics.repeatDiff >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {metrics.repeatDiff >= 0 ? '+' : ''}{metrics.repeatDiff.toFixed(1)}% from last month
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-2">No historical comparison</p>
+          )}
         </div>
 
         <div className="bg-card rounded-2xl p-6 border border-border">
           <div className="p-2 bg-primary/10 rounded-lg w-fit mb-4">
             <Clock className="w-5 h-5 text-primary" />
           </div>
-          <h3 className="text-3xl font-bold">{metrics.avgVisitTime} min</h3>
+          <h3 className="text-3xl font-bold">{metrics.avgVisitTime > 0 ? `${metrics.avgVisitTime} min` : '—'}</h3>
           <p className="text-sm text-muted-foreground mt-1">Avg. Visit Time</p>
-          <p className="text-xs text-green-600 dark:text-green-400 mt-2">
-            +{metrics.avgVisitDiff} min increase
-          </p>
+          {hasHistory ? (
+            <p className={`text-xs mt-2 ${metrics.avgVisitDiff >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {metrics.avgVisitDiff >= 0 ? `+${metrics.avgVisitDiff} min increase` : `${metrics.avgVisitDiff} min decrease`}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-2">No historical comparison</p>
+          )}
         </div>
 
         <div className="bg-card rounded-2xl p-6 border border-border">
@@ -309,9 +347,13 @@ export function CustomerInsights() {
           </div>
           <h3 className="text-3xl font-bold">₹{Math.round(metrics.avgSpending).toLocaleString('en-IN')}</h3>
           <p className="text-sm text-muted-foreground mt-1">Avg. Spending</p>
-          <p className={`text-xs mt-2 ${metrics.avgSpendingDiff >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-            {metrics.avgSpendingDiff >= 0 ? '+' : ''}{metrics.avgSpendingDiff.toFixed(1)}% increase
-          </p>
+          {hasHistory ? (
+            <p className={`text-xs mt-2 ${metrics.avgSpendingDiff >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {metrics.avgSpendingDiff >= 0 ? '+' : ''}{metrics.avgSpendingDiff.toFixed(1)}% from last month
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-2">No historical comparison</p>
+          )}
         </div>
 
         <div className="bg-card rounded-2xl p-6 border border-border">
@@ -327,57 +369,69 @@ export function CustomerInsights() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-card rounded-2xl p-6 border border-border">
           <h3 className="mb-6">Visit Timing Heatmap</h3>
-          <div className="space-y-3">
-            {visitTimings.map((slot, idx) => (
-              <div key={idx} className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">{slot.hour}</span>
-                  <span className="text-muted-foreground">
-                    {slot.visits} visit{slot.visits !== 1 ? 's' : ''}
-                  </span>
+          {!hasOrders ? (
+            <div className="flex flex-col items-center justify-center h-[240px] text-muted-foreground text-sm">
+              <span>No orders placed yet</span>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {visitTimings.map((slot, idx) => (
+                <div key={idx} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{slot.hour}</span>
+                    <span className="text-muted-foreground">
+                      {slot.visits} visit{slot.visits !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="h-3 bg-accent/20 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${slot.value}%`,
+                        background:
+                          slot.value > 70
+                            ? "linear-gradient(to right, var(--color-primary), var(--color-accent))"
+                            : slot.value > 40
+                            ? "var(--color-primary)"
+                            : "var(--color-muted-foreground)",
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="h-3 bg-accent/20 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${slot.value}%`,
-                      background:
-                        slot.value > 70
-                          ? "linear-gradient(to right, var(--color-primary), var(--color-accent))"
-                          : slot.value > 40
-                          ? "var(--color-primary)"
-                          : "var(--color-muted-foreground)",
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="bg-card rounded-2xl p-6 border border-border">
           <h3 className="mb-6">Spending Behavior</h3>
-          <div className="space-y-4">
-            {spendingBehavior.map((segment, idx) => (
-              <div key={idx} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{segment.range}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {segment.count} customer{segment.count !== 1 ? 's' : ''}
-                  </span>
+          {!hasOrders ? (
+            <div className="flex flex-col items-center justify-center h-[240px] text-muted-foreground text-sm">
+              <span>No order data available</span>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {spendingBehavior.map((segment, idx) => (
+                <div key={idx} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{segment.range}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {segment.count} customer{segment.count !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
+                      style={{ width: `${segment.percent}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {segment.percent}% of total
+                  </p>
                 </div>
-                <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
-                    style={{ width: `${segment.percent}%` }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {segment.percent}% of total
-                </p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -405,36 +459,44 @@ export function CustomerInsights() {
               </tr>
             </thead>
             <tbody>
-              {repeatCustomersList.map((customer, idx) => (
-                <tr
-                  key={idx}
-                  className="border-b border-border hover:bg-accent/30 transition-colors"
-                >
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold text-sm">
-                        {customer.name
-                          .split(" ")
-                          .map((n: string) => n[0])
-                          .join("")}
-                      </div>
-                      <span className="font-medium">{customer.name}</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                      {customer.visits} visit{customer.visits !== 1 ? 's' : ''}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 text-sm">{customer.lastVisit}</td>
-                  <td className="py-4 px-4 font-medium">{customer.avgSpend}</td>
-                  <td className="py-4 px-4">
-                    <span className="px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-medium">
-                      {customer.status}
-                    </span>
+              {repeatCustomersList.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-muted-foreground text-sm">
+                    No repeat customers found yet
                   </td>
                 </tr>
-              ))}
+              ) : (
+                repeatCustomersList.map((customer, idx) => (
+                  <tr
+                    key={idx}
+                    className="border-b border-border hover:bg-accent/30 transition-colors"
+                  >
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold text-sm">
+                          {customer.name
+                            .split(" ")
+                            .map((n: string) => n[0])
+                            .join("")}
+                        </div>
+                        <span className="font-medium">{customer.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                        {customer.visits} visit{customer.visits !== 1 ? 's' : ''}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-sm">{customer.lastVisit}</td>
+                    <td className="py-4 px-4 font-medium">{customer.avgSpend}</td>
+                    <td className="py-4 px-4">
+                      <span className="px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-medium">
+                        {customer.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -443,126 +505,145 @@ export function CustomerInsights() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-card rounded-2xl p-6 border border-border">
           <h3 className="mb-4">Peak Hours</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg">
-              <span className="text-sm">Lunch Rush</span>
-              <span className="font-semibold">12 PM - 2 PM ({peakHours.lunch} orders)</span>
+          {!hasOrders ? (
+            <div className="flex flex-col items-center justify-center h-[120px] text-muted-foreground text-sm">
+              <span>No orders placed yet</span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg">
-              <span className="text-sm">Dinner Peak</span>
-              <span className="font-semibold">7 PM - 9 PM ({peakHours.dinner} orders)</span>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg">
+                <span className="text-sm">Lunch Rush</span>
+                <span className="font-semibold">12 PM - 2 PM ({peakHours.lunch} orders)</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg">
+                <span className="text-sm">Dinner Peak</span>
+                <span className="font-semibold">7 PM - 9 PM ({peakHours.dinner} orders)</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-accent/10 rounded-lg">
+                <span className="text-sm">Morning Coffee</span>
+                <span className="font-semibold">9 AM - 11 AM ({peakHours.morning} orders)</span>
+              </div>
             </div>
-            <div className="flex items-center justify-between p-3 bg-accent/10 rounded-lg">
-              <span className="text-sm">Morning Coffee</span>
-              <span className="font-semibold">9 AM - 11 AM ({peakHours.morning} orders)</span>
-            </div>
-          </div>
+          )}
         </div>
 
         <div className="bg-card rounded-2xl p-6 border border-border">
           <h3 className="mb-4">Group Patterns</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Solo Diners</span>
-              <span className="font-semibold">{groupPatterns.solo}%</span>
+          {!hasOrders ? (
+            <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
+              <span>No order data available</span>
             </div>
-            <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full"
-                style={{ width: `${groupPatterns.solo}%` }}
-              />
-            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Solo Diners</span>
+                <span className="font-semibold">{groupPatterns.solo}%</span>
+              </div>
+              <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full"
+                  style={{ width: `${groupPatterns.solo}%` }}
+                />
+              </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Couples</span>
-              <span className="font-semibold">{groupPatterns.couples}%</span>
-            </div>
-            <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full"
-                style={{ width: `${groupPatterns.couples}%` }}
-              />
-            </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Couples</span>
+                <span className="font-semibold">{groupPatterns.couples}%</span>
+              </div>
+              <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full"
+                  style={{ width: `${groupPatterns.couples}%` }}
+                />
+              </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Groups (3-5)</span>
-              <span className="font-semibold">{groupPatterns.medium}%</span>
-            </div>
-            <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full"
-                style={{ width: `${groupPatterns.medium}%` }}
-              />
-            </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Groups (3-5)</span>
+                <span className="font-semibold">{groupPatterns.medium}%</span>
+              </div>
+              <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full"
+                  style={{ width: `${groupPatterns.medium}%` }}
+                />
+              </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Large Groups (6+)</span>
-              <span className="font-semibold">{groupPatterns.large}%</span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Large Groups (6+)</span>
+                <span className="font-semibold">{groupPatterns.large}%</span>
+              </div>
+              <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full"
+                  style={{ width: `${groupPatterns.large}%` }}
+                />
+              </div>
             </div>
-            <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full"
-                style={{ width: `${groupPatterns.large}%` }}
-              />
-            </div>
-          </div>
+          )}
         </div>
 
         <div className="bg-card rounded-2xl p-6 border border-border">
           <h3 className="mb-4">Sentiment Trends</h3>
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm">Ambience</span>
-                <span className="text-sm font-semibold">{sentiment.ambience}/10</span>
-              </div>
-              <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
-                  style={{ width: `${sentiment.ambience * 10}%` }}
-                />
-              </div>
+          {metrics.reviewCount === 0 ? (
+            <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
+              <span>No verified reviews yet</span>
+              <span className="text-xs mt-1">Sentiment data will sync once reviews are received</span>
             </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm">Ambience</span>
+                  <span className="text-sm font-semibold">{sentiment.ambience}/10</span>
+                </div>
+                <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
+                    style={{ width: `${sentiment.ambience * 10}%` }}
+                  />
+                </div>
+              </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm">Service Quality</span>
-                <span className="text-sm font-semibold">{sentiment.service}/10</span>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm">Service Quality</span>
+                  <span className="text-sm font-semibold">{sentiment.service}/10</span>
+                </div>
+                <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
+                    style={{ width: `${sentiment.service * 10}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
-                  style={{ width: `${sentiment.service * 10}%` }}
-                />
-              </div>
-            </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm">Food Quality</span>
-                <span className="text-sm font-semibold">{sentiment.food}/10</span>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm">Food Quality</span>
+                  <span className="text-sm font-semibold">{sentiment.food}/10</span>
+                </div>
+                <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
+                    style={{ width: `${sentiment.food * 10}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
-                  style={{ width: `${sentiment.food * 10}%` }}
-                />
-              </div>
-            </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm">Value for Money</span>
-                <span className="text-sm font-semibold">{sentiment.value}/10</span>
-              </div>
-              <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
-                  style={{ width: `${sentiment.value * 10}%` }}
-                />
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm">Value for Money</span>
+                  <span className="text-sm font-semibold">{sentiment.value}/10</span>
+                </div>
+                <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
+                    style={{ width: `${sentiment.value * 10}%` }}
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

@@ -267,6 +267,14 @@
       padding: 18px 16px;
       text-align: center;
       backdrop-filter: blur(16px);
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .pf-stat-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--cyan, #6FB7D6);
+      box-shadow: 0 8px 24px rgba(111,183,214,0.12);
     }
 
     .pf-stat-num {
@@ -285,6 +293,32 @@
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--muted, #6E6A64);
+    }
+
+    /* Venue filters */
+    .pf-venue-pill {
+      font-size: 11px;
+      font-family: var(--mono, monospace);
+      padding: 5px 12px;
+      background: rgba(30,30,27,0.04);
+      border: 1px solid rgba(30,30,27,0.08);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--muted, #6E6A64);
+      user-select: none;
+    }
+
+    .pf-venue-pill:hover {
+      background: rgba(111,183,214,0.08);
+      border-color: var(--cyan, #6FB7D6);
+      color: var(--cyan, #6FB7D6);
+    }
+
+    .pf-venue-pill--active {
+      background: var(--cyan, #6FB7D6) !important;
+      border-color: var(--cyan, #6FB7D6) !important;
+      color: #FFF !important;
     }
 
     /* Section */
@@ -1084,25 +1118,28 @@
 
       <!-- Stats row -->
       <div class="pf-stats-row">
-        <div class="pf-stat-card">
+        <div class="pf-stat-card" onclick="scrollToSection('orders')">
           <div class="pf-stat-num" id="pf-stat-orders">0</div>
           <div class="pf-stat-label">Orders</div>
         </div>
-        <div class="pf-stat-card">
+        <div class="pf-stat-card" onclick="scrollToSection('reviews')">
           <div class="pf-stat-num" id="pf-stat-reviews">0</div>
           <div class="pf-stat-label">Reviews</div>
         </div>
-        <div class="pf-stat-card">
+        <div class="pf-stat-card" onclick="scrollToSection('venues')">
           <div class="pf-stat-num" id="pf-stat-venues">0</div>
           <div class="pf-stat-label">Venues</div>
         </div>
       </div>
 
       <!-- Order history -->
-      <div class="pf-section">
+      <div class="pf-section" id="pf-orders-section">
         <div class="pf-section-head">
           <span class="pf-section-title">Order History</span>
           <span class="pf-section-count" id="pf-orders-count">—</span>
+        </div>
+        <div class="pf-venue-filters" id="pf-venue-filters-container" style="display:none; padding:12px 22px 6px; gap:8px; flex-wrap:wrap; border-bottom: 1px solid rgba(30,30,27,0.03); background: rgba(30,30,27,0.01);">
+          <!-- Venues pills will be inserted here dynamically -->
         </div>
         <div class="pf-search-bar" style="padding: 10px 22px; border-bottom: 1px solid rgba(30,30,27,0.05); display: flex; gap: 8px;">
           <input type="text" class="pf-search-input" id="pf-orders-search" placeholder="Search orders by venue, items, price..." oninput="filterOrders()">
@@ -1113,7 +1150,7 @@
       </div>
 
       <!-- Review history -->
-      <div class="pf-section">
+      <div class="pf-section" id="pf-reviews-section">
         <div class="pf-section-head">
           <span class="pf-section-title">My Reviews</span>
           <span class="pf-section-count" id="pf-reviews-count">—</span>
@@ -1563,6 +1600,7 @@ async function loadProfile(user) {
 // ── LOAD ORDERS ───────────────────────────────────────────────
 // ── LOAD ORDERS ───────────────────────────────────────────────
 let allOrders = [];
+let activeVenueFilter = null;
 
 async function loadOrders(userId) {
   const listEl  = document.getElementById('pf-orders-list');
@@ -1577,6 +1615,7 @@ async function loadOrders(userId) {
 
     allOrders = orders || [];
     renderOrdersList(allOrders);
+    showVenueFilters();
 
   } catch (err) {
     dbError('loadOrders', err);
@@ -1587,11 +1626,96 @@ async function loadOrders(userId) {
   }
 }
 
+function showVenueFilters(forceOpen = false) {
+  const container = document.getElementById('pf-venue-filters-container');
+  if (!container) return;
+
+  const venueMap = new Map();
+  allOrders.forEach(o => {
+    if (o.venues?.name && o.venue_id) {
+      venueMap.set(o.venue_id, o.venues.name);
+    }
+  });
+
+  if (venueMap.size === 0) {
+    container.style.display = 'none';
+    return;
+  }
+
+  if (forceOpen || activeVenueFilter) {
+    container.style.display = 'flex';
+  }
+
+  let html = `<span class="pf-venue-pill ${!activeVenueFilter ? 'pf-venue-pill--active' : ''}" onclick="filterByVenue(null, this)">All Venues</span>`;
+  venueMap.forEach((name, id) => {
+    html += `<span class="pf-venue-pill ${activeVenueFilter === id ? 'pf-venue-pill--active' : ''}" onclick="filterByVenue('${id}', this)">${name}</span>`;
+  });
+
+  container.innerHTML = html;
+}
+
+window.filterByVenue = function(venueId, element) {
+  activeVenueFilter = venueId;
+
+  const pills = document.querySelectorAll('.pf-venue-pill');
+  pills.forEach(p => p.classList.remove('pf-venue-pill--active'));
+  
+  if (element) {
+    element.classList.add('pf-venue-pill--active');
+  } else {
+    // If no element, find the "All Venues" pill
+    const allPill = document.querySelector('.pf-venue-pill');
+    if (allPill) allPill.classList.add('pf-venue-pill--active');
+  }
+
+  filterOrders();
+  filterReviews();
+};
+
+window.scrollToSection = function(target) {
+  if (target === 'orders') {
+    const el = document.getElementById('pf-orders-section');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    document.getElementById('pf-orders-search').value = '';
+    filterByVenue(null, null);
+
+    setTimeout(() => {
+      document.getElementById('pf-orders-search')?.focus();
+    }, 800);
+  } 
+  else if (target === 'reviews') {
+    const el = document.getElementById('pf-reviews-section');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    document.getElementById('pf-reviews-search').value = '';
+    filterReviews();
+    
+    setTimeout(() => {
+      document.getElementById('pf-reviews-search')?.focus();
+    }, 800);
+  } 
+  else if (target === 'venues') {
+    const el = document.getElementById('pf-orders-section');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    showVenueFilters(true);
+    
+    const container = document.getElementById('pf-venue-filters-container');
+    if (container) {
+      container.style.transition = 'background-color 0.3s';
+      container.style.backgroundColor = 'rgba(111,183,214,0.15)';
+      setTimeout(() => {
+        container.style.backgroundColor = 'transparent';
+      }, 600);
+    }
+  }
+};
+
 function renderOrdersList(ordersToRender) {
   const listEl  = document.getElementById('pf-orders-list');
   const countEl = document.getElementById('pf-orders-count');
 
-  // Update total count from the main array
   const totalCount = allOrders.length;
   document.getElementById('pf-stat-orders').textContent = totalCount;
 
@@ -1664,19 +1788,23 @@ function renderOrdersList(ordersToRender) {
 
 window.filterOrders = function() {
   const query = document.getElementById('pf-orders-search').value.toLowerCase().trim();
-  if (!query) {
-    renderOrdersList(allOrders);
-    return;
+  
+  let filtered = allOrders;
+
+  if (activeVenueFilter) {
+    filtered = filtered.filter(order => order.venue_id === activeVenueFilter);
   }
 
-  const filtered = allOrders.filter(order => {
-    const venueName = (order.venues?.name || 'Unknown Venue').toLowerCase();
-    const itemsText = (order.items || []).map(i => i.name).join(' ').toLowerCase();
-    const status = (order.status || 'received').toLowerCase();
-    const totalStr = (order.total || 0).toString();
-    
-    return venueName.includes(query) || itemsText.includes(query) || status.includes(query) || totalStr.includes(query);
-  });
+  if (query) {
+    filtered = filtered.filter(order => {
+      const venueName = (order.venues?.name || 'Unknown Venue').toLowerCase();
+      const itemsText = (order.items || []).map(i => i.name).join(' ').toLowerCase();
+      const status = (order.status || 'received').toLowerCase();
+      const totalStr = (order.total || 0).toString();
+      
+      return venueName.includes(query) || itemsText.includes(query) || status.includes(query) || totalStr.includes(query);
+    });
+  }
 
   renderOrdersList(filtered);
 };
@@ -1714,7 +1842,6 @@ function renderReviewsList(reviewsToRender) {
   const listEl  = document.getElementById('pf-reviews-list');
   const countEl = document.getElementById('pf-reviews-count');
 
-  // Update total count from the main array
   const totalCount = allReviews.length;
   document.getElementById('pf-stat-reviews').textContent = totalCount;
 
@@ -1775,22 +1902,26 @@ function renderReviewsList(reviewsToRender) {
 
 window.filterReviews = function() {
   const query = document.getElementById('pf-reviews-search').value.toLowerCase().trim();
-  if (!query) {
-    renderReviewsList(allReviews);
-    return;
+  
+  let filtered = allReviews;
+
+  if (activeVenueFilter) {
+    filtered = filtered.filter(r => r.venue_id === activeVenueFilter);
   }
 
-  const filtered = allReviews.filter(r => {
-    const venueName = (r.venue_name || 'Unknown Venue').toLowerCase();
-    const note = (r.note || '').toLowerCase();
-    
-    const foodMatch = r.food != null && r.food.toString().includes(query);
-    const ambienceMatch = r.ambience != null && r.ambience.toString().includes(query);
-    const serviceMatch = r.service != null && r.service.toString().includes(query);
-    const valueMatch = r.value != null && r.value.toString().includes(query);
+  if (query) {
+    filtered = filtered.filter(r => {
+      const venueName = (r.venue_name || 'Unknown Venue').toLowerCase();
+      const note = (r.note || '').toLowerCase();
+      
+      const foodMatch = r.food != null && r.food.toString().includes(query);
+      const ambienceMatch = r.ambience != null && r.ambience.toString().includes(query);
+      const serviceMatch = r.service != null && r.service.toString().includes(query);
+      const valueMatch = r.value != null && r.value.toString().includes(query);
 
-    return venueName.includes(query) || note.includes(query) || foodMatch || ambienceMatch || serviceMatch || valueMatch;
-  });
+      return venueName.includes(query) || note.includes(query) || foodMatch || ambienceMatch || serviceMatch || valueMatch;
+    });
+  }
 
   renderReviewsList(filtered);
 };

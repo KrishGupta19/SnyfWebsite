@@ -6,11 +6,12 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 async function run() {
-  const { data, error } = await db.from('field_reports').select('*').limit(1);
+  const { data: reviews, error } = await db.from('field_reports').select('*').eq('venue_id', '94991de2-f597-4b73-a85a-9e1fe0ef8927');
   if (error) {
-    console.error('Error fetching field_reports:', error);
+    console.error('Error fetching reviews:', error);
   } else {
-    console.log('Field report row:', data[0]);
+    console.log('Reviews found:', reviews.length);
+    console.log('Reviews details:', reviews);
   }
 }
 run();
