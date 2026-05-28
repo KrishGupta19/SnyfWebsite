@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Save, Trash2, GripVertical, KeyRound, Eye, EyeOff, Lock, Unlock, ShieldAlert } from 'lucide-react';
 import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
@@ -7,6 +8,7 @@ import { VenuePhoto } from '../../lib/types';
 import { ImageUploader } from '../components/ImageUploader';
 
 export function VenueInfo() {
+  const navigate = useNavigate();
   const { venue, slug }          = useVenue();
   const [saving,   setSaving]    = useState(false);
   const [saved,    setSaved]     = useState(false);
@@ -325,6 +327,7 @@ export function VenueInfo() {
                 setShowUnlockModal(true);
               } else {
                 lockInterface();
+                navigate('/kitchen');
               }
             }}
             className={`px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
@@ -341,7 +344,7 @@ export function VenueInfo() {
             ) : (
               <>
                 <Unlock className="w-4 h-4" />
-                Unlock Mode (Click to Lock)
+                Unlocked (Click to Lock)
               </>
             )}
           </button>
