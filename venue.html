@@ -2896,6 +2896,7 @@
         }
 
         if (!isAddon) {
+          sessionStorage.removeItem('snyf_rated_this_visit');
           const { data: insertedOrder } = await db
             .from('orders')
             .insert({
