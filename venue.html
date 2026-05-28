@@ -4041,6 +4041,14 @@ async function callForHelp() {
     btn.className = 'track-help-btn called';
     if (btnText) btnText.textContent = 'Help Called!';
     showToast('Help call sent to the kitchen!');
+    
+    // Play premium local audio chime feedback
+    try {
+      playAudioTone(880, 0.12, 'sine');
+      setTimeout(() => playAudioTone(1100, 0.22, 'sine'), 120);
+    } catch (e) {
+      console.warn('Audio tone blocked or unsupported:', e);
+    }
 
     // 5. Unlock button locally after 30 seconds (does not clear the flag in DB)
     if (_helpResetTimer) clearTimeout(_helpResetTimer);

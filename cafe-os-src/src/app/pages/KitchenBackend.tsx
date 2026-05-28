@@ -20,14 +20,36 @@ export function KitchenBackend() {
   const [updatedOrderId, setUpdatedOrderId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<'pending' | 'completed'>('pending');
   const channelRef                  = useRef<ReturnType<typeof db.channel> | null>(null);
+  const audioContextRef             = useRef<AudioContext | null>(null);
+
+  function getAudioContext() {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume().catch(() => {});
+    }
+    return audioContextRef.current;
+  }
 
   useEffect(() => {
+    // Resume audio context on any user interaction to comply with browser autoplay policies
+    const resumeAudio = () => {
+      if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume().catch(() => {});
+      }
+    };
+    window.addEventListener('click', resumeAudio);
+    window.addEventListener('keydown', resumeAudio);
+
     if (!venue?.id) return;
     fetchOrders();
     fetchMenuItems();
     subscribeToOrders();
     return () => {
       if (channelRef.current) db.removeChannel(channelRef.current);
+      window.removeEventListener('click', resumeAudio);
+      window.removeEventListener('keydown', resumeAudio);
     };
   }, [venue?.id]);
 
@@ -144,7 +166,7 @@ export function KitchenBackend() {
 
   function playAlert() {
     try {
-      const ctx  = new AudioContext();
+      const ctx  = getAudioContext();
       const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -160,7 +182,7 @@ export function KitchenBackend() {
 
   function playHelpCallAlarm(count = 1) {
     try {
-      const ctx  = new AudioContext();
+      const ctx  = getAudioContext();
       const playBeep = (time: number, freq: number, dur: number) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
