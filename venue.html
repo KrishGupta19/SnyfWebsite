@@ -2461,6 +2461,9 @@
 
     // Render direct rating box
     renderDirectRateBox();
+
+    // Load saved cart from localStorage
+    loadCart();
   }
 
   async function logVisit(venueId) {
@@ -2486,6 +2489,27 @@
   // STATE
   // ══════════════════════════════════════════
   let cart = {}; // { id: { item, qty } }
+
+  function saveCart() {
+    try {
+      localStorage.setItem(`snyf_cart_${VENUE_SLUG}`, JSON.stringify(cart));
+    } catch (e) {
+      console.warn('Failed to save cart:', e);
+    }
+  }
+
+  function loadCart() {
+    try {
+      const saved = localStorage.getItem(`snyf_cart_${VENUE_SLUG}`);
+      if (saved) {
+        cart = JSON.parse(saved);
+        updateOrderBar();
+      }
+    } catch (e) {
+      console.warn('Failed to load cart:', e);
+    }
+  }
+
   let activeCategory = 'Recommended';
   let trackInterval = null;
   let trackState = 0;
@@ -2783,6 +2807,7 @@
       cart[id] = { item: dish, qty: 1 };
     }
 
+    saveCart();
     updateOrderBar();
     renderDishes();
     showToast(`${dish.name} added`);
@@ -2792,6 +2817,7 @@
     if (!cart[id]) return;
     cart[id].qty += delta;
     if (cart[id].qty <= 0) delete cart[id];
+    saveCart();
     updateOrderBar();
     renderDishes();
   }
@@ -2935,12 +2961,14 @@
     if (!cart[id]) return;
     cart[id].qty += delta;
     if (cart[id].qty <= 0) delete cart[id];
+    saveCart();
     updateOrderBar();
     renderCartBody();
   }
 
   function cartRemove(id) {
     delete cart[id];
+    saveCart();
     updateOrderBar();
     renderCartBody();
   }
@@ -2955,10 +2983,128 @@
     });
   }
 
+  function showSignInPrompt() {
+    saveCart();
+    let overlay = document.getElementById('signin-prompt-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'signin-prompt-overlay';
+      overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(30, 30, 27, 0.45);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      `;
+      overlay.innerHTML = `
+        <div style="
+          background: var(--white, #ffffff);
+          border-radius: 24px;
+          width: 100%;
+          max-width: 360px;
+          padding: 32px 24px;
+          box-shadow: 0 12px 48px rgba(30,30,27,0.18);
+          text-align: center;
+          position: relative;
+          transform: scale(0.9);
+          transition: transform 0.2s ease-out;
+        ">
+          <div style="
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: rgba(111, 183, 214, 0.1);
+            color: var(--cyan, #6FB7D6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin: 0 auto 20px;
+          ">👤</div>
+          <h3 style="
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--ink, #1E1E1B);
+            margin: 0 0 8px;
+            font-family: 'Oswald', sans-serif;
+            letter-spacing: 0.02em;
+          ">SIGN IN REQUIRED</h3>
+          <p style="
+            font-size: 13px;
+            color: var(--muted, #6E6A64);
+            line-height: 1.5;
+            margin: 0 0 28px;
+          ">You must sign in to place an order. Your current cart items will be saved so you can check out instantly upon return!</p>
+          
+          <button onclick="redirectToSignIn()" style="
+            display: block;
+            width: 100%;
+            background: var(--ink, #1E1E1B);
+            color: var(--paper, #F6F5F2);
+            font-weight: 700;
+            font-size: 14px;
+            text-align: center;
+            padding: 14px 20px;
+            border-radius: 14px;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 12px;
+            letter-spacing: 0.02em;
+          ">Sign In / Sign Up</button>
+          
+          <button onclick="closeSignInPrompt()" style="
+            display: block;
+            width: 100%;
+            background: none;
+            color: var(--muted, #6E6A64);
+            font-weight: 600;
+            font-size: 13px;
+            text-align: center;
+            padding: 12px 20px;
+            border-radius: 14px;
+            border: 1px solid var(--border, #D8D5CF);
+            cursor: pointer;
+          ">Cancel</button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    }
+    overlay.style.display = 'flex';
+    requestAnimationFrame(() => {
+      overlay.firstElementChild.style.transform = 'scale(1)';
+    });
+  }
+
+  window.redirectToSignIn = function() {
+    saveCart();
+    const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `profile.html?redirect=${redirectUrl}`;
+  };
+
+  window.closeSignInPrompt = function() {
+    const overlay = document.getElementById('signin-prompt-overlay');
+    if (overlay) {
+      overlay.firstElementChild.style.transform = 'scale(0.9)';
+      setTimeout(() => {
+        overlay.style.display = 'none';
+      }, 150);
+    }
+  };
+
   // ══════════════════════════════════════════
   // ORDER CONFIRMATION + TRACKING
   // ══════════════════════════════════════════
-    async function confirmOrder() {
+  async function confirmOrder() {
+    if (!window._currentUser) {
+      showSignInPrompt();
+      return;
+    }
+
     const orderItems = Object.values(cart).map(({ item, qty }) => ({
       id:    item.id,
       name:  item.name,
@@ -3103,6 +3249,7 @@
 
     // Clear cart + show tracking screen (existing logic unchanged)
     cart = {};
+    localStorage.removeItem(`snyf_cart_${VENUE_SLUG}`);
     updateOrderBar();
     renderDishes();
     showScreen('screen-track');
