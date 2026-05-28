@@ -3973,11 +3973,19 @@ async function initActiveOrderBar() {
 }
 
 // ── WAITER CALL HELP LOGIC ──────────────────────────────────
-let _helpResetTimer = null; // track the auto-reset timer
+let _helpResetTimer = null;
+let _lastHelpCallTime = 0;
 
 async function callForHelp() {
   const btn = document.getElementById('track-help-btn');
-  if (!btn || btn.classList.contains('called') || btn.classList.contains('loading')) return;
+  if (!btn || btn.classList.contains('loading')) return;
+
+  const now = Date.now();
+  if (now - _lastHelpCallTime < 30000) {
+    const remaining = Math.ceil((30000 - (now - _lastHelpCallTime)) / 1000);
+    showToast(`Please wait ${remaining}s before calling again.`);
+    return;
+  }
 
   const orderId = window._lastOrderId;
   if (!orderId) {
@@ -4001,64 +4009,50 @@ async function callForHelp() {
       throw new Error(fetchErr?.message || 'Order not found');
     }
 
-    // 2. Append '[HELP REQUESTED]' to special_instructions
+    // 2. Add or increment the '[HELP REQUESTED]' count
     let currentInstructions = order.special_instructions || '';
-    if (!currentInstructions.includes('[HELP REQUESTED]')) {
+    let newInstructions = '';
+    const helpRegex = /\[HELP REQUESTED(?: x(\d+))?\]/;
+    const match = currentInstructions.match(helpRegex);
+
+    if (match) {
+      const currentCount = match[1] ? parseInt(match[1], 10) : 1;
+      const newCount = currentCount + 1;
+      newInstructions = currentInstructions.replace(helpRegex, `[HELP REQUESTED x${newCount}]`);
+    } else {
       if (currentInstructions) {
-        currentInstructions += ' | [HELP REQUESTED]';
+        newInstructions = currentInstructions + ' | [HELP REQUESTED]';
       } else {
-        currentInstructions = '[HELP REQUESTED]';
+        newInstructions = '[HELP REQUESTED]';
       }
-
-      // 3. Update in Supabase
-      const { error: updateErr } = await db
-        .from('orders')
-        .update({ special_instructions: currentInstructions })
-        .eq('id', orderId);
-
-      if (updateErr) throw updateErr;
     }
 
+    // 3. Update in Supabase
+    const { error: updateErr } = await db
+      .from('orders')
+      .update({ special_instructions: newInstructions })
+      .eq('id', orderId);
+
+    if (updateErr) throw updateErr;
+
     // 4. Update UI to success called state
+    _lastHelpCallTime = Date.now();
     btn.classList.remove('loading');
     btn.className = 'track-help-btn called';
     if (btnText) btnText.textContent = 'Help Called!';
     showToast('Help call sent to the kitchen!');
 
-    // 5. Auto-reset after 2 minutes — clears the flag and re-enables the button
+    // 5. Unlock button locally after 30 seconds (does not clear the flag in DB)
     if (_helpResetTimer) clearTimeout(_helpResetTimer);
-    _helpResetTimer = setTimeout(async () => {
-      try {
-        // Remove [HELP REQUESTED] from special_instructions in DB
-        const { data: freshOrder } = await db
-          .from('orders')
-          .select('special_instructions')
-          .eq('id', orderId)
-          .single();
-
-        if (freshOrder) {
-          const cleared = (freshOrder.special_instructions || '')
-            .replace(' | [HELP REQUESTED]', '')
-            .replace('[HELP REQUESTED]', '')
-            .trim();
-
-          await db
-            .from('orders')
-            .update({ special_instructions: cleared || null })
-            .eq('id', orderId);
-        }
-      } catch (e) {
-        console.warn('Auto-reset help flag failed silently:', e);
-      }
-
-      // Revert button regardless of DB success
+    _helpResetTimer = setTimeout(() => {
+      _helpResetTimer = null;
       const resetBtn = document.getElementById('track-help-btn');
       if (resetBtn) {
         resetBtn.className = 'track-help-btn';
         const resetText = resetBtn.querySelector('span');
         if (resetText) resetText.textContent = 'Call Waiter';
       }
-    }, 2 * 60 * 1000); // 2 minutes
+    }, 30000); // 30 seconds lockout
 
   } catch (err) {
     console.error('Error calling for help:', err);
@@ -4073,23 +4067,28 @@ function syncHelpButtonState(specialInstructions) {
   const btn = document.getElementById('track-help-btn');
   if (!btn) return;
   const btnText = btn.querySelector('span');
+  
   if (specialInstructions && specialInstructions.includes('[HELP REQUESTED]')) {
-    btn.className = 'track-help-btn called';
-    if (btnText) btnText.textContent = 'Help Called!';
-  } else {
-    // Only revert if we are not currently loading
-    if (!btn.classList.contains('loading')) {
-      // Don't revert if auto-reset timer is still pending (waiter may have dismissed)
-      if (!_helpResetTimer) {
-        btn.className = 'track-help-btn';
-        if (btnText) btnText.textContent = 'Call Waiter';
-      } else {
-        // The flag was cleared (waiter dismissed), revert and cancel timer
-        clearTimeout(_helpResetTimer);
-        _helpResetTimer = null;
+    const now = Date.now();
+    if (now - _lastHelpCallTime < 30000) {
+      btn.className = 'track-help-btn called';
+      if (btnText) btnText.textContent = 'Help Called!';
+    } else {
+      if (!btn.classList.contains('loading')) {
         btn.className = 'track-help-btn';
         if (btnText) btnText.textContent = 'Call Waiter';
       }
+    }
+  } else {
+    // Flag cleared by waiter, reset lockout
+    _lastHelpCallTime = 0;
+    if (_helpResetTimer) {
+      clearTimeout(_helpResetTimer);
+      _helpResetTimer = null;
+    }
+    if (!btn.classList.contains('loading')) {
+      btn.className = 'track-help-btn';
+      if (btnText) btnText.textContent = 'Call Waiter';
     }
   }
 }

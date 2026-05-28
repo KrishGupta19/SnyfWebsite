@@ -66,6 +66,13 @@ export function KitchenBackend() {
     }
   }
 
+  const getHelpCallCount = (instr?: string | null) => {
+    if (!instr) return 0;
+    const match = instr.match(/\[HELP REQUESTED(?: x(\d+))?\]/);
+    if (!match) return 0;
+    return match[1] ? parseInt(match[1], 10) : 1;
+  };
+
   // ── Supabase Realtime subscription ──────────────────────────
   function subscribeToOrders() {
     if (!venue?.id) return;
@@ -86,8 +93,9 @@ export function KitchenBackend() {
           setNewOrderId(newOrder.id);
           setTimeout(() => setNewOrderId(null), 4000);
           
-          if (newOrder.special_instructions?.includes('[HELP REQUESTED]')) {
-            playHelpCallAlarm();
+          const count = getHelpCallCount(newOrder.special_instructions);
+          if (count > 0) {
+            playHelpCallAlarm(count);
           } else {
             playAlert();
           }
@@ -108,8 +116,11 @@ export function KitchenBackend() {
             const wasHelping = existing?.special_instructions?.includes('[HELP REQUESTED]');
             const isHelping = updated.special_instructions?.includes('[HELP REQUESTED]');
             
-            if (isHelping && !wasHelping) {
-              playHelpCallAlarm();
+            const prevCount = getHelpCallCount(existing?.special_instructions);
+            const currentCount = getHelpCallCount(updated.special_instructions);
+
+            if (currentCount > prevCount || (isHelping && !wasHelping)) {
+              playHelpCallAlarm(currentCount || 1);
             }
 
             if (existing) {
@@ -147,7 +158,7 @@ export function KitchenBackend() {
     } catch { /* silent if audio unavailable */ }
   }
 
-  function playHelpCallAlarm() {
+  function playHelpCallAlarm(count = 1) {
     try {
       const ctx  = new AudioContext();
       const playBeep = (time: number, freq: number, dur: number) => {
@@ -155,18 +166,36 @@ export function KitchenBackend() {
         const gain = ctx.createGain();
         osc.connect(gain);
         gain.connect(ctx.destination);
-        osc.frequency.setValueAtTime(freq, time);
-        gain.gain.setValueAtTime(0.4, time);
+        
+        // Pitch increases with successive calls to sound sharper and more urgent
+        const pitchMultiplier = 1 + Math.min(count - 1, 4) * 0.1;
+        osc.frequency.setValueAtTime(freq * pitchMultiplier, time);
+        
+        // Volume/gain increases as count climbs
+        const volume = Math.min(0.4 + (count - 1) * 0.2, 1.0);
+        gain.gain.setValueAtTime(volume, time);
         gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+        
         osc.start(time);
         osc.stop(time + dur);
       };
 
       const now = ctx.currentTime;
-      playBeep(now, 987.77, 0.15);      // B5
-      playBeep(now + 0.18, 1318.51, 0.25); // E6
-      playBeep(now + 0.4, 987.77, 0.15);   // B5
-      playBeep(now + 0.58, 1318.51, 0.35); // E6
+      // Alarm repeat speed speeds up with count
+      const speed = count >= 3 ? 0.7 : count === 2 ? 0.85 : 1.0;
+      
+      playBeep(now, 987.77, 0.15 * speed);
+      playBeep(now + 0.18 * speed, 1318.51, 0.25 * speed);
+      playBeep(now + 0.4 * speed, 987.77, 0.15 * speed);
+      playBeep(now + 0.58 * speed, 1318.51, 0.35 * speed);
+
+      // Play dramatic supplementary alarms for repeat calls
+      if (count >= 2) {
+        playBeep(now + 0.9 * speed, 1567.98, 0.2 * speed);
+      }
+      if (count >= 3) {
+        playBeep(now + 1.1 * speed, 1975.53, 0.3 * speed);
+      }
     } catch { /* silent if audio unavailable */ }
   }
 
@@ -174,8 +203,9 @@ export function KitchenBackend() {
     if (!order.special_instructions) return;
     
     let updatedInstr = order.special_instructions
-      .replace('| [HELP REQUESTED]', '')
-      .replace('[HELP REQUESTED]', '')
+      .replace(/\s*\|\s*\[HELP REQUESTED(?: x\d+)?\]/gi, '')
+      .replace(/\[HELP REQUESTED(?: x\d+)?\]\s*\|\s*/gi, '')
+      .replace(/\[HELP REQUESTED(?: x\d+)?\]/gi, '')
       .trim();
     
     if (updatedInstr.endsWith('|')) {
@@ -307,8 +337,9 @@ export function KitchenBackend() {
   async function dismissHelpCall(order: Order) {
     // Strip the [HELP REQUESTED] flag from special_instructions
     const cleared = (order.special_instructions || '')
-      .replace(' | [HELP REQUESTED]', '')
-      .replace('[HELP REQUESTED]', '')
+      .replace(/\s*\|\s*\[HELP REQUESTED(?: x\d+)?\]/gi, '')
+      .replace(/\[HELP REQUESTED(?: x\d+)?\]\s*\|\s*/gi, '')
+      .replace(/\[HELP REQUESTED(?: x\d+)?\]/gi, '')
       .trim();
 
     // Optimistically update local state immediately
@@ -506,11 +537,26 @@ export function KitchenBackend() {
       {!loading && (
         <div className="grid grid-cols-1 gap-6">
           {filteredOrders.map(order => {
-            const needsHelp = order.special_instructions?.includes('[HELP REQUESTED]');
+            const count = getHelpCallCount(order.special_instructions);
+            const needsHelp = count > 0;
             const displayInstructions = order.special_instructions
-              ?.replace('| [HELP REQUESTED]', '')
-              ?.replace('[HELP REQUESTED]', '')
+              ?.replace(/\s*\|\s*\[HELP REQUESTED(?: x\d+)?\]/gi, '')
+              ?.replace(/\[HELP REQUESTED(?: x\d+)?\]\s*\|\s*/gi, '')
+              ?.replace(/\[HELP REQUESTED(?: x\d+)?\]/gi, '')
               ?.trim();
+
+            let bannerClass = "bg-yellow-400 dark:bg-yellow-500 text-black border-yellow-500";
+            let bellClass = "w-4 h-4 animate-bounce";
+            let bannerStyle: React.CSSProperties = {};
+
+            if (count === 2) {
+              bannerClass = "bg-orange-500 text-white border-orange-600 shadow-md shadow-orange-500/20";
+              bannerStyle = { fontSize: '14px', textShadow: '0 1px 2px rgba(0,0,0,0.1)' };
+            } else if (count >= 3) {
+              bannerClass = "bg-red-600 text-white border-red-700 animate-pulse shadow-lg shadow-red-600/35";
+              bellClass = "w-5 h-5 animate-[spin_1.5s_linear_infinite] text-white";
+              bannerStyle = { fontSize: '15px', fontWeight: 900, letterSpacing: '0.08em' };
+            }
 
             return (
               <div
@@ -525,9 +571,14 @@ export function KitchenBackend() {
               >
                 {/* Help Request Banner */}
                 {needsHelp && (
-                  <div className="bg-yellow-400 dark:bg-yellow-500 text-black text-center text-sm font-extrabold py-3 tracking-widest uppercase animate-pulse flex items-center justify-center gap-2 border-b border-yellow-500">
-                    <Bell className="w-4 h-4 animate-bounce" />
-                    <span>Table {order.table_num || 'N/A'} is calling for help!</span>
+                  <div 
+                    className={`${bannerClass} text-center py-3 uppercase flex items-center justify-center gap-2 border-b font-extrabold`}
+                    style={bannerStyle}
+                  >
+                    <Bell className={bellClass} />
+                    <span>
+                      Table {order.table_num || 'N/A'} is calling for help! {count > 1 ? `(Called ×${count})` : ''}
+                    </span>
                     <button
                       onClick={() => dismissHelpCall(order)}
                       className="ml-4 px-3 py-1 bg-black text-white hover:bg-neutral-800 text-xs font-semibold rounded-lg transition-colors shadow-sm"
