@@ -156,6 +156,9 @@
       border: 1px solid rgba(30,30,27,0.1);
       transition: all 0.18s;
       text-transform: uppercase;
+      cursor: pointer;
+      position: relative;
+      z-index: 5;
     }
 
     .menu-profile-btn:hover { background: var(--paper); }
@@ -1942,11 +1945,14 @@
         <img class="menu-hero-img" id="hero-img" src="" alt="" loading="eager">
         <div class="menu-topbar">
           <a href="discover.html" class="menu-back-btn" aria-label="Back to Discover">←</a>
-          <a href="profile.html" class="menu-profile-btn" id="menu-profile-btn" aria-label="Account">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
+          <a href="profile.html" class="menu-profile-btn" id="menu-profile-btn" aria-label="Account" onclick="window.location.href=this.href; return false;">
+            <span id="menu-profile-icon" style="display: flex; align-items: center; justify-content: center;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </span>
+            <span id="menu-profile-initial" style="display: none;"></span>
           </a>
         </div>
       </div>
@@ -2260,8 +2266,12 @@
         if (user) {
           const profile = await snyfGetProfile(user.id);
           const name = profile?.name || user.email?.split('@')[0] || 'S';
-          if (profBtn) {
-            profBtn.textContent = name[0].toUpperCase();
+          const profIcon = document.getElementById('menu-profile-icon');
+          const profInitial = document.getElementById('menu-profile-initial');
+          if (profIcon && profInitial) {
+            profIcon.style.display = 'none';
+            profInitial.textContent = name[0].toUpperCase();
+            profInitial.style.display = 'block';
           }
 
           const { data: userReport } = await db
