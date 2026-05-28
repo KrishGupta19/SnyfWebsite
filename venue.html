@@ -2014,23 +2014,21 @@
               <p id="popup-reviews-count" style="font-size: 22px; font-weight: 800; color: var(--ink); margin-bottom: 2px;">—</p>
               <p style="font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em;">Reviews</p>
             </div>
-            <div style="flex: 1; background: var(--hover); border-radius: 14px; padding: 14px 12px; text-align: center;">
-              <p id="popup-trust-score" style="font-size: 22px; font-weight: 800; color: var(--cyan); margin-bottom: 2px;">—</p>
-              <p style="font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em;">Trust Pts</p>
-            </div>
           </div>
 
           <!-- Go to Profile CTA -->
-          <a id="popup-profile-link" href="profile.html" style="
+          <button id="popup-profile-link" onclick="navigateToProfileWithSignOut()" style="
             display: block; width: 100%;
             background: var(--ink); color: var(--paper);
             font-weight: 700; font-size: 14px;
             text-align: center; text-decoration: none;
             padding: 14px 20px;
             border-radius: 14px;
+            border: none;
+            cursor: pointer;
             letter-spacing: 0.02em;
             margin-bottom: 10px;
-          ">Go to Your Profile →</a>
+          ">Go to Your Profile →</button>
 
           <button onclick="handleSignOut()" style="
             display: block; width: 100%;
@@ -2608,10 +2606,6 @@
     document.getElementById('popup-name').textContent    = name;
     document.getElementById('popup-email').textContent   = email;
 
-    // Set profile link with redirect param
-    const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search);
-    document.getElementById('popup-profile-link').href  = `profile.html?redirect=${redirectUrl}`;
-
     // Fetch stats asynchronously
     try {
       const [ordersRes, reviewsRes] = await Promise.all([
@@ -2620,13 +2614,17 @@
       ]);
       document.getElementById('popup-orders-count').textContent  = ordersRes.count ?? 0;
       document.getElementById('popup-reviews-count').textContent = reviewsRes.count ?? 0;
-
-      // Trust points: 10 per verified review, 2 per order
-      const trustPts = ((reviewsRes.count || 0) * 10) + ((ordersRes.count || 0) * 2);
-      document.getElementById('popup-trust-score').textContent   = trustPts;
     } catch (e) {
       console.warn('Could not load popup stats:', e);
     }
+  }
+
+  async function navigateToProfileWithSignOut() {
+    await snyfSignOut();
+    window._currentUser    = null;
+    window._currentProfile = null;
+    const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `profile.html?redirect=${redirectUrl}`;
   }
 
   function closeProfilePopup(event) {
