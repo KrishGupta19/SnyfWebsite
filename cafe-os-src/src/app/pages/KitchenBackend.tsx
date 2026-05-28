@@ -588,10 +588,25 @@ export function KitchenBackend() {
                         {(order.items || []).map((item, idx) => (
                           <div
                             key={idx}
-                            className="flex items-center justify-between p-3 bg-accent/30 rounded-lg"
+                            className={`flex items-center justify-between p-3 rounded-lg ${
+                              item.addon
+                                ? 'bg-amber-100 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-900/60 text-amber-950 dark:text-amber-300'
+                                : 'bg-accent/30'
+                            }`}
                           >
-                            <span className="font-medium">{item.name}</span>
-                            <span className="px-3 py-1 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
+                            <span className="font-medium flex items-center gap-2">
+                              {item.name}
+                              {item.addon && (
+                                <span className="px-1.5 py-0.5 bg-amber-600 text-white rounded text-[10px] uppercase font-bold tracking-wider">
+                                  Add-on
+                                </span>
+                              )}
+                            </span>
+                            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                              item.addon
+                                ? 'bg-amber-600 text-white'
+                                : 'bg-primary text-primary-foreground'
+                            }`}>
                               ×{item.qty}
                             </span>
                           </div>
