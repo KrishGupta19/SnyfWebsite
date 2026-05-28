@@ -3139,7 +3139,9 @@
           const title = reviewEl.querySelector('.track-review-title');
           const btn = reviewEl.querySelector('.track-back-btn');
           
-          if (window._hasRatedVenue) {
+          const hasRatedThisVisit = sessionStorage.getItem('snyf_rated_this_visit') === 'true';
+
+          if (hasRatedThisVisit) {
             if (title) title.textContent = "Order Tracking Complete";
             sliders.forEach(s => s.style.display = 'none');
             if (btn) btn.textContent = 'Back to Menu';
@@ -3397,6 +3399,8 @@ async function submitReviewAndReturn() {
       // Silent fail — don't block user
     }
   }
+
+  sessionStorage.setItem('snyf_rated_this_visit', 'true');
 
   // Clear order reference
   window._lastOrderId   = null;
@@ -3779,6 +3783,9 @@ function syncHelpButtonState(specialInstructions) {
 }
 
 // ── DIRECT RATING BOX LOGIC ──────────────────────────────────
+// ── DIRECT RATING BOX LOGIC ──────────────────────────────────
+let _latestReportForEdit = null;
+
 async function renderDirectRateBox() {
   const container = document.getElementById('menu-direct-rate-container');
   if (!container) return;
@@ -3810,16 +3817,18 @@ async function renderDirectRateBox() {
       .select('*')
       .eq('venue_id', VENUE_DATA.id)
       .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
       .limit(1);
     
     if (!error && data && data.length > 0) {
       existingReport = data[0];
+      _latestReportForEdit = existingReport;
     }
   } catch (e) {
     console.warn('Could not query existing rating:', e);
   }
 
-  if (existingReport) {
+  if (existingReport && !window._editDirectRating) {
     const food = existingReport.food != null ? Number(existingReport.food) : 5.0;
     const ambience = existingReport.ambience != null ? Number(existingReport.ambience) : 5.0;
     const service = existingReport.service != null ? Number(existingReport.service) : 5.0;
@@ -3852,54 +3861,77 @@ async function renderDirectRateBox() {
         <p style="font-size:11px;color:var(--muted);margin:6px 0 0;line-height:1.5;text-align:center;">
           Thank you for contributing to Snyf Intelligence!
         </p>
+        <button onclick="enableDirectRateEditing()" class="menu-direct-rate-btn" style="background:var(--accent);color:var(--accent-foreground);margin-top:8px;width:100%;border:none;cursor:pointer;padding:8px;border-radius:8px;font-size:12px;font-weight:600;">
+          Edit / Rate Again
+        </button>
       </div>
     `;
     return;
   }
 
+  const foodVal = existingReport ? (existingReport.food != null ? Number(existingReport.food) : 5.0) : 5.0;
+  const ambienceVal = existingReport ? (existingReport.ambience != null ? Number(existingReport.ambience) : 5.0) : 5.0;
+  const serviceVal = existingReport ? (existingReport.service != null ? Number(existingReport.service) : 5.0) : 5.0;
+  const valueVal = existingReport ? (existingReport.value != null ? Number(existingReport.value) : 5.0) : 5.0;
+  const waitVal = existingReport ? (existingReport.wait_time != null ? Number(existingReport.wait_time) : 5.0) : 5.0;
+  const overallScore = (foodVal * 0.3 + ambienceVal * 0.2 + serviceVal * 0.2 + valueVal * 0.2 + waitVal * 0.1).toFixed(1);
+
   container.innerHTML = `
     <div class="menu-direct-rate-title">
-      <span>Rate this venue</span>
-      <span class="menu-direct-rate-val-display" id="direct-rate-num">5.0 / 7</span>
+      <span>${existingReport ? 'Update your rating' : 'Rate this venue'}</span>
+      <span class="menu-direct-rate-val-display" id="direct-rate-num">${overallScore} / 7</span>
     </div>
     <div class="menu-direct-rate-ui">
       <!-- Food -->
       <div class="menu-direct-rate-row">
         <span class="menu-direct-rate-label">Food</span>
-        <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="5.0" id="direct-rate-food" oninput="updateDirectRateValues()">
-        <span class="menu-direct-rate-val" id="direct-rate-food-val">5.0</span>
+        <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="${foodVal}" id="direct-rate-food" oninput="updateDirectRateValues()">
+        <span class="menu-direct-rate-val" id="direct-rate-food-val">${foodVal.toFixed(1)}</span>
       </div>
       <!-- Ambience -->
       <div class="menu-direct-rate-row">
         <span class="menu-direct-rate-label">Ambience</span>
-        <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="5.0" id="direct-rate-ambience" oninput="updateDirectRateValues()">
-        <span class="menu-direct-rate-val" id="direct-rate-ambience-val">5.0</span>
+        <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="${ambienceVal}" id="direct-rate-ambience" oninput="updateDirectRateValues()">
+        <span class="menu-direct-rate-val" id="direct-rate-ambience-val">${ambienceVal.toFixed(1)}</span>
       </div>
       <!-- Service -->
       <div class="menu-direct-rate-row">
         <span class="menu-direct-rate-label">Service</span>
-        <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="5.0" id="direct-rate-service" oninput="updateDirectRateValues()">
-        <span class="menu-direct-rate-val" id="direct-rate-service-val">5.0</span>
+        <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="${serviceVal}" id="direct-rate-service" oninput="updateDirectRateValues()">
+        <span class="menu-direct-rate-val" id="direct-rate-service-val">${serviceVal.toFixed(1)}</span>
       </div>
       <!-- Value -->
       <div class="menu-direct-rate-row">
         <span class="menu-direct-rate-label">Value</span>
-        <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="5.0" id="direct-rate-value" oninput="updateDirectRateValues()">
-        <span class="menu-direct-rate-val" id="direct-rate-value-val">5.0</span>
+        <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="${valueVal}" id="direct-rate-value" oninput="updateDirectRateValues()">
+        <span class="menu-direct-rate-val" id="direct-rate-value-val">${valueVal.toFixed(1)}</span>
       </div>
       <!-- Wait -->
       <div class="menu-direct-rate-row">
         <span class="menu-direct-rate-label">Wait</span>
-        <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="5.0" id="direct-rate-wait" oninput="updateDirectRateValues()">
-        <span class="menu-direct-rate-val" id="direct-rate-wait-val">5.0</span>
+        <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="${waitVal}" id="direct-rate-wait" oninput="updateDirectRateValues()">
+        <span class="menu-direct-rate-val" id="direct-rate-wait-val">${waitVal.toFixed(1)}</span>
       </div>
 
-      <button class="menu-direct-rate-btn" id="direct-rate-submit-btn" onclick="submitDirectRate()">
-        Submit Rating
-      </button>
+      <div style="display: flex; gap: 8px; width: 100%;">
+        ${existingReport ? `<button class="menu-direct-rate-btn" style="background: var(--muted); color: var(--ink); flex: 1; border: none; cursor: pointer; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 600;" onclick="cancelDirectRateEditing()">Cancel</button>` : ''}
+        <button class="menu-direct-rate-btn" id="direct-rate-submit-btn" onclick="submitDirectRate()" style="flex: 2; border: none; cursor: pointer; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 600;">
+          ${existingReport ? 'Update Rating' : 'Submit Rating'}
+        </button>
+      </div>
     </div>
   `;
 }
+
+window.enableDirectRateEditing = function() {
+  window._editDirectRating = true;
+  renderDirectRateBox();
+};
+
+window.cancelDirectRateEditing = function() {
+  window._editDirectRating = false;
+  renderDirectRateBox();
+};
 
 window.updateDirectRateValues = function() {
   const food = parseFloat(document.getElementById('direct-rate-food')?.value || '5.0');
@@ -3948,30 +3980,49 @@ window.submitDirectRate = async function() {
       return;
     }
 
-    await db.from('field_reports').insert({
-      venue_id:    VENUE_DATA.id,
-      venue_name:  VENUE_DATA.name,
-      user_id:     user.id,
-      trust_level: 'scout',
-      food,
-      ambience,
-      service,
-      value,
-      wait_time:   wait,
-      note:        'Direct rating',
-      verified:    true,
-      flagged:     false,
-      source:      'direct_rating',
-      session_id:  snyfSessionId(),
-    });
+    const activeOrders = getActiveOrders();
+    const activeOrder = activeOrders.find(o => o.venueSlug === VENUE_SLUG && o.status !== 'ready');
+    const activeOrderId = activeOrder ? activeOrder.id : null;
 
+    if (_latestReportForEdit && _latestReportForEdit.id) {
+      await db.from('field_reports').update({
+        food,
+        ambience,
+        service,
+        value,
+        wait_time:   wait,
+        note:        'Updated direct rating',
+        order_id:    activeOrderId || _latestReportForEdit.order_id || null,
+      }).eq('id', _latestReportForEdit.id);
+    } else {
+      await db.from('field_reports').insert({
+        venue_id:    VENUE_DATA.id,
+        venue_name:  VENUE_DATA.name,
+        user_id:     user.id,
+        trust_level: 'scout',
+        food,
+        ambience,
+        service,
+        value,
+        wait_time:   wait,
+        note:        'Direct rating',
+        verified:    true,
+        flagged:     false,
+        source:      'direct_rating',
+        session_id:  snyfSessionId(),
+        order_id:    activeOrderId || null,
+      });
+    }
+
+    sessionStorage.setItem('snyf_rated_this_visit', 'true');
     showToast('Rating submitted! 🎉');
+    window._editDirectRating = false;
     await loadVenueData();
   } catch (err) {
     console.error('Failed to submit direct rating:', err);
     showToast('Submission failed. Try again.');
     btn.disabled = false;
-    btn.textContent = 'Submit Rating';
+    btn.textContent = _latestReportForEdit ? 'Update Rating' : 'Submit Rating';
   }
 };
   </script>
