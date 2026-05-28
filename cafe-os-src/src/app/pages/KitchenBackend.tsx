@@ -357,6 +357,8 @@ export function KitchenBackend() {
   }
 
   async function dismissHelpCall(order: Order) {
+    const isVirtual = !order.items || order.items.length === 0;
+
     // Strip the [HELP REQUESTED] flag from special_instructions
     const cleared = (order.special_instructions || '')
       .replace(/\s*\|\s*\[HELP REQUESTED(?: x\d+)?\]/gi, '')
@@ -365,21 +367,33 @@ export function KitchenBackend() {
       .trim();
 
     // Optimistically update local state immediately
-    setOrders(prev => prev.map(o =>
-      o.id === order.id
-        ? { ...o, special_instructions: cleared || null }
-        : o
-    ));
+    if (isVirtual) {
+      setOrders(prev => prev.filter(o => o.id !== order.id));
+    } else {
+      setOrders(prev => prev.map(o =>
+        o.id === order.id
+          ? { ...o, special_instructions: cleared || null }
+          : o
+      ));
+    }
 
     try {
-      const { error } = await db
-        .from('orders')
-        .update({
-          special_instructions: cleared || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', order.id);
-      if (error) throw error;
+      if (isVirtual) {
+        const { error } = await db
+          .from('orders')
+          .delete()
+          .eq('id', order.id);
+        if (error) throw error;
+      } else {
+        const { error } = await db
+          .from('orders')
+          .update({
+            special_instructions: cleared || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', order.id);
+        if (error) throw error;
+      }
     } catch (err) {
       console.error('[Kitchen] dismissHelpCall:', err);
       fetchOrders(); // revert on error
@@ -423,21 +437,22 @@ export function KitchenBackend() {
     return Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000) > 15;
   }
 
-  const pendingCount   = orders.filter(o => o.status === 'received' || o.status === 'delivered').length;
-  const completedCount = orders.filter(o => o.status === 'ready').length;
-  const helpCount      = orders.filter(o => o.special_instructions?.includes('[HELP REQUESTED]')).length;
-  const lateCount      = orders.filter(o => isLate(o.created_at) && o.status !== 'ready').length;
+  const pendingCount   = orders.filter(o => (o.status === 'received' || o.status === 'delivered') && (o.items && o.items.length > 0)).length;
+  const completedCount = orders.filter(o => o.status === 'ready' && (o.items && o.items.length > 0)).length;
+  const helpOrders     = orders.filter(o => o.special_instructions?.includes('[HELP REQUESTED]'));
+  const helpCount      = helpOrders.length;
+  const lateCount      = orders.filter(o => isLate(o.created_at) && o.status !== 'ready' && (o.items && o.items.length > 0)).length;
 
   const filteredOrders = orders.filter(order => {
+    // Exclude virtual help calls
+    if (!order.items || order.items.length === 0) return false;
+
     if (activeFilter === 'pending') {
       return order.status === 'received' || order.status === 'delivered';
     } else {
       return order.status === 'ready';
     }
   });
-
-  // Orders needing help — always from ALL orders regardless of active tab
-  const helpOrders = orders.filter(o => o.special_instructions?.includes('[HELP REQUESTED]'));
 
   return (
     <div className="p-8 space-y-8">
@@ -532,6 +547,76 @@ export function KitchenBackend() {
           </button>
         </div>
       </div>
+
+      {/* ── OVERALL TOP WAITER CALLS DASHBOARD ────────────────── */}
+      {helpOrders.length > 0 && (
+        <div className="bg-neutral-950 text-white rounded-2xl p-5 border border-red-500/20 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-neutral-800 pb-3 flex-wrap gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse ring-4 ring-red-500/30" />
+              <h2 className="text-sm font-black tracking-wider uppercase text-neutral-200">
+                Active Table Assistance Calls ({helpOrders.length})
+              </h2>
+            </div>
+            <button 
+              onClick={async () => {
+                // Dimiss all active help calls
+                for (const order of helpOrders) {
+                  await dismissHelpCall(order);
+                }
+              }}
+              className="text-xs font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-wider cursor-pointer bg-red-950/30 border border-red-900/50 px-3 py-1.5 rounded-lg"
+            >
+              Dismiss All Calls
+            </button>
+          </div>
+          
+          {/* Scrollable / wrap container for mobile-optimized experience */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {helpOrders.map(order => {
+              const count = getHelpCallCount(order.special_instructions);
+              
+              let cardClass = "bg-yellow-400 dark:bg-yellow-500 text-black border-yellow-500";
+              let bellClass = "w-4 h-4 animate-bounce text-black";
+              let cardStyle: React.CSSProperties = {};
+
+              if (count === 2) {
+                cardClass = "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-orange-600 shadow-md shadow-orange-500/20";
+                bellClass = "w-4 h-4 animate-bounce text-white";
+                cardStyle = { textShadow: '0 1px 2px rgba(0,0,0,0.1)' };
+              } else if (count >= 3) {
+                cardClass = "bg-gradient-to-r from-red-600 to-orange-600 text-white border-red-700 animate-pulse shadow-lg shadow-red-600/35";
+                bellClass = "w-5 h-5 animate-[spin_1.5s_linear_infinite] text-white";
+                cardStyle = { fontWeight: 900 };
+              }
+
+              const isVirtualHelp = !order.items || order.items.length === 0;
+
+              return (
+                <div 
+                  key={`top-help-${order.id}`}
+                  className={`${cardClass} flex items-center justify-between gap-4 px-4 py-3 rounded-xl border font-bold text-sm shadow transition-all duration-300 hover:scale-[1.02]`}
+                  style={cardStyle}
+                >
+                  <div className="flex items-center gap-2">
+                    <Bell className={bellClass} />
+                    <span>
+                      Table {order.table_num || 'N/A'} {count > 1 ? `(Called ×${count})` : ''}
+                      {isVirtualHelp ? ' 💬' : ' 🍔'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => dismissHelpCall(order)}
+                    className="px-2.5 py-1.5 bg-black/80 text-white hover:bg-neutral-900 text-xs font-semibold rounded-lg transition-all shadow-sm border border-neutral-700/50 cursor-pointer"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Loading */}
       {loading && (
