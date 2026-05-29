@@ -1765,7 +1765,8 @@ async function loadProfile(user) {
   currentProfile = profile;
 
   // Show first-time password modal if no password set yet
-  const hasPassword = !!(user?.user_metadata?.password);
+  // Show first-time password modal if no password set yet
+  const hasPassword = !!(user?.user_metadata?.account_password);
   if (profile && !hasPassword && !firstPasswordPromptShown) {
     firstPasswordPromptShown = true;
     setTimeout(() => {
@@ -2445,7 +2446,7 @@ function openProfileModal() {
   // Populate unified password field
   const passInp = document.getElementById('pf-modal-password');
   if (passInp) {
-    passInp.value = currentUser?.user_metadata?.password || '';
+    passInp.value = currentUser?.user_metadata?.account_password || '';
     passInp.type = 'password';
     document.getElementById('pf-toggle-password-visibility').textContent = 'Show';
   }
@@ -2566,7 +2567,7 @@ async function saveProfileModal() {
   if (errEl) errEl.classList.remove('show');
   
   const newPass = document.getElementById('pf-modal-password').value;
-  const oldPass = currentUser?.user_metadata?.password || '';
+  const oldPass = currentUser?.user_metadata?.account_password || '';
   let shouldUpdatePassword = false;
 
   if (newPass !== oldPass) {
@@ -2596,7 +2597,7 @@ async function saveProfileModal() {
     if (shouldUpdatePassword) {
       const updateData = {
         avatar_url: tempAvatarUrl,
-        password: newPass || null
+        account_password: newPass || null
       };
 
       const updatePayload = { data: updateData };
