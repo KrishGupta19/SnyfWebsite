@@ -1068,21 +1068,17 @@
           border-radius:10px;
         ">
           ✓ OTP sent to <strong id="pf-email-display"></strong><br>
-          Check your inbox and enter the 8-digit code below.
+          Check your inbox and enter the 4-digit code below.
         </div>
 
-        <label class="pf-auth-label">8-Digit OTP Code</label>
+        <label class="pf-auth-label">4-Digit OTP Code</label>
 
         <!-- OTP input boxes -->
-        <div class="pf-otp-wrap" id="pf-otp-wrap">
+        <div class="pf-otp-wrap" id="pf-otp-wrap" style="max-width: 240px; margin: 0 auto 20px;">
           <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-0" autocomplete="one-time-code">
           <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-1">
           <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-2">
           <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-3">
-          <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-4">
-          <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-5">
-          <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-6">
-          <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-7">
         </div>
 
         <div class="pf-auth-error" id="pf-otp-error"></div>
@@ -1537,7 +1533,7 @@ function initOTPBoxes() {
       const pasted = (e.clipboardData || window.clipboardData)
         .getData('text')
         .replace(/[^0-9]/g, '')
-        .slice(0, 8);
+        .slice(0, 4);
 
       pasted.split('').forEach((char, idx) => {
         if (boxes[idx]) {
@@ -1550,8 +1546,8 @@ function initOTPBoxes() {
       const lastIdx = Math.min(pasted.length, boxes.length - 1);
       boxes[lastIdx].focus();
 
-      // Auto verify if all 8 filled
-      if (pasted.length === 8) {
+      // Auto verify if all 4 filled
+      if (pasted.length === 4) {
         setTimeout(() => verifyOTP(), 200);
       }
     });
@@ -1633,8 +1629,8 @@ async function verifyOTP() {
 
   errEl.classList.remove('show');
 
-  if (token.length !== 8) {
-    errEl.textContent = 'Enter all 8 digits';
+  if (token.length !== 4) {
+    errEl.textContent = 'Enter all 4 digits';
     errEl.classList.add('show');
     shakeOTPBoxes();
     return;

@@ -64,8 +64,8 @@ exports.handler = async (event) => {
             };
         }
 
-        // 2. Generate 8-digit OTP
-        const otp = Math.floor(10000000 + Math.random() * 90000000).toString();
+        // 2. Generate 4-digit OTP
+        const otp = Math.floor(1000 + Math.random() * 9000).toString();
         const expiry = Date.now() + 5 * 60 * 1000; // 5 minutes validity
 
         // 3. Store OTP in waitlist table's notes column
@@ -100,7 +100,7 @@ exports.handler = async (event) => {
                 <div style="font-size: 24px; font-weight: 900; letter-spacing: -0.5px; color: #1E1E1B; margin-bottom: 24px; font-family: 'Oswald', sans-serif;">Snyf</div>
                 <h2 style="font-size: 20px; font-weight: 800; color: #1E1E1B; margin-bottom: 8px;">Verify your identity</h2>
                 <p style="font-size: 14px; line-height: 1.6; color: #6E6A64; margin-bottom: 24px;">Use this single-use verification code to securely access your Snyf account. This code is valid for 5 minutes.</p>
-                <div style="background: rgba(255,255,255,0.8); border: 1.5px solid #D8D5CF; border-radius: 12px; padding: 16px; font-size: 32px; font-family: monospace; font-weight: 800; letter-spacing: 6px; text-align: center; margin-bottom: 24px; color: #6FB7D6; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">${otp}</div>
+                <div style="background: rgba(255,255,255,0.8); border: 1.5px solid #D8D5CF; border-radius: 12px; padding: 16px; font-size: 36px; font-family: monospace; font-weight: 800; letter-spacing: 12px; padding-left: 24px; text-align: center; margin-bottom: 24px; color: #6FB7D6; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">${otp}</div>
                 <p style="font-size: 12px; color: #A59BB7; line-height: 1.5;">If you did not request this code, you can safely ignore this email. Someone else may have typed your email address by mistake.</p>
                 <hr style="border: none; border-top: 1px solid #D8D5CF; margin: 24px 0 16px;" />
                 <p style="font-size: 11px; color: #6E6A64; font-family: monospace;">— The Snyf Team</p>
