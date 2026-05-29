@@ -55,53 +55,45 @@ async function snyfGetProfile(userId) {
   } catch { return null; }
 }
 
-// Sign in with email OTP
+// Sign in with email OTP via Netlify functions and Resend
 async function snyfSignInOTP(email) {
-  const { error } = await db.auth.signInWithOtp({
-    email,
-    options: {
-      shouldCreateUser: true,
-      // No emailRedirectTo — we handle verification manually with OTP code
-    },
-  });
-  return !error;
+  try {
+    const res = await fetch('/.netlify/functions/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      return { ok: false, error: data.error || 'Failed to send OTP' };
+    }
+    return { ok: true };
+  } catch (err) {
+    console.error('snyfSignInOTP error:', err);
+    return { ok: false, error: err.message || 'Network error occurred while sending OTP' };
+  }
 }
 
 async function snyfVerifyOTP(email, token) {
-  // Try 'magiclink' first (standard for passwordless email login)
-  let { data, error } = await db.auth.verifyOtp({
-    email,
-    token,
-    type: 'magiclink',
-  });
-
-  // Try 'signup' if user is registering for the first time
-  if (error) {
-    const signupResult = await db.auth.verifyOtp({
-      email,
-      token,
-      type: 'signup',
+  try {
+    const res = await fetch('/.netlify/functions/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, token }),
     });
-    if (!signupResult.error) {
-      data = signupResult.data;
-      error = null;
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      return { user: null, error: new Error(data.error || 'Invalid or expired OTP') };
     }
-  }
-
-  // Fallback to 'email' if neither worked
-  if (error) {
-    const emailResult = await db.auth.verifyOtp({
-      email,
-      token,
-      type: 'email',
-    });
-    if (!emailResult.error) {
-      data = emailResult.data;
-      error = null;
+    if (data.actionLink) {
+      window.location.href = data.actionLink;
+      return new Promise(() => {}); // Keep UI in pending/loading state during redirect
     }
+    return { user: null, error: new Error('Session establishment failed') };
+  } catch (err) {
+    console.error('snyfVerifyOTP error:', err);
+    return { user: null, error: err };
   }
-
-  return { user: data?.user || null, error };
 }
 
 // Sign out

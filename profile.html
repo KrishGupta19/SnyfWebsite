@@ -1601,9 +1601,9 @@ async function sendOTP() {
   btn.disabled    = true;
   btn.textContent = 'Sending...';
 
-  const ok = await snyfSignInOTP(email);
+  const res = await snyfSignInOTP(email);
 
-  if (ok) {
+  if (res.ok) {
     currentEmail = email;
     document.getElementById('pf-email-display').textContent = email;
     document.getElementById('pf-step-email').style.display  = 'none';
@@ -1618,7 +1618,7 @@ async function sendOTP() {
     startResendCountdown();
 
   } else {
-    errEl.textContent = 'Could not send OTP. Try again.';
+    errEl.textContent = res.error || 'Could not send OTP. Try again.';
     errEl.classList.add('show');
     btn.disabled    = false;
     btn.textContent = 'Send OTP →';
@@ -1655,7 +1655,7 @@ async function verifyOTP() {
     }
     await loadProfile(user);
   } else {
-    errEl.textContent = 'Invalid or expired OTP. Try again.';
+    errEl.textContent = error?.message || 'Invalid or expired OTP. Try again.';
     errEl.classList.add('show');
     shakeOTPBoxes();
     clearOTPBoxes();
@@ -1673,13 +1673,14 @@ async function resendOTP() {
 
   clearOTPBoxes();
 
-  const ok = await snyfSignInOTP(currentEmail);
+  const res = await snyfSignInOTP(currentEmail);
 
-  if (ok) {
+  if (res.ok) {
     startResendCountdown();
   } else {
     btn.disabled    = false;
     btn.textContent = 'Resend OTP';
+    alert(res.error || 'Failed to resend OTP. Please try again.');
   }
 }
 

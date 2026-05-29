@@ -334,7 +334,7 @@
         <button class="nav-item" data-section="reports" onclick="navTo('reports',this)">
           <span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">📋</span>
           <span class="nav-label">Field Reports</span>
-          <span style="margin-left:auto;background:rgba(217,122,74,0.15);color:var(--orange);font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:4px;" class="nav-label">3</span>
+          <span style="margin-left:auto;background:rgba(217,122,74,0.15);color:var(--orange);font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:4px;" class="nav-label" id="nav-reports-badge">3</span>
         </button>
         <button class="nav-item" data-section="qr" onclick="navTo('qr',this)">
           <span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">📱</span>
@@ -343,7 +343,7 @@
         <button class="nav-item" data-section="waitlist" onclick="navTo('waitlist',this)">
           <span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">📧</span>
           <span class="nav-label">Waitlist</span>
-          <span style="margin-left:auto;background:rgba(212,168,83,0.15);color:var(--gold);font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:4px;" class="nav-label">12</span>
+          <span style="margin-left:auto;background:rgba(212,168,83,0.15);color:var(--gold);font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:4px;" class="nav-label" id="nav-waitlist-badge">12</span>
         </button>
         <button class="nav-item" data-section="discover" onclick="navTo('discover',this)">
           <span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">🔍</span>
@@ -355,7 +355,7 @@
         <button class="nav-item" data-section="analytics" onclick="navTo('analytics',this)">
           <span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">📊</span>
           <span class="nav-label">Analytics</span>
-          <span style="margin-left:auto;font-family:var(--mono);font-size:8px;color:var(--dim);padding:1px 5px;border:1px solid var(--border);border-radius:3px;" class="nav-label">Soon</span>
+          <span style="margin-left:auto;font-family:var(--mono);font-size:8px;color:var(--mint);padding:1px 5px;border:1px solid rgba(123,198,164,0.3);border-radius:3px;background:rgba(123,198,164,0.08);" class="nav-label">Live</span>
         </button>
         <button class="nav-item" data-section="settings" onclick="navTo('settings',this)">
           <span style="font-size:15px;width:18px;text-align:center;flex-shrink:0;">⚙️</span>
@@ -393,7 +393,7 @@
             <div class="stat-card"><div class="stat-label">Total Venues</div><div class="stat-value" id="stat-total-venues" style="color:var(--cyan);">—</div><div class="stat-delta">↑ 2 this month</div></div>
             <div class="stat-card"><div class="stat-label">Active Venues</div><div class="stat-value" id="stat-active-venues" style="color:var(--mint);">—</div><div class="stat-delta">100% uptime</div></div>
             <div class="stat-card"><div class="stat-label">Field Reports</div><div class="stat-value" id="stat-total-reports" style="color:var(--text);">—</div><div class="stat-delta">↑ 47 this week</div></div>
-            <div class="stat-card"><div class="stat-label">QR Scans</div><div class="stat-value" style="color:var(--gold);">312</div><div class="stat-delta">↑ 28 today</div></div>
+            <div class="stat-card"><div class="stat-label">QR Scans</div><div class="stat-value" id="stat-qr-scans" style="color:var(--gold);">—</div><div class="stat-delta">↑ 28 today</div></div>
             <div class="stat-card"><div class="stat-label">Waitlist</div><div class="stat-value" id="stat-waitlist" style="color:var(--violet);">—</div><div class="stat-delta">↑ 12 today</div></div>
             <div class="stat-card"><div class="stat-label">Avg Trust Score</div><div class="stat-value" id="stat-avg-trust" style="color:var(--cyan);">—</div><div class="stat-delta" id="stat-avg-trust-delta">Across 0 venues</div></div>
           </div>
@@ -402,20 +402,20 @@
             <div style="display:flex;flex-direction:column;gap:20px;">
               <div class="card">
                 <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:14px;">Pending Actions</div>
-                <div class="pending-card">
+                <div class="pending-card" id="pending-reports-card" style="display:none;">
                   <div class="pending-icon">⚠</div>
-                  <div><div class="pending-text">3 field reports flagged for review</div><div class="pending-sub">Anomaly patterns detected</div></div>
-                  <button class="btn btn--xs btn--ghost" onclick="navTo('reports',document.querySelector('[data-section=reports]'))">Review</button>
+                  <div><div class="pending-text" id="pending-reports-text">3 field reports flagged for review</div><div class="pending-sub">Anomaly patterns detected</div></div>
+                  <button class="btn btn--xs btn--ghost" style="margin-left:auto;" onclick="navTo('reports',document.querySelector('[data-section=reports]'))">Review</button>
                 </div>
-                <div class="pending-card">
+                <div class="pending-card" id="pending-waitlist-card" style="display:none;">
                   <div class="pending-icon">◈</div>
-                  <div><div class="pending-text">2 business waitlist signups</div><div class="pending-sub">Potential café partners</div></div>
-                  <button class="btn btn--xs btn--cyan" onclick="navTo('waitlist',document.querySelector('[data-section=waitlist]'))">View</button>
+                  <div><div class="pending-text" id="pending-waitlist-text">2 business waitlist signups</div><div class="pending-sub">Potential café partners</div></div>
+                  <button class="btn btn--xs btn--cyan" style="margin-left:auto;" onclick="navTo('waitlist',document.querySelector('[data-section=waitlist]'))">View</button>
                 </div>
-                <div class="pending-card">
+                <div class="pending-card" id="pending-qr-card" style="display:none;">
                   <div class="pending-icon">📱</div>
-                  <div><div class="pending-text">QR codes not yet generated</div><div class="pending-sub">Add venues to generate QR codes</div></div>
-                  <button class="btn btn--xs btn--cyan" onclick="navTo('qr',document.querySelector('[data-section=qr]'))">Generate</button>
+                  <div><div class="pending-text" id="pending-qr-text">QR codes not yet generated</div><div class="pending-sub" id="pending-qr-sub">Add venues to generate QR codes</div></div>
+                  <button class="btn btn--xs btn--cyan" style="margin-left:auto;" onclick="navTo('qr',document.querySelector('[data-section=qr]'))">Generate</button>
                 </div>
               </div>
 
@@ -607,15 +607,21 @@
         <div id="section-reports" class="admin-section" style="display:none;">
           <div class="sec-head">
             <div><div class="sec-title">Field Reports</div><div class="sec-sub">All community reports across every venue</div></div>
-            <button class="btn btn--ghost btn--sm">Export CSV</button>
+            <button class="btn btn--ghost btn--sm" onclick="exportReportsCSV()">Export CSV</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+            <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);">Filter by Venue</div>
+            <div class="filter-pills" id="reports-venue-tabs" style="display:flex;gap:8px;flex-wrap:wrap;overflow-x:auto;padding-bottom:4px;">
+              <!-- Dynamic Venue pills populate here -->
+            </div>
           </div>
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
-            <div class="search-wrap"><span class="search-icon">⌕</span><input class="search-input" type="search" placeholder="Search reports..."></div>
-            <div class="filter-pills">
-              <button class="filter-pill active">All</button>
-              <button class="filter-pill">Flagged</button>
-              <button class="filter-pill">Verified</button>
-              <button class="filter-pill">This Week</button>
+            <div class="search-wrap"><span class="search-icon">⌕</span><input class="search-input" type="search" id="reports-search" oninput="renderAllReports()" placeholder="Search reports..."></div>
+            <div class="filter-pills" id="reports-status-filters">
+              <button class="filter-pill active" onclick="setReportsFilter('All', this)">All</button>
+              <button class="filter-pill" onclick="setReportsFilter('Flagged', this)">Flagged</button>
+              <button class="filter-pill" onclick="setReportsFilter('Verified', this)">Verified</button>
+              <button class="filter-pill" onclick="setReportsFilter('This Week', this)">This Week</button>
             </div>
           </div>
           <div class="card" style="padding:0;overflow:hidden;">
@@ -715,15 +721,15 @@
         <div id="section-waitlist" class="admin-section" style="display:none;">
           <div class="sec-head">
             <div><div class="sec-title">Waitlist</div><div class="sec-sub">Early access signups from snyf.co.in</div></div>
-            <button class="btn btn--ghost btn--sm">Export CSV</button>
+            <button class="btn btn--ghost btn--sm" onclick="exportWaitlistCSV()">Export CSV</button>
           </div>
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
-            <div class="search-wrap"><span class="search-icon">⌕</span><input class="search-input" type="search" placeholder="Search by name or email..."></div>
-            <div class="filter-pills">
-              <button class="filter-pill active">All</button>
-              <button class="filter-pill" style="border-color:rgba(212,168,83,0.3);color:var(--gold);">Business 🏢</button>
-              <button class="filter-pill">Users</button>
-              <button class="filter-pill">New Only</button>
+            <div class="search-wrap"><span class="search-icon">⌕</span><input class="search-input" type="search" id="waitlist-search" oninput="renderWaitlist()" placeholder="Search by name or email..."></div>
+            <div class="filter-pills" id="waitlist-type-filters">
+              <button class="filter-pill active" onclick="setWaitlistFilter('All', this)">All</button>
+              <button class="filter-pill" style="border-color:rgba(212,168,83,0.3);color:var(--gold);" onclick="setWaitlistFilter('Business', this)">Business 🏢</button>
+              <button class="filter-pill" onclick="setWaitlistFilter('Users', this)">Users</button>
+              <button class="filter-pill" onclick="setWaitlistFilter('New Only', this)">New Only</button>
             </div>
           </div>
           <div class="card" style="padding:0;overflow:hidden;">
@@ -757,13 +763,94 @@
         <div id="section-analytics" class="admin-section" style="display:none;">
           <div class="sec-head">
             <div><div class="sec-title">Analytics</div><div class="sec-sub">Platform-wide intelligence dashboard</div></div>
-            <span class="badge badge--draft">Coming Phase 4</span>
+            <span class="badge badge--active">Live Dashboard</span>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
-            <div class="analytics-placeholder"><div class="analytics-placeholder-icon">📈</div><div class="analytics-placeholder-title">Platform Visits Over Time</div><div class="analytics-placeholder-sub">Requires Supabase + tracking integration</div></div>
-            <div class="analytics-placeholder"><div class="analytics-placeholder-icon">📱</div><div class="analytics-placeholder-title">QR Scan Heatmap</div><div class="analytics-placeholder-sub">Per-venue scan tracking coming Phase 2</div></div>
-            <div class="analytics-placeholder"><div class="analytics-placeholder-icon">🛒</div><div class="analytics-placeholder-title">Order Volume</div><div class="analytics-placeholder-sub">Real-time order tracking coming Phase 2</div></div>
-            <div class="analytics-placeholder"><div class="analytics-placeholder-icon">⬡</div><div class="analytics-placeholder-title">Trust Score Trends</div><div class="analytics-placeholder-sub">AI model integration coming Phase 4</div></div>
+          
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));gap:20px;">
+            
+            <!-- QR SCAN LEADERBOARD -->
+            <div class="card" style="display:flex;flex-direction:column;">
+              <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;">
+                <span>Top Performing Venues by Scans</span>
+                <span style="color:var(--gold);">📱 Live Scans</span>
+              </div>
+              <div id="analytics-qr-leaderboard" style="display:flex;flex-direction:column;gap:14px;flex:1;">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- CATEGORY DISTRIBUTION -->
+            <div class="card" style="display:flex;flex-direction:column;">
+              <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;">
+                <span>Venue Category Breakdown</span>
+                <span style="color:var(--cyan);">🏢 Category Mix</span>
+              </div>
+              <div id="analytics-category-chart" style="display:flex;flex-direction:column;gap:14px;flex:1;">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- TRUST SCORE DISTRIBUTION -->
+            <div class="card" style="display:flex;flex-direction:column;">
+              <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;">
+                <span>Global Trust Dimensions Avg</span>
+                <span style="color:var(--mint);">⬡ Snyf Algorithms</span>
+              </div>
+              <div id="analytics-trust-distribution" style="display:flex;flex-direction:column;gap:14px;flex:1;">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- WAITLIST & SIGNUPS INSIGHTS -->
+            <div class="card" style="display:flex;flex-direction:column;">
+              <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;">
+                <span>Waitlist & Platform Conversion</span>
+                <span style="color:var(--violet);"> Early Access</span>
+              </div>
+              <div id="analytics-waitlist-stats" style="display:flex;flex-direction:column;gap:14px;flex:1;">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- VENUE INTELLIGENCE & PERFORMANCE ANALYTICS -->
+            <div class="card" style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:16px;">
+              <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:6px;">
+                <span>Venue Intelligence & Performance Analytics</span>
+                <div style="display:flex;gap:10px;">
+                  <button class="btn btn--ghost btn--sm" id="analytics-export-orders-csv" onclick="exportAnalyticsOrdersCSV()">Export Sales CSV</button>
+                  <button class="btn btn--ghost btn--sm" id="analytics-export-visits-csv" onclick="exportAnalyticsVisitsCSV()">Export Visits CSV</button>
+                </div>
+              </div>
+
+              <!-- Venue Filter Tabs in Analytics -->
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);">Select Venue Profile</div>
+                <div class="filter-pills" id="analytics-venue-tabs" style="display:flex;gap:8px;flex-wrap:wrap;overflow-x:auto;padding-bottom:4px;">
+                  <!-- Dynamically populated: All Venues, Pixel Room, etc. -->
+                </div>
+              </div>
+
+              <!-- Dynamic Venue Stats Grid -->
+              <div id="analytics-venue-stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;margin-top:10px;">
+                <!-- Dynamically populated stats: Total Revenue, Orders, Visits, Active, Menu Items -->
+              </div>
+
+              <!-- Peak Hours & Insights split row -->
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:20px;margin-top:10px;">
+                <!-- Peak Hours Slots -->
+                <div class="card" style="background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.03);">
+                  <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;margin-bottom:14px;">Busy Peak Hours Today</div>
+                  <div id="analytics-venue-peak-hours" style="display:flex;flex-direction:column;gap:12px;"></div>
+                </div>
+
+                <!-- Granular Rating average score card -->
+                <div class="card" style="background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.03);">
+                  <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;margin-bottom:14px;">Granular Ratings Breakdown</div>
+                  <div id="analytics-venue-ratings-bars" style="display:flex;flex-direction:column;gap:12px;"></div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -776,31 +863,31 @@
             <div class="card">
               <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:18px;">Account</div>
               <div style="display:flex;flex-direction:column;gap:12px;">
-                <div class="field"><label class="input-label">Super Admin Email</label><input class="input" type="email" value="teams@snyf.co.in"></div>
-                <div class="field"><label class="input-label">Current Password</label><input class="input" type="password" placeholder="••••••••"></div>
-                <div class="field"><label class="input-label">New Password</label><input class="input" type="password" placeholder="New password"></div>
-                <button class="btn btn--primary btn--sm" style="align-self:flex-start;" onclick="showToast('✓ Credentials updated','success')">Update Credentials</button>
+                <div class="field"><label class="input-label">Super Admin Email</label><input class="input" type="email" id="settings-admin-email" value="teams@snyf.co.in"></div>
+                <div class="field"><label class="input-label">Current Password</label><input class="input" type="password" id="settings-admin-curr-pass" placeholder="••••••••"></div>
+                <div class="field"><label class="input-label">New Password</label><input class="input" type="password" id="settings-admin-new-pass" placeholder="New password"></div>
+                <button class="btn btn--primary btn--sm" style="align-self:flex-start;" onclick="saveAdminCredentials()">Update Credentials</button>
               </div>
             </div>
             <div class="card">
               <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:18px;">Platform</div>
               <div style="display:flex;flex-direction:column;gap:12px;">
-                <div class="field"><label class="input-label">Platform Name</label><input class="input" type="text" value="Snyf"></div>
-                <div class="field"><label class="input-label">Tagline</label><input class="input" type="text" value="Trust Intelligence for Local Discovery"></div>
+                <div class="field"><label class="input-label">Platform Name</label><input class="input" type="text" id="settings-platform-name" value="Snyf"></div>
+                <div class="field"><label class="input-label">Tagline</label><input class="input" type="text" id="settings-platform-tagline" value="Trust Intelligence for Local Discovery"></div>
               </div>
               <div style="margin-top:18px;display:flex;flex-direction:column;gap:10px;">
                 <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">Feature Flags</div>
-                <div class="toggle-wrap"><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label><span class="toggle-label">Commons page enabled</span></div>
-                <div class="toggle-wrap"><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label><span class="toggle-label">Discover page enabled</span></div>
-                <div class="toggle-wrap"><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label><span class="toggle-label">Ordering enabled</span></div>
-                <div class="toggle-wrap"><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label><span class="toggle-label">Field reports enabled</span></div>
+                <div class="toggle-wrap"><label class="toggle"><input type="checkbox" id="flag-commons" checked><span class="toggle-slider"></span></label><span class="toggle-label">Commons page enabled</span></div>
+                <div class="toggle-wrap"><label class="toggle"><input type="checkbox" id="flag-discover" checked><span class="toggle-slider"></span></label><span class="toggle-label">Discover page enabled</span></div>
+                <div class="toggle-wrap"><label class="toggle"><input type="checkbox" id="flag-ordering" checked><span class="toggle-slider"></span></label><span class="toggle-label">Ordering enabled</span></div>
+                <div class="toggle-wrap"><label class="toggle"><input type="checkbox" id="flag-reports" checked><span class="toggle-slider"></span></label><span class="toggle-label">Field reports enabled</span></div>
               </div>
-              <button class="btn btn--primary btn--sm" style="margin-top:18px;align-self:flex-start;" onclick="showToast('✓ Platform settings saved','success')">Save Platform Settings</button>
+              <button class="btn btn--primary btn--sm" style="margin-top:18px;align-self:flex-start;" onclick="saveSettings()">Save Platform Settings</button>
             </div>
             <div class="card">
               <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:18px;">Integrations</div>
               <div style="display:flex;flex-direction:column;gap:10px;">
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);"><div><div style="font-weight:600;font-size:13px;">Supabase</div><div style="font-size:11px;color:var(--muted);">Database + Auth</div></div><span class="badge badge--draft">Not Connected</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);"><div><div style="font-weight:600;font-size:13px;">Supabase</div><div style="font-size:11px;color:var(--muted);">Database + Auth</div></div><span class="badge badge--active">Connected</span></div>
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);"><div><div style="font-weight:600;font-size:13px;">Netlify</div><div style="font-size:11px;color:var(--muted);">Hosting + Functions</div></div><span class="badge badge--active">Connected</span></div>
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;"><div><div style="font-weight:600;font-size:13px;">Resend</div><div style="font-size:11px;color:var(--muted);">Email / OTP</div></div><span class="badge badge--draft">Not Connected</span></div>
               </div>
@@ -808,7 +895,7 @@
             <div class="danger-zone">
               <div class="danger-zone-title">⚠ Danger Zone</div>
               <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <button class="btn btn--danger btn--sm" onclick="showToast('Export triggered','info')">Export All Data as JSON</button>
+                <button class="btn btn--danger btn--sm" onclick="exportAllDataAsJSON()">Export All Data as JSON</button>
                 <button class="btn btn--danger btn--sm" onclick="showToast('⚠ Action requires confirmation','error')">Clear All Field Reports</button>
               </div>
             </div>
@@ -908,8 +995,8 @@
 </div>
 
 <script>
-const ADMIN_EMAIL    = 'teams@snyf.co.in';
-const ADMIN_PASSWORD = 'Snyf@1234';
+let ADMIN_EMAIL    = localStorage.getItem('snyf_admin_email') || 'teams@snyf.co.in';
+let ADMIN_PASSWORD = localStorage.getItem('snyf_admin_password') || 'Snyf@1234';
 
 function getVenueUrl(slug) {
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.port !== '';
@@ -921,6 +1008,8 @@ let REPORTS_DATA = [];
 let MENU_DATA = {};
 let WAITLIST_DATA = [];
 let ACTIVITY_DATA = [];
+let ORDERS_DATA = [];
+let VISITS_DATA = [];
 let TICKER_EVENTS_DATA = [
   '⬡ Snyf platform is live',
   '◈ Add your first venue to get started',
@@ -1081,6 +1170,7 @@ function doLogout() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  loadPlatformSettings();
   ['login-password','login-email'].forEach(id => {
     document.getElementById(id)?.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
   });
@@ -1220,6 +1310,17 @@ async function initAdminApp() {
       console.warn('waitlist fetch failed:', waitlistErr);
     }
 
+    // 4b. Fetch Orders & Visits
+    try {
+      const { data: ords, error: ordsErr } = await db.from('orders').select('*');
+      if (!ordsErr && ords) { ORDERS_DATA = ords; }
+    } catch (e) { console.warn('orders fetch failed:', e); }
+
+    try {
+      const { data: vsts, error: vstsErr } = await db.from('visits').select('*');
+      if (!vstsErr && vsts) { VISITS_DATA = vsts; }
+    } catch (e) { console.warn('visits fetch failed:', e); }
+
     // 5. Generate Activity Feed
     generateActivityFeedFromData();
     updateOverviewStats();
@@ -1231,10 +1332,13 @@ async function initAdminApp() {
   }
 
   // Render UIs
+  populateReportsVenueTabs();
+  populateAnalyticsVenueTabs();
   renderActivityFeed();
   renderOverviewVenues();
   renderVenuesTable();
   renderAllReports();
+  renderAnalyticsReports();
   renderWaitlist();
   renderDiscoverControl();
   renderTickerEditor();
@@ -1672,10 +1776,78 @@ function renderScoreHistory() {
 }
 
 // ALL REPORTS
+let currentReportsFilter = 'All';
+let currentReportsVenueFilter = 'all';
+let activeFilteredReports = [];
+
+function populateReportsVenueTabs() {
+  const container = document.getElementById('reports-venue-tabs');
+  if (!container) return;
+
+  const uniqueVenues = [...new Set(VENUES_DATA.map(v => v.name))];
+  
+  let html = `<button class="filter-pill ${currentReportsVenueFilter === 'all' ? 'active' : ''}" onclick="setReportsVenueFilter('all', this)">All Venues</button>`;
+  
+  uniqueVenues.forEach(vName => {
+    const escaped = vName.replace(/'/g, "\\'");
+    html += `<button class="filter-pill ${currentReportsVenueFilter === vName ? 'active' : ''}" onclick="setReportsVenueFilter('${escaped}', this)">${vName}</button>`;
+  });
+  
+  container.innerHTML = html;
+}
+
+function setReportsVenueFilter(venueName, btnEl) {
+  currentReportsVenueFilter = venueName;
+  const pills = document.querySelectorAll('#reports-venue-tabs .filter-pill');
+  pills.forEach(p => p.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+  renderAllReports();
+}
+
+function setReportsFilter(filter, btnEl) {
+  currentReportsFilter = filter;
+  const pills = document.querySelectorAll('#reports-status-filters .filter-pill');
+  pills.forEach(p => p.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+  renderAllReports();
+}
+
 function renderAllReports() {
   const tbody = document.getElementById('all-reports-tbody');
   if (!tbody) return;
-  tbody.innerHTML = REPORTS_DATA.map((r,i) => `
+
+  const searchInput = document.getElementById('reports-search');
+  const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+  let filtered = REPORTS_DATA;
+
+  // Venue tab filter
+  if (currentReportsVenueFilter !== 'all') {
+    filtered = filtered.filter(r => r.venue === currentReportsVenueFilter);
+  }
+
+  // Search filter
+  if (query) {
+    filtered = filtered.filter(r => 
+      r.venue.toLowerCase().includes(query) ||
+      r.reviewer.toLowerCase().includes(query) ||
+      (r.note && r.note.toLowerCase().includes(query))
+    );
+  }
+
+  // Pill filter
+  if (currentReportsFilter === 'Flagged') {
+    filtered = filtered.filter(r => r.flagged);
+  } else if (currentReportsFilter === 'Verified') {
+    filtered = filtered.filter(r => r.status === 'verified');
+  } else if (currentReportsFilter === 'This Week') {
+    const oneWeekAgo = new Date(Date.now() - 7 * 86400000);
+    filtered = filtered.filter(r => new Date(r.date) > oneWeekAgo);
+  }
+
+  activeFilteredReports = filtered;
+
+  tbody.innerHTML = filtered.map((r,i) => `
     <tr>
       <td style="color:var(--muted);font-family:var(--mono);font-size:10px;">${String(i+1).padStart(2,'0')}</td>
       <td style="font-size:12px;font-weight:600;">${r.venue}</td>
@@ -1686,10 +1858,221 @@ function renderAllReports() {
       <td style="font-size:11px;color:var(--muted);">${r.date}</td>
       <td>${r.flagged?'<span class="badge badge--flagged">Flagged</span>':r.status==='verified'?'<span class="badge badge--verified">Verified</span>':'<span class="badge badge--inactive">Unverified</span>'}</td>
       <td class="tbl-actions">
-        ${!r.flagged?`<button class="btn btn--xs btn--danger" onclick="flagReport(${r.id})">Flag</button>`:`<button class="btn btn--xs btn--ghost" onclick="unflagReport(${r.id})">Unflag</button>`}
-        <button class="btn btn--xs btn--danger" onclick="deleteReport(${r.id})">Delete</button>
+        ${!r.flagged?`<button class="btn btn--xs btn--danger" onclick="flagReport('${r.id}')">Flag</button>`:`<button class="btn btn--xs btn--ghost" onclick="unflagReport('${r.id}')">Unflag</button>`}
+        <button class="btn btn--xs btn--danger" onclick="deleteReport('${r.id}')">Delete</button>
       </td>
     </tr>`).join('');
+}
+
+// ANALYTICS TAB DYNAMIC PERFORMANCE DASHBOARD
+let currentAnalyticsReportsVenueFilter = 'all';
+
+function populateAnalyticsVenueTabs() {
+  const container = document.getElementById('analytics-venue-tabs');
+  if (!container) return;
+
+  let html = `<button class="filter-pill ${currentAnalyticsReportsVenueFilter === 'all' ? 'active' : ''}" onclick="setAnalyticsReportsVenueFilter('all', this)">All Venues</button>`;
+  
+  VENUES_DATA.forEach(v => {
+    const escaped = v.name.replace(/'/g, "\\'");
+    html += `<button class="filter-pill ${currentAnalyticsReportsVenueFilter === v.name ? 'active' : ''}" onclick="setAnalyticsReportsVenueFilter('${escaped}', this)">${v.name}</button>`;
+  });
+  
+  container.innerHTML = html;
+}
+
+function setAnalyticsReportsVenueFilter(venueName, btnEl) {
+  currentAnalyticsReportsVenueFilter = venueName;
+  const pills = document.querySelectorAll('#analytics-venue-tabs .filter-pill');
+  pills.forEach(p => p.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+  renderAnalyticsReports();
+}
+
+function renderAnalyticsReports() {
+  const selectedVenue = currentAnalyticsReportsVenueFilter === 'all' ? null : VENUES_DATA.find(v => v.name === currentAnalyticsReportsVenueFilter);
+
+  // Filter Orders & Visits
+  const filteredOrders = selectedVenue ? ORDERS_DATA.filter(o => o.venue_id === selectedVenue.id) : ORDERS_DATA;
+  const filteredVisits = selectedVenue ? VISITS_DATA.filter(v => v.venue_id === selectedVenue.id) : VISITS_DATA;
+
+  // 1. Compute Stats Grid
+  const totalRevenue = filteredOrders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
+  const totalOrders = filteredOrders.length;
+  const activeOrders = filteredOrders.filter(o => 
+    o.status === 'received' || o.status === 'serving' || o.status === 'delivered' || o.status === 'prepared'
+  ).length;
+  const totalVisits = filteredVisits.length;
+  
+  let menuCount = 0;
+  if (currentAnalyticsReportsVenueFilter === 'all') {
+    Object.keys(MENU_DATA).forEach(k => { menuCount += MENU_DATA[k].length; });
+  } else {
+    const slug = selectedVenue ? selectedVenue.slug : '';
+    menuCount = MENU_DATA[slug] ? MENU_DATA[slug].length : 0;
+  }
+
+  const statsHtml = `
+    <div class="card" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);padding:14px;display:flex;flex-direction:column;gap:4px;">
+      <div style="font-size:10px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.05em;">Total Revenue</div>
+      <div style="font-size:22px;font-weight:800;color:var(--cyan);margin-top:2px;">₹${totalRevenue.toLocaleString('en-IN')}</div>
+    </div>
+    <div class="card" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);padding:14px;display:flex;flex-direction:column;gap:4px;">
+      <div style="font-size:10px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.05em;">Total Orders</div>
+      <div style="font-size:22px;font-weight:800;color:var(--gold);margin-top:2px;">${totalOrders}</div>
+    </div>
+    <div class="card" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);padding:14px;display:flex;flex-direction:column;gap:4px;">
+      <div style="font-size:10px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.05em;">Active Orders</div>
+      <div style="font-size:22px;font-weight:800;color:var(--violet);margin-top:2px;">${activeOrders} <span style="font-size:10px;color:var(--muted);font-weight:normal;">Live</span></div>
+    </div>
+    <div class="card" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);padding:14px;display:flex;flex-direction:column;gap:4px;">
+      <div style="font-size:10px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.05em;">Total Visits</div>
+      <div style="font-size:22px;font-weight:800;color:var(--mint);margin-top:2px;">${totalVisits}</div>
+    </div>
+    <div class="card" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);padding:14px;display:flex;flex-direction:column;gap:4px;">
+      <div style="font-size:10px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.05em;">Menu Items</div>
+      <div style="font-size:22px;font-weight:800;color:var(--coral);margin-top:2px;">${menuCount}</div>
+    </div>
+  `;
+  document.getElementById('analytics-venue-stats-grid').innerHTML = statsHtml;
+
+  // 2. Compute Peak Hours
+  const slotDefinitions = [
+    { time: '12:00 PM – 2:00 PM', start: 12, end: 14 },
+    { time: '7:00 PM – 9:00 PM',  start: 19, end: 21 },
+    { time: '9:00 AM – 11:00 AM', start: 9,  end: 11 },
+    { time: '4:00 PM – 6:00 PM',  start: 16, end: 18 },
+  ];
+
+  const slotData = slotDefinitions.map(slot => {
+    let revenue = 0;
+    let count = 0;
+    filteredOrders.forEach(o => {
+      const hour = new Date(o.created_at).getHours();
+      if (hour >= slot.start && hour < slot.end) {
+        revenue += (o.total || 0);
+        count++;
+      }
+    });
+    return { time: slot.time, revenue, count };
+  });
+
+  const maxCount = Math.max(...slotData.map(s => s.count));
+  const peakHtml = slotData.map(slot => {
+    const occupancy = maxCount > 0 ? Math.round((slot.count / maxCount) * 80 + 15) : 0;
+    return `
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;">
+          <span style="color:var(--muted);">${slot.time}</span>
+          <span style="color:var(--cyan);font-weight:600;">₹${slot.revenue.toLocaleString('en-IN')}</span>
+        </div>
+        <div style="height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;margin:4px 0;">
+          <div style="height:100%;width:${slot.count > 0 ? occupancy : 0}%;background:linear-gradient(to right, var(--cyan), var(--violet));border-radius:2px;"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('analytics-venue-peak-hours').innerHTML = peakHtml || '<div style="font-size:11px;color:var(--muted);">No sales transactions logged</div>';
+
+  // 3. Compute Granular Ratings
+  let ratings = { food: 5, ambience: 5, service: 5, value: 5, wait: 5 };
+  if (currentAnalyticsReportsVenueFilter === 'all') {
+    let sums = { food: 0, ambience: 0, service: 0, value: 0, wait: 0, count: 0 };
+    VENUES_DATA.forEach(v => {
+      if (v.scores) {
+        sums.food += v.scores.food || 5;
+        sums.ambience += v.scores.ambience || 5;
+        sums.service += v.scores.service || 5;
+        sums.value += v.scores.value || 5;
+        sums.wait += v.scores.wait || 5;
+        sums.count++;
+      }
+    });
+    if (sums.count > 0) {
+      ratings = {
+        food: sums.food / sums.count,
+        ambience: sums.ambience / sums.count,
+        service: sums.service / sums.count,
+        value: sums.value / sums.count,
+        wait: sums.wait / sums.count
+      };
+    }
+  } else if (selectedVenue && selectedVenue.scores) {
+    ratings = selectedVenue.scores;
+  }
+
+  const ratingsHtml = `
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      ${Object.entries(ratings).map(([dimension, val]) => `
+        <div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;margin-bottom:6px;">
+          <span style="text-transform:capitalize;color:var(--muted);width:80px;">${dimension}</span>
+          <div style="flex:1;height:4px;background:rgba(255,255,255,0.05);border-radius:2px;margin:0 12px;overflow:hidden;">
+            <div style="height:100%;width:${(val / 10) * 100}%;background:var(--mint);border-radius:2px;"></div>
+          </div>
+          <span style="font-weight:700;color:var(--mint);font-family:var(--mono);width:45px;text-align:right;">${val.toFixed(1)}/10</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  document.getElementById('analytics-venue-ratings-bars').innerHTML = ratingsHtml;
+}
+
+function exportAnalyticsOrdersCSV() {
+  const selectedVenue = currentAnalyticsReportsVenueFilter === 'all' ? null : VENUES_DATA.find(v => v.name === currentAnalyticsReportsVenueFilter);
+  const filteredOrders = selectedVenue ? ORDERS_DATA.filter(o => o.venue_id === selectedVenue.id) : ORDERS_DATA;
+
+  if (filteredOrders.length === 0) {
+    showToast('⚠ No sales transactions to export', 'error');
+    return;
+  }
+  const headers = ['Order ID', 'Table Number', 'Total (INR)', 'Status', 'Date', 'Items'];
+  const rows = filteredOrders.map(o => [
+    o.id,
+    o.table_num || 'Self-Service',
+    o.total || 0,
+    o.status,
+    o.created_at,
+    `"${(o.items || []).map(i => `${i.name} (x${i.quantity || 1})`).join(', ').replace(/"/g, '""')}"`
+  ]);
+  const csvContent = "data:text/csv;charset=utf-8," 
+    + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  const filePrefix = currentAnalyticsReportsVenueFilter === 'all' ? 'all_venues' : currentAnalyticsReportsVenueFilter.toLowerCase().replace(/\s+/g, '_');
+  link.setAttribute("download", `snyf_sales_${filePrefix}_${new Date().toISOString().split('T')[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast(`✓ Exported ${filteredOrders.length} transactions as CSV`, 'success');
+}
+
+function exportAnalyticsVisitsCSV() {
+  const selectedVenue = currentAnalyticsReportsVenueFilter === 'all' ? null : VENUES_DATA.find(v => v.name === currentAnalyticsReportsVenueFilter);
+  const filteredVisits = selectedVenue ? VISITS_DATA.filter(v => v.venue_id === selectedVenue.id) : VISITS_DATA;
+
+  if (filteredVisits.length === 0) {
+    showToast('⚠ No visit records to export', 'error');
+    return;
+  }
+  const headers = ['Visit ID', 'Device', 'Source', 'Date'];
+  const rows = filteredVisits.map(v => [
+    v.id,
+    v.device || 'unknown',
+    v.source || 'direct',
+    v.created_at
+  ]);
+  const csvContent = "data:text/csv;charset=utf-8," 
+    + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  const filePrefix = currentAnalyticsReportsVenueFilter === 'all' ? 'all_venues' : currentAnalyticsReportsVenueFilter.toLowerCase().replace(/\s+/g, '_');
+  link.setAttribute("download", `snyf_visits_${filePrefix}_${new Date().toISOString().split('T')[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast(`✓ Exported ${filteredVisits.length} visits as CSV`, 'success');
 }
 
 async function flagReport(id) {
@@ -1702,6 +2085,8 @@ async function flagReport(id) {
     const r = REPORTS_DATA.find(x => x.id === id);
     if (r) { r.flagged = true; }
     renderAllReports();
+    renderAnalyticsReports();
+    updateOverviewStats();
     showToast('⚠ Report flagged', 'error');
   } catch (err) {
     dbError('flagReport', err);
@@ -1719,6 +2104,8 @@ async function unflagReport(id) {
     const r = REPORTS_DATA.find(x => x.id === id);
     if (r) { r.flagged = false; }
     renderAllReports();
+    renderAnalyticsReports();
+    updateOverviewStats();
     showToast('✓ Report unflagged', 'success');
   } catch (err) {
     dbError('unflagReport', err);
@@ -1736,6 +2123,8 @@ async function deleteReport(id) {
     const idx = REPORTS_DATA.findIndex(x => x.id === id);
     if (idx !== -1) { REPORTS_DATA.splice(idx, 1); }
     renderAllReports();
+    renderAnalyticsReports();
+    updateOverviewStats();
     showToast('Report deleted', 'info');
   } catch (err) {
     dbError('deleteReport', err);
@@ -1744,10 +2133,43 @@ async function deleteReport(id) {
 }
 
 // WAITLIST
+let currentWaitlistFilter = 'All';
+
+function setWaitlistFilter(filter, btnEl) {
+  currentWaitlistFilter = filter;
+  const pills = document.querySelectorAll('#waitlist-type-filters .filter-pill');
+  pills.forEach(p => p.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+  renderWaitlist();
+}
+
 function renderWaitlist() {
   const tbody = document.getElementById('waitlist-tbody');
   if (!tbody) return;
-  tbody.innerHTML = WAITLIST_DATA.map((w,i) => `
+
+  const searchInput = document.getElementById('waitlist-search');
+  const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+  let filtered = WAITLIST_DATA;
+
+  // Search filter
+  if (query) {
+    filtered = filtered.filter(w => 
+      w.name.toLowerCase().includes(query) ||
+      w.email.toLowerCase().includes(query)
+    );
+  }
+
+  // Pill filter
+  if (currentWaitlistFilter === 'Business') {
+    filtered = filtered.filter(w => w.type === 'business');
+  } else if (currentWaitlistFilter === 'Users') {
+    filtered = filtered.filter(w => w.type === 'user');
+  } else if (currentWaitlistFilter === 'New Only') {
+    filtered = filtered.filter(w => w.status === 'new');
+  }
+
+  tbody.innerHTML = filtered.map((w,i) => `
     <tr ${w.type==='business'?'style="background:rgba(212,168,83,0.03);"':''}>
       <td style="color:var(--muted);font-family:var(--mono);font-size:10px;">${String(i+1).padStart(2,'0')}</td>
       <td style="font-weight:600;">${w.name}</td>
@@ -1756,7 +2178,7 @@ function renderWaitlist() {
       <td style="font-size:11px;color:var(--muted);font-family:var(--mono);">${w.date}</td>
       <td><span class="badge badge--${w.status==='new'?'active':'inactive'}">${w.status}</span></td>
       <td class="tbl-actions">
-        <button class="btn btn--xs btn--ghost" onclick="markContacted(${w.id})">Mark Contacted</button>
+        <button class="btn btn--xs btn--ghost" onclick="markContacted('${w.id}')">Mark Contacted</button>
         ${w.type==='business'?`<button class="btn btn--xs btn--cyan">Convert to Venue</button>`:''}
       </td>
     </tr>`).join('');
@@ -1773,6 +2195,7 @@ async function markContacted(id) {
 
     const entry = WAITLIST_DATA.find(w => w.id === id);
     if (entry) { entry.status = 'contacted'; renderWaitlist(); }
+    updateOverviewStats();
     showToast('✓ Marked as contacted', 'success');
   } catch (err) {
     dbError('markContacted', err);
@@ -1781,18 +2204,114 @@ async function markContacted(id) {
 }
 
 // DISCOVER CONTROL
+async function toggleDiscoverVisibility(venueId, show) {
+  try {
+    const { error } = await db
+      .from('venues')
+      .update({ show_on_discover: show })
+      .eq('id', venueId);
+    if (error) throw error;
+    
+    // Update local data
+    const venue = VENUES_DATA.find(v => String(v.id) === String(venueId));
+    if (venue) venue.show_on_discover = show;
+    
+    showToast(`✓ Discover visibility updated`, 'success');
+  } catch (err) {
+    dbError('toggleDiscoverVisibility', err);
+    showToast('⚠ Failed to update visibility', 'error');
+  }
+}
+
+async function toggleFeaturedVenue(venueId, isFeatured) {
+  try {
+    const { error } = await db
+      .from('venues')
+      .update({ featured: isFeatured })
+      .eq('id', venueId);
+    if (error) throw error;
+    
+    // Update local data
+    const venue = VENUES_DATA.find(v => String(v.id) === String(venueId));
+    if (venue) venue.featured = isFeatured;
+    
+    renderDiscoverControl();
+    showToast(`✓ Venue featured status updated`, 'success');
+  } catch (err) {
+    dbError('toggleFeaturedVenue', err);
+    showToast('⚠ Failed to update featured status', 'error');
+  }
+}
+
+let draggedVenueId = null;
+
+function onDiscoverDragStart(e) {
+  draggedVenueId = e.currentTarget.dataset.id;
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDiscoverDragOver(e) {
+  e.preventDefault();
+}
+
+async function onDiscoverDrop(e, targetId) {
+  e.preventDefault();
+  if (!draggedVenueId || draggedVenueId === targetId) return;
+
+  const draggedIdx = VENUES_DATA.findIndex(v => String(v.id) === String(draggedVenueId));
+  const targetIdx = VENUES_DATA.findIndex(v => String(v.id) === String(targetId));
+  if (draggedIdx === -1 || targetIdx === -1) return;
+
+  // Move the item in the array
+  const [removed] = VENUES_DATA.splice(draggedIdx, 1);
+  VENUES_DATA.splice(targetIdx, 0, removed);
+
+  // Update sort_order locally
+  VENUES_DATA.forEach((v, idx) => {
+    v.sort_order = idx + 1;
+  });
+
+  // Re-render
+  renderDiscoverControl();
+
+  // Save to database
+  try {
+    showToast('Saving discover order...', 'info');
+    const promises = VENUES_DATA.map(v => 
+      db.from('venues').update({ sort_order: v.sort_order }).eq('id', v.id)
+    );
+    await Promise.all(promises);
+    showToast('✓ Discover order saved', 'success');
+  } catch (err) {
+    dbError('onDiscoverDrop', err);
+    showToast('⚠ Failed to save discover order', 'error');
+  }
+}
+
 function renderDiscoverControl() {
   const list = document.getElementById('discover-order-list');
   if (!list) return;
-  list.innerHTML = VENUES_DATA.map((v,i) => `
-    <div class="discover-item" draggable="true" data-id="${v.id}">
-      <span class="discover-drag-handle">⠿</span>
-      <div style="flex:1;"><div class="discover-item-name">${v.name}</div><div class="discover-item-zone">${v.zone} · ${v.category}</div></div>
-      <div class="toggle-wrap">
-        <label class="toggle"><input type="checkbox" checked onchange="showToast('Discover visibility updated','info')"><span class="toggle-slider"></span></label>
-        <span class="toggle-label" style="font-size:11px;">Visible</span>
+  
+  // Sort VENUES_DATA by sort_order
+  VENUES_DATA.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  
+  list.innerHTML = VENUES_DATA.map((v, i) => `
+    <div class="discover-item" draggable="true" data-id="${v.id}" ondragstart="onDiscoverDragStart(event)" ondragover="onDiscoverDragOver(event)" ondrop="onDiscoverDrop(event, '${v.id}')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:8px;cursor:grab;">
+      <span class="discover-drag-handle" style="cursor:grab;color:var(--dim);user-select:none;font-size:14px;">⠿</span>
+      <div style="flex:1;">
+        <div class="discover-item-name" style="font-weight:600;font-size:13px;color:var(--text);">${v.name}</div>
+        <div class="discover-item-zone" style="font-size:11px;color:var(--muted);margin-top:2px;">${v.zone} · ${v.category}</div>
       </div>
-      <button class="btn btn--xs btn--ghost" style="margin-left:8px;" onclick="showToast('${i===0?'Already featured':'✓ Venue featured'}','${i===0?'info':'success'}')">${i===0?'★ Featured':'☆ Feature'}</button>
+      <div class="toggle-wrap" style="display:flex;align-items:center;gap:8px;">
+        <label class="toggle">
+          <input type="checkbox" ${v.show_on_discover !== false ? 'checked' : ''} onchange="toggleDiscoverVisibility('${v.id}', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label" style="font-size:11px;color:var(--muted);">Visible</span>
+      </div>
+      <button class="btn btn--xs ${v.featured ? 'btn--cyan' : 'btn--ghost'}" style="margin-left:8px;" onclick="toggleFeaturedVenue('${v.id}', ${!v.featured})">
+        ${v.featured ? '★ Featured' : '☆ Feature'}
+      </button>
     </div>`).join('');
 }
 
@@ -2527,6 +3046,167 @@ async function deleteVenueConfirm() {
   } else if (confirm !== null) {
     showToast('⚠ Name did not match — deletion cancelled', 'error');
   }
+}
+
+// PLATFORM SETTINGS & CREDENTIALS
+function loadPlatformSettings() {
+  const name = localStorage.getItem('snyf_settings_name') || 'Snyf';
+  const tagline = localStorage.getItem('snyf_settings_tagline') || 'Trust Intelligence for Local Discovery';
+  const commons = localStorage.getItem('snyf_settings_flag_commons') !== 'false';
+  const discover = localStorage.getItem('snyf_settings_flag_discover') !== 'false';
+  const ordering = localStorage.getItem('snyf_settings_flag_ordering') !== 'false';
+  const reports = localStorage.getItem('snyf_settings_flag_reports') !== 'false';
+
+  const nameEl = document.getElementById('settings-platform-name');
+  const taglineEl = document.getElementById('settings-platform-tagline');
+  const commonsEl = document.getElementById('flag-commons');
+  const discoverEl = document.getElementById('flag-discover');
+  const orderingEl = document.getElementById('flag-ordering');
+  const reportsEl = document.getElementById('flag-reports');
+  const emailEl = document.getElementById('settings-admin-email');
+
+  if (nameEl) nameEl.value = name;
+  if (taglineEl) taglineEl.value = tagline;
+  if (commonsEl) commonsEl.checked = commons;
+  if (discoverEl) discoverEl.checked = discover;
+  if (orderingEl) orderingEl.checked = ordering;
+  if (reportsEl) reportsEl.checked = reports;
+  if (emailEl) emailEl.value = ADMIN_EMAIL;
+}
+
+function saveSettings() {
+  const name = document.getElementById('settings-platform-name').value.trim();
+  const tagline = document.getElementById('settings-platform-tagline').value.trim();
+  const commons = document.getElementById('flag-commons').checked;
+  const discover = document.getElementById('flag-discover').checked;
+  const ordering = document.getElementById('flag-ordering').checked;
+  const reports = document.getElementById('flag-reports').checked;
+
+  localStorage.setItem('snyf_settings_name', name);
+  localStorage.setItem('snyf_settings_tagline', tagline);
+  localStorage.setItem('snyf_settings_flag_commons', commons);
+  localStorage.setItem('snyf_settings_flag_discover', discover);
+  localStorage.setItem('snyf_settings_flag_ordering', ordering);
+  localStorage.setItem('snyf_settings_flag_reports', reports);
+
+  showToast('✓ Platform settings saved', 'success');
+}
+
+function saveAdminCredentials() {
+  const emailInput = document.getElementById('settings-admin-email').value.trim();
+  const currPass = document.getElementById('settings-admin-curr-pass').value;
+  const newPass = document.getElementById('settings-admin-new-pass').value;
+
+  if (!emailInput) {
+    showToast('⚠ Email cannot be empty', 'error');
+    return;
+  }
+  
+  if (currPass !== ADMIN_PASSWORD) {
+    showToast('⚠ Incorrect current password', 'error');
+    return;
+  }
+
+  if (newPass) {
+    ADMIN_PASSWORD = newPass;
+    localStorage.setItem('snyf_admin_password', newPass);
+  }
+
+  ADMIN_EMAIL = emailInput;
+  localStorage.setItem('snyf_admin_email', emailInput);
+
+  document.getElementById('settings-admin-curr-pass').value = '';
+  document.getElementById('settings-admin-new-pass').value = '';
+
+  showToast('✓ Credentials updated successfully', 'success');
+}
+
+// EXPORT FUNCTIONS
+async function exportAllDataAsJSON() {
+  try {
+    showToast('Exporting data...', 'info');
+    const { data: dbVenues } = await db.from('venues').select('*');
+    const { data: dbReports } = await db.from('field_reports').select('*');
+    const { data: dbWaitlist } = await db.from('waitlist').select('*');
+    const { data: dbQRCodes } = await db.from('qr_codes').select('*');
+
+    const fullBackup = {
+      exported_at: new Date().toISOString(),
+      venues: dbVenues || [],
+      field_reports: dbReports || [],
+      waitlist: dbWaitlist || [],
+      qr_codes: dbQRCodes || []
+    };
+
+    const blob = new Blob([JSON.stringify(fullBackup, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.download = `snyf_backup_${new Date().toISOString().split('T')[0]}.json`;
+    link.href = URL.createObjectURL(blob);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+    showToast('✓ Data backup exported successfully', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('⚠ Failed to export backup', 'error');
+  }
+}
+
+function exportWaitlistCSV() {
+  if (WAITLIST_DATA.length === 0) {
+    showToast('⚠ No waitlist data to export', 'error');
+    return;
+  }
+  const headers = ['ID', 'Name', 'Email', 'Type', 'Date', 'Status'];
+  const rows = WAITLIST_DATA.map(w => [
+    w.id,
+    `"${w.name.replace(/"/g, '""')}"`,
+    `"${w.email.replace(/"/g, '""')}"`,
+    w.type,
+    w.date,
+    w.status
+  ]);
+  const csvContent = "data:text/csv;charset=utf-8," 
+    + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `snyf_waitlist_${new Date().toISOString().split('T')[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('✓ Waitlist exported as CSV', 'success');
+}
+
+function exportReportsCSV() {
+  if (activeFilteredReports.length === 0) {
+    showToast('⚠ No report data to export in the current view', 'error');
+    return;
+  }
+  const headers = ['ID', 'Venue', 'Reviewer', 'Score', 'Note', 'Trust Level', 'Date', 'Flagged', 'Status'];
+  const rows = activeFilteredReports.map(r => [
+    r.id,
+    `"${r.venue.replace(/"/g, '""')}"`,
+    `"${r.reviewer.replace(/"/g, '""')}"`,
+    r.score,
+    `"${(r.note || '').replace(/"/g, '""')}"`,
+    r.trustLevel,
+    r.date,
+    r.flagged ? 'TRUE' : 'FALSE',
+    r.status
+  ]);
+  const csvContent = "data:text/csv;charset=utf-8," 
+    + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  const filePrefix = currentReportsVenueFilter === 'all' ? 'all_venues' : currentReportsVenueFilter.toLowerCase().replace(/\s+/g, '_');
+  link.setAttribute("download", `snyf_reports_${filePrefix}_${new Date().toISOString().split('T')[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast(`✓ Exported ${activeFilteredReports.length} reports as CSV`, 'success');
 }
 
 // MODAL HELPERS
