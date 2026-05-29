@@ -2279,6 +2279,13 @@
               id="sl-value" oninput="updateSlider('value', this.value)">
           </div>
 
+          <div class="track-slider-row" style="flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 12px;">
+            <div class="track-slider-meta" style="margin-bottom: 4px;">
+              <span class="track-slider-label">Comment (optional)</span>
+            </div>
+            <textarea id="sl-comment" placeholder="What should the community know?" style="width: 100%; min-height: 54px; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg, #fcfbf9); color: var(--ink); font-size: 12px; font-family: inherit; resize: vertical; box-sizing: border-box;" maxlength="180"></textarea>
+          </div>
+
           <button class="track-back-btn" onclick="submitReviewAndReturn()">Submit & Back to Menu</button>
         </div>
 
@@ -2301,6 +2308,16 @@
   let VENUE_DATA = null;
 
   // Read slug from URL query param (local dev) or pathname (production rewrite)
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   const getVenueSlug = () => {
     const searchSlug = new URLSearchParams(window.location.search).get('slug');
     if (searchSlug) return searchSlug;
@@ -2937,7 +2954,7 @@
             service:     pending.service,
             value:       pending.value,
             wait_time:   null,
-            note:        'Order feedback',
+            note:        pending.note || 'Order feedback',
             verified:    true,
             flagged:     false,
             source:      'qr_scan',
@@ -4027,6 +4044,7 @@ async function submitReviewAndReturn() {
   const ambience = parseFloat(document.getElementById('sl-ambience')?.value || '5.0');
   const service  = parseFloat(document.getElementById('sl-service')?.value  || '5.0');
   const value    = parseFloat(document.getElementById('sl-value')?.value    || '5.0');
+  const note     = document.getElementById('sl-comment')?.value.trim()      || 'Order feedback';
 
   // Only save if user actually moved the sliders (not all default 5.0)
   const hasRated = [food, ambience, service, value].some(v => v !== 5.0);
@@ -4043,6 +4061,7 @@ async function submitReviewAndReturn() {
           ambience,
           service,
           value,
+          note,
           order_id:    window._lastOrderId || null,
         };
         sessionStorage.setItem('snyf_pending_tracking_review', JSON.stringify(pendingReview));
@@ -4064,7 +4083,7 @@ async function submitReviewAndReturn() {
         service,
         value,
         wait_time:   null,
-        note:        'Order feedback',
+        note,
         verified:    true,      // ordered = verified visit
         flagged:     false,
         source:      'qr_scan',
@@ -4525,6 +4544,10 @@ async function renderDirectRateBox() {
     const wait = existingReport.wait_time != null ? Number(existingReport.wait_time) : 5.0;
 
     const userScore = (food * 0.3 + ambience * 0.2 + service * 0.2 + value * 0.2 + wait * 0.1).toFixed(1);
+    
+    const defaultNotes = ['Direct rating', 'Updated direct rating', 'Order feedback', 'No note added.'];
+    const commentText = existingReport.note && !defaultNotes.includes(existingReport.note) ? existingReport.note : '';
+    const hasComment = commentText.trim().length > 0;
 
     container.innerHTML = `
       <div class="menu-direct-rate-title">
@@ -4550,6 +4573,35 @@ async function renderDirectRateBox() {
         <p style="font-size:11px;color:var(--muted);margin:6px 0 0;line-height:1.5;text-align:center;">
           Thank you for contributing to Snyf Intelligence!
         </p>
+
+        <!-- Inline Comment Area -->
+        <div class="menu-direct-rate-comment-section" style="border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px; margin-top: 4px; text-align: left; width: 100%;">
+          ${hasComment ? `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <span style="font-size: 11px; font-weight: 700; color: var(--muted);">Your Comment</span>
+              <button onclick="enableDirectCommentEdit()" style="background: none; border: none; color: var(--cyan); font-size: 11px; font-weight: 600; cursor: pointer; padding: 0;">Edit</button>
+            </div>
+            <div id="comment-display-area" style="font-size: 12px; color: var(--ink); line-height: 1.45; word-break: break-word; font-style: italic;">
+              "${escapeHtml(commentText)}"
+            </div>
+          ` : `
+            <div id="comment-trigger-area">
+              <button onclick="enableDirectCommentEdit()" style="width: 100%; background: none; border: 1px dashed var(--border); color: var(--muted); border-radius: 6px; padding: 8px; font-size: 11px; font-weight: 600; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                💬 Write a comment
+              </button>
+            </div>
+          `}
+
+          <!-- Inline Edit/Write Form (hidden by default) -->
+          <div id="comment-edit-area" style="display: none; flex-direction: column; gap: 6px; margin-top: 4px;">
+            <textarea id="direct-comment-inline-input" placeholder="Add a comment about your experience..." style="width: 100%; min-height: 50px; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: #fcfbf9; color: var(--ink); font-size: 12px; font-family: inherit; resize: vertical; box-sizing: border-box;" maxlength="180">${escapeHtml(commentText)}</textarea>
+            <div style="display: flex; gap: 6px; justify-content: flex-end;">
+              <button onclick="cancelDirectCommentEdit()" style="background: var(--hover); color: var(--ink); border: 1px solid var(--border); border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; padding: 4px 10px;">Cancel</button>
+              <button id="save-inline-comment-btn" onclick="saveDirectCommentInline()" style="background: var(--ink); color: var(--white); border: none; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; padding: 4px 10px;">Save</button>
+            </div>
+          </div>
+        </div>
+
         <button onclick="enableDirectRateEditing()" class="menu-direct-rate-btn" style="background:var(--accent);color:var(--accent-foreground);margin-top:8px;width:100%;border:none;cursor:pointer;padding:8px;border-radius:8px;font-size:12px;font-weight:600;">
           Edit / Rate Again
         </button>
@@ -4558,6 +4610,7 @@ async function renderDirectRateBox() {
     return;
   }
 
+  const defaultNotes = ['Direct rating', 'Updated direct rating', 'Order feedback', 'No note added.'];
   const foodVal = existingReport ? (existingReport.food != null ? Number(existingReport.food) : 5.0) : 5.0;
   const ambienceVal = existingReport ? (existingReport.ambience != null ? Number(existingReport.ambience) : 5.0) : 5.0;
   const serviceVal = existingReport ? (existingReport.service != null ? Number(existingReport.service) : 5.0) : 5.0;
@@ -4600,6 +4653,12 @@ async function renderDirectRateBox() {
         <span class="menu-direct-rate-label">Wait</span>
         <input type="range" class="menu-direct-rate-slider" min="1.0" max="7.0" step="0.1" value="${waitVal}" id="direct-rate-wait" oninput="updateDirectRateValues()">
         <span class="menu-direct-rate-val" id="direct-rate-wait-val">${waitVal.toFixed(1)}</span>
+      </div>
+
+      <!-- Add Comment Area (sliders mode) -->
+      <div class="menu-direct-rate-comment-row" style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px; width: 100%;">
+        <span style="font-size: 11px; font-weight: 600; color: var(--muted); text-align: left;">Add comment (optional)</span>
+        <textarea id="direct-rate-comment" placeholder="What should the community know?" style="width: 100%; min-height: 54px; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: #fcfbf9; color: var(--ink); font-size: 12px; font-family: inherit; resize: vertical; box-sizing: border-box;" maxlength="180">${escapeHtml(existingReport && existingReport.note && !defaultNotes.includes(existingReport.note) ? existingReport.note : '')}</textarea>
       </div>
 
       <div style="display: flex; gap: 8px; width: 100%;">
@@ -4648,6 +4707,60 @@ window.updateDirectRateValues = function() {
   }
 };
 
+window.enableDirectCommentEdit = function() {
+  const displayArea = document.getElementById('comment-display-area');
+  const triggerArea = document.getElementById('comment-trigger-area');
+  const editArea = document.getElementById('comment-edit-area');
+  if (displayArea) displayArea.style.display = 'none';
+  if (triggerArea) triggerArea.style.display = 'none';
+  if (editArea) editArea.style.display = 'flex';
+};
+
+window.cancelDirectCommentEdit = function() {
+  const displayArea = document.getElementById('comment-display-area');
+  const triggerArea = document.getElementById('comment-trigger-area');
+  const editArea = document.getElementById('comment-edit-area');
+  if (displayArea) displayArea.style.display = 'block';
+  if (triggerArea) triggerArea.style.display = 'block';
+  if (editArea) editArea.style.display = 'none';
+};
+
+window.saveDirectCommentInline = async function() {
+  const textarea = document.getElementById('direct-comment-inline-input');
+  const btn = document.getElementById('save-inline-comment-btn');
+  if (!textarea || !btn) return;
+
+  const newComment = textarea.value.trim();
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    const user = await snyfGetUser();
+    if (!user) {
+      showToast('Please log in first.');
+      return;
+    }
+
+    if (_latestReportForEdit && _latestReportForEdit.id) {
+      await db.from('field_reports').update({
+        note: newComment || 'Updated direct rating',
+      }).eq('id', _latestReportForEdit.id);
+
+      showToast('Comment saved! 💬');
+      _latestReportForEdit.note = newComment || 'Updated direct rating';
+      await loadVenueData();
+    } else {
+      showToast('Please submit a rating first.');
+    }
+  } catch (err) {
+    console.error('Failed to save comment inline:', err);
+    showToast('Failed to save comment. Try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save';
+  }
+};
+
 window.submitDirectRate = async function() {
   const btn = document.getElementById('direct-rate-submit-btn');
   if (!btn) return;
@@ -4657,6 +4770,7 @@ window.submitDirectRate = async function() {
   const service = parseFloat(document.getElementById('direct-rate-service')?.value || '5.0');
   const value = parseFloat(document.getElementById('direct-rate-value')?.value || '5.0');
   const wait = parseFloat(document.getElementById('direct-rate-wait')?.value || '5.0');
+  const comment = document.getElementById('direct-rate-comment')?.value.trim() || '';
 
   btn.disabled = true;
   btn.textContent = 'Submitting...';
@@ -4673,6 +4787,8 @@ window.submitDirectRate = async function() {
     const activeOrder = activeOrders.find(o => o.venueSlug === VENUE_SLUG && o.status !== 'ready');
     const activeOrderId = activeOrder ? activeOrder.id : null;
 
+    const noteToSave = comment || (_latestReportForEdit ? 'Updated direct rating' : 'Direct rating');
+
     if (_latestReportForEdit && _latestReportForEdit.id) {
       await db.from('field_reports').update({
         food,
@@ -4680,7 +4796,7 @@ window.submitDirectRate = async function() {
         service,
         value,
         wait_time:   wait,
-        note:        'Updated direct rating',
+        note:        noteToSave,
         order_id:    activeOrderId || _latestReportForEdit.order_id || null,
       }).eq('id', _latestReportForEdit.id);
     } else {
@@ -4694,7 +4810,7 @@ window.submitDirectRate = async function() {
         service,
         value,
         wait_time:   wait,
-        note:        'Direct rating',
+        note:        noteToSave,
         verified:    true,
         flagged:     false,
         source:      'direct_rating',
