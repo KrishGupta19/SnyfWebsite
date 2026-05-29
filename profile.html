@@ -1470,21 +1470,21 @@ function goToSetPassword() {
 
 // ── INIT ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-
-  // Check if already logged in
-  const { data: { user } } = await db.auth.getUser();
-
-  if (user) {
-    currentUser = user;
-    const redirect = new URLSearchParams(window.location.search).get('redirect');
-    if (redirect) {
-      window.location.href = redirect;
-      return;
+  // Listen for auth state changes (crucial for handling hash redirects asynchronously)
+  db.auth.onAuthStateChange(async (event, session) => {
+    const user = session?.user;
+    if (user) {
+      currentUser = user;
+      const redirect = new URLSearchParams(window.location.search).get('redirect');
+      if (redirect) {
+        window.location.href = redirect;
+        return;
+      }
+      await loadProfile(user);
+    } else {
+      showAuthScreen();
     }
-    await loadProfile(user);
-  } else {
-    showAuthScreen();
-  }
+  });
 
   // OTP box keyboard handling
   initOTPBoxes();
