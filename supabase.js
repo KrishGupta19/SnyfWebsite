@@ -85,9 +85,16 @@ async function snyfVerifyOTP(email, token) {
     if (!res.ok || !data.ok) {
       return { user: null, error: new Error(data.error || 'Invalid or expired OTP') };
     }
-    if (data.actionLink) {
-      window.location.href = data.actionLink;
-      return new Promise(() => {}); // Keep UI in pending/loading state during redirect
+    // Server returns session tokens directly — set them immediately, no redirect needed
+    if (data.access_token && data.refresh_token) {
+      const { data: sessionData, error: sessionErr } = await db.auth.setSession({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+      });
+      if (sessionErr) {
+        return { user: null, error: sessionErr };
+      }
+      return { user: sessionData.user, error: null };
     }
     return { user: null, error: new Error('Session establishment failed') };
   } catch (err) {
