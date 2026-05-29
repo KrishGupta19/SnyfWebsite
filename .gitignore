@@ -4,3 +4,4 @@ dist/
 .netlify/state.json
 server.out.log
 server.err.log
+scratch/

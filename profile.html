@@ -1436,13 +1436,16 @@ async function signInWithPassword() {
     if (error) throw error;
 
     if (data?.user) {
-      currentUser = data.user;
+      currentUser      = data.user;
+      lastLoadedUserId = data.user.id;
       const redirect = new URLSearchParams(window.location.search).get('redirect');
       if (redirect) {
         window.location.href = redirect;
         return;
       }
+      profileLoading = true;
       await loadProfile(data.user);
+      profileLoading = false;
     }
   } catch (err) {
     errEl.textContent = err.message || 'Invalid email or password. Please try again.';
@@ -1470,31 +1473,59 @@ function goToSetPassword() {
 
 // ── INIT ──────────────────────────────────────────────────────
 let lastLoadedUserId = null;
+let profileLoading   = false;
 
-document.addEventListener('DOMContentLoaded', async () => {
-  // Listen for auth state changes (crucial for handling hash redirects asynchronously)
-  db.auth.onAuthStateChange(async (event, session) => {
-    const user = session?.user;
+async function initAuth() {
+  // Step 1: Immediate check — handles page refresh when already logged in
+  // This is instant and doesn't wait for the listener to fire
+  try {
+    const { data: { user } } = await db.auth.getUser();
     if (user) {
-      currentUser = user;
-      
-      // Prevent concurrent race conditions when event fires multiple times
-      if (lastLoadedUserId === user.id) return;
+      currentUser      = user;
       lastLoadedUserId = user.id;
-
+      profileLoading   = true;
       const redirect = new URLSearchParams(window.location.search).get('redirect');
-      if (redirect) {
-        window.location.href = redirect;
-        return;
-      }
+      if (redirect) { window.location.href = redirect; return; }
       await loadProfile(user);
-    } else {
+      profileLoading = false;
+      return;
+    }
+  } catch (e) {
+    console.warn('[Snyf] getUser failed:', e.message);
+  }
+
+  // Step 2: No session found — show auth screen immediately
+  showAuthScreen();
+
+  // Step 3: Listen for dynamic sign-in / sign-out events
+  db.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session?.user) {
+      const user = session.user;
+      if (lastLoadedUserId === user.id || profileLoading) return;
+      lastLoadedUserId = user.id;
+      currentUser      = user;
+      profileLoading   = true;
+      try {
+        const redirect = new URLSearchParams(window.location.search).get('redirect');
+        if (redirect) { window.location.href = redirect; return; }
+        await loadProfile(user);
+      } catch (err) {
+        console.error('[Snyf] loadProfile error:', err);
+        showAuthScreen();
+      } finally {
+        profileLoading = false;
+      }
+    } else if (event === 'SIGNED_OUT') {
       lastLoadedUserId = null;
+      currentUser      = null;
+      profileLoading   = false;
       showAuthScreen();
     }
   });
+}
 
-  // OTP box keyboard handling
+document.addEventListener('DOMContentLoaded', () => {
+  initAuth();
   initOTPBoxes();
 });
 
@@ -1853,9 +1884,12 @@ let activeVenueFilter = null;
 async function loadOrders(userId) {
   const listEl  = document.getElementById('pf-orders-list');
   try {
+    if (!userId) throw new Error('No user ID — please sign out and sign in again.');
+
+    // Fetch orders without join first (simpler query, avoids CORS preflight complexity)
     const { data: orders, error } = await db
       .from('orders')
-      .select('*, venues(name, slug)')
+      .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
@@ -1870,7 +1904,7 @@ async function loadOrders(userId) {
     listEl.innerHTML = `
       <div class="pf-empty">
         <div class="pf-empty-title">Could not load orders</div>
-        <div class="pf-empty-sub" style="color:#c0392b;font-size:11px;margin-top:6px;">${err?.message || String(err)}</div>
+        <div class="pf-empty-sub" style="color:#c0392b;font-size:11px;margin-top:6px;">uid:${userId} — ${err?.message || String(err)}</div>
       </div>`;
   }
 }
