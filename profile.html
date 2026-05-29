@@ -1305,23 +1305,24 @@
         <!-- Password Settings Section -->
         <div class="pf-modal-field">
           <h4 style="margin: 0 0 12px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink, #1E1E1B);">🔑 Password Settings</h4>
-          
-          <div id="pf-password-create-fields" style="display: none;">
-            <label class="pf-modal-label">Create Password</label>
-            <input type="password" class="pf-modal-input" id="pf-modal-new-password" placeholder="Min 6 characters" autocomplete="new-password" style="margin-bottom: 12px;">
-            <label class="pf-modal-label">Confirm Password</label>
-            <input type="password" class="pf-modal-input" id="pf-modal-confirm-password" placeholder="Confirm new password" autocomplete="new-password">
+          <label class="pf-modal-label">Account Password</label>
+          <div style="position: relative; display: flex; align-items: center; width: 100%;">
+            <input type="password" class="pf-modal-input" id="pf-modal-password" placeholder="Create a password (min 6 characters)" autocomplete="new-password" style="padding-right: 64px; width: 100%; box-sizing: border-box; margin: 0;">
+            <button type="button" id="pf-toggle-password-visibility" onclick="toggleEditPasswordVisibility()" style="
+              position: absolute;
+              right: 12px;
+              background: none;
+              border: none;
+              cursor: pointer;
+              font-size: 12px;
+              color: var(--muted, #6E6A64);
+              padding: 6px;
+              font-family: inherit;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+            ">Show</button>
           </div>
-
-          <div id="pf-password-update-fields" style="display: none;">
-            <label class="pf-modal-label">Current Password</label>
-            <input type="password" class="pf-modal-input" id="pf-modal-current-password" placeholder="Enter current password" autocomplete="current-password" style="margin-bottom: 12px;">
-            <label class="pf-modal-label">New Password</label>
-            <input type="password" class="pf-modal-input" id="pf-modal-update-new-password" placeholder="Min 6 characters" autocomplete="new-password" style="margin-bottom: 12px;">
-            <label class="pf-modal-label">Confirm New Password</label>
-            <input type="password" class="pf-modal-input" id="pf-modal-update-confirm-password" placeholder="Confirm new password" autocomplete="new-password">
-          </div>
-          
           <div class="pf-auth-error" id="pf-modal-pass-error" style="margin-top: 12px;"></div>
         </div>
       </div>
@@ -2440,21 +2441,13 @@ function openProfileModal() {
   const errEl = document.getElementById('pf-modal-pass-error');
   if (errEl) errEl.classList.remove('show');
   
-  // Populate password fields based on whether currentProfile has a password
-  if (currentProfile && currentProfile.password) {
-    document.getElementById('pf-password-create-fields').style.display = 'none';
-    document.getElementById('pf-password-update-fields').style.display = 'block';
-  } else {
-    document.getElementById('pf-password-create-fields').style.display = 'block';
-    document.getElementById('pf-password-update-fields').style.display = 'none';
+  // Populate unified password field
+  const passInp = document.getElementById('pf-modal-password');
+  if (passInp) {
+    passInp.value = currentProfile?.password || '';
+    passInp.type = 'password';
+    document.getElementById('pf-toggle-password-visibility').textContent = 'Show';
   }
-  
-  // Clear all password inputs
-  document.getElementById('pf-modal-new-password').value = '';
-  document.getElementById('pf-modal-confirm-password').value = '';
-  document.getElementById('pf-modal-current-password').value = '';
-  document.getElementById('pf-modal-update-new-password').value = '';
-  document.getElementById('pf-modal-update-confirm-password').value = '';
   
   // Populate avatar preview
   tempAvatarUrl = currentUser.user_metadata?.avatar_url || '';
@@ -2467,6 +2460,19 @@ function openProfileModal() {
   
   // Show modal
   document.getElementById('pf-edit-modal').style.display = 'flex';
+}
+
+function toggleEditPasswordVisibility() {
+  const input = document.getElementById('pf-modal-password');
+  const button = document.getElementById('pf-toggle-password-visibility');
+  if (!input || !button) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    button.textContent = 'Hide';
+  } else {
+    input.type = 'password';
+    button.textContent = 'Show';
+  }
 }
 
 function closeProfileModal() {
@@ -2557,15 +2563,14 @@ async function saveProfileModal() {
   // 1. Password updates validation
   const errEl = document.getElementById('pf-modal-pass-error');
   if (errEl) errEl.classList.remove('show');
-  let newPass = '';
+  
+  const newPass = document.getElementById('pf-modal-password').value;
+  const oldPass = currentProfile?.password || '';
+  let shouldUpdatePassword = false;
 
-  const hasPassword = !!(currentProfile && currentProfile.password);
-  if (!hasPassword) {
-    // Create Mode
-    const createPass = document.getElementById('pf-modal-new-password').value;
-    const confirmPass = document.getElementById('pf-modal-confirm-password').value;
-    if (createPass) {
-      if (createPass.length < 6) {
+  if (newPass !== oldPass) {
+    if (newPass) {
+      if (newPass.length < 6) {
         if (errEl) {
           errEl.textContent = 'Password must be at least 6 characters';
           errEl.classList.add('show');
@@ -2574,71 +2579,9 @@ async function saveProfileModal() {
         saveBtn.textContent = 'Save Changes';
         return;
       }
-      if (createPass !== confirmPass) {
-        if (errEl) {
-          errEl.textContent = 'Passwords do not match';
-          errEl.classList.add('show');
-        }
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Changes';
-        return;
-      }
-      newPass = createPass;
-    }
-  } else {
-    // Update Mode
-    const currPass = document.getElementById('pf-modal-current-password').value;
-    const updatePass = document.getElementById('pf-modal-update-new-password').value;
-    const confirmUpdatePass = document.getElementById('pf-modal-update-confirm-password').value;
-    if (updatePass) {
-      if (!currPass) {
-        if (errEl) {
-          errEl.textContent = 'Please enter your current password to change it';
-          errEl.classList.add('show');
-        }
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Changes';
-        return;
-      }
-      if (updatePass.length < 6) {
-        if (errEl) {
-          errEl.textContent = 'New password must be at least 6 characters';
-          errEl.classList.add('show');
-        }
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Changes';
-        return;
-      }
-      if (updatePass !== confirmUpdatePass) {
-        if (errEl) {
-          errEl.textContent = 'New passwords do not match';
-          errEl.classList.add('show');
-        }
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Changes';
-        return;
-      }
-
-      // Verify current password by signing in silently
-      try {
-        const { error: signInErr } = await db.auth.signInWithPassword({
-          email: currentUser.email,
-          password: currPass
-        });
-        if (signInErr) {
-          throw new Error('Current password is incorrect.');
-        }
-      } catch (authVerifyErr) {
-        if (errEl) {
-          errEl.textContent = authVerifyErr.message || 'Verification of current password failed';
-          errEl.classList.add('show');
-        }
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Changes';
-        return;
-      }
-
-      newPass = updatePass;
+      shouldUpdatePassword = true;
+    } else {
+      shouldUpdatePassword = true;
     }
   }
   
@@ -2648,15 +2591,24 @@ async function saveProfileModal() {
     if (dbErr) throw dbErr;
     
     // 3. Update password if requested
-    if (newPass) {
-      const { error: authPassErr } = await db.auth.updateUser({ password: newPass });
-      if (authPassErr) throw authPassErr;
+    if (shouldUpdatePassword) {
+      if (newPass) {
+        const { error: authPassErr } = await db.auth.updateUser({ password: newPass });
+        if (authPassErr) throw authPassErr;
 
-      try {
-        await db.from('users').update({ password: newPass }).eq('id', currentUser.id);
-        currentProfile.password = newPass;
-      } catch (passDbErr) {
-        console.warn('Could not store password in public.users table:', passDbErr);
+        try {
+          await db.from('users').update({ password: newPass }).eq('id', currentUser.id);
+          currentProfile.password = newPass;
+        } catch (passDbErr) {
+          console.warn('Could not store password in public.users table:', passDbErr);
+        }
+      } else {
+        try {
+          await db.from('users').update({ password: null }).eq('id', currentUser.id);
+          currentProfile.password = null;
+        } catch (passDbErr) {
+          console.warn('Could not clear password in public.users table:', passDbErr);
+        }
       }
     }
 
