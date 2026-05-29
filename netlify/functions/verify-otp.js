@@ -1,16 +1,20 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey, {
-    auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-    }
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const anonKey = process.env.SUPABASE_ANON_KEY;
+
+// Admin client for privileged operations
+const admin = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
+});
+
+// Anon client — used to exchange the magic link token for a real session
+const anon = createClient(supabaseUrl, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
 });
 
 exports.handler = async (event) => {
-    // Enable CORS
     if (event.httpMethod === 'OPTIONS') {
         return {
             statusCode: 200,
@@ -24,10 +28,7 @@ exports.handler = async (event) => {
     }
 
     if (event.httpMethod !== 'POST') {
-        return { 
-            statusCode: 405, 
-            body: 'Method Not Allowed' 
-        };
+        return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
     try {
@@ -43,8 +44,8 @@ exports.handler = async (event) => {
         const normalizedEmail = email.trim().toLowerCase();
         const otpToken = token.trim();
 
-        // 1. Fetch waitlist record to get the stored OTP
-        const { data: wlUser } = await supabase
+        // 1. Fetch waitlist record + stored OTP
+        const { data: wlUser } = await admin
             .from('waitlist')
             .select('*')
             .eq('email', normalizedEmail)
@@ -58,12 +59,12 @@ exports.handler = async (event) => {
             };
         }
 
-        // Parse stored OTP: "otp:CODE:EXPIRY"
+        // Parse "otp:CODE:EXPIRY"
         const parts = wlUser.notes.split(':');
         const storedCode = parts[1];
         const expiry = parseInt(parts[2], 10);
 
-        // 2. Validate OTP code
+        // 2. Validate OTP
         if (storedCode !== otpToken) {
             return {
                 statusCode: 400,
@@ -71,7 +72,6 @@ exports.handler = async (event) => {
                 body: JSON.stringify({ ok: false, error: 'Invalid verification code. Please try again.' }),
             };
         }
-
         if (Date.now() > expiry) {
             return {
                 statusCode: 400,
@@ -80,53 +80,83 @@ exports.handler = async (event) => {
             };
         }
 
-        // OTP is correct! Clear it from notes immediately so it can't be reused
-        await supabase
-            .from('waitlist')
-            .update({ notes: null })
-            .eq('id', wlUser.id);
+        // Clear OTP immediately to prevent reuse
+        await admin.from('waitlist').update({ notes: null }).eq('id', wlUser.id);
 
-        // 3. Get or create the Supabase Auth user
-        let authUserId = null;
+        // 3. Find or create the auth user
+        // IMPORTANT: Check public users table first to reuse their existing UUID.
+        // This ensures orders/reviews (linked to the old UUID) still load correctly.
+        let authUser = null;
 
-        // Try to find existing auth user by email
-        const { data: { users: existingUsers } } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
-        const existingAuthUser = existingUsers?.find(u => u.email === normalizedEmail);
+        const { data: { users: allAuthUsers } } = await admin.auth.admin.listUsers({ perPage: 1000 });
+        authUser = allAuthUsers?.find(u => u.email === normalizedEmail) || null;
 
-        if (existingAuthUser) {
-            authUserId = existingAuthUser.id;
-        } else {
-            // Create new auth user with email confirmed
-            const { data: newAuthUser, error: createErr } = await supabase.auth.admin.createUser({
+        if (!authUser) {
+            // Check if there's an existing public user record with a specific UUID
+            const { data: existingPublicUser } = await admin
+                .from('users')
+                .select('id')
+                .eq('email', normalizedEmail)
+                .maybeSingle();
+
+            const createPayload = {
                 email: normalizedEmail,
                 email_confirm: true,
-                user_metadata: { source: 'otp_login' }
-            });
+                user_metadata: { source: 'otp_login' },
+            };
 
-            if (createErr) {
-                throw new Error('Failed to create auth user: ' + createErr.message);
+            // If public user exists, force the same UUID so all their data stays linked
+            if (existingPublicUser?.id) {
+                createPayload.id = existingPublicUser.id;
             }
-            authUserId = newAuthUser.user.id;
+
+            const { data: created, error: createErr } = await admin.auth.admin.createUser(createPayload);
+            if (createErr) throw new Error('Failed to create auth user: ' + createErr.message);
+            authUser = created.user;
         }
 
-        // 4. Create a real session directly (no magic links, no redirects, no expiry race conditions)
-        const { data: sessionData, error: sessionErr } = await supabase.auth.admin.createSession({
-            user_id: authUserId
+        // 4. Generate a magic link server-side, then immediately exchange it for session tokens
+        //    using verifyOtp() on the anon client — no redirects, no expiry race conditions.
+        const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+            type: 'magiclink',
+            email: normalizedEmail,
         });
+        if (linkErr) throw new Error('Failed to generate link: ' + linkErr.message);
 
-        if (sessionErr) {
-            throw new Error('Failed to create session: ' + sessionErr.message);
+        const hashedToken = linkData.properties.hashed_token;
+
+        // Exchange hashed token for a real session server-side
+        const { data: sessionData, error: sessionErr } = await anon.auth.verifyOtp({
+            token_hash: hashedToken,
+            type: 'magiclink',
+        });
+        if (sessionErr) throw new Error('Failed to exchange token: ' + sessionErr.message);
+
+        // 5. Ensure public users table has a matching row for this auth user
+        const { data: publicUser } = await admin
+            .from('users')
+            .select('id')
+            .eq('email', normalizedEmail)
+            .maybeSingle();
+
+        if (!publicUser) {
+            await admin.from('users').upsert({
+                id: authUser.id,
+                email: normalizedEmail,
+                trust_level: 'scout',
+                report_count: 0,
+                verified: false,
+            });
         }
 
-        // 5. Return session tokens to the client directly
-        // The client will call db.auth.setSession() with these tokens — instant, reliable login
+        // Return session tokens to the client — client calls db.auth.setSession()
         return {
             statusCode: 200,
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
             },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 ok: true,
                 access_token: sessionData.session.access_token,
                 refresh_token: sessionData.session.refresh_token,
@@ -138,9 +168,9 @@ exports.handler = async (event) => {
         console.error('verify-otp error:', err);
         return {
             statusCode: 500,
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
             },
             body: JSON.stringify({ ok: false, error: err.message }),
         };
