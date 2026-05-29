@@ -1870,6 +1870,7 @@ async function loadOrders(userId) {
     listEl.innerHTML = `
       <div class="pf-empty">
         <div class="pf-empty-title">Could not load orders</div>
+        <div class="pf-empty-sub" style="color:#c0392b;font-size:11px;margin-top:6px;">${err?.message || String(err)}</div>
       </div>`;
   }
 }
@@ -2082,6 +2083,7 @@ async function loadReviews(userId) {
     listEl.innerHTML = `
       <div class="pf-empty">
         <div class="pf-empty-title">Could not load reviews</div>
+        <div class="pf-empty-sub" style="color:#c0392b;font-size:11px;margin-top:6px;">${err?.message || String(err)}</div>
       </div>`;
   }
 }
