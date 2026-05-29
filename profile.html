@@ -1469,12 +1469,19 @@ function goToSetPassword() {
 }
 
 // ── INIT ──────────────────────────────────────────────────────
+let lastLoadedUserId = null;
+
 document.addEventListener('DOMContentLoaded', async () => {
   // Listen for auth state changes (crucial for handling hash redirects asynchronously)
   db.auth.onAuthStateChange(async (event, session) => {
     const user = session?.user;
     if (user) {
       currentUser = user;
+      
+      // Prevent concurrent race conditions when event fires multiple times
+      if (lastLoadedUserId === user.id) return;
+      lastLoadedUserId = user.id;
+
       const redirect = new URLSearchParams(window.location.search).get('redirect');
       if (redirect) {
         window.location.href = redirect;
@@ -1482,6 +1489,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       await loadProfile(user);
     } else {
+      lastLoadedUserId = null;
       showAuthScreen();
     }
   });
@@ -1776,10 +1784,19 @@ async function loadProfile(user) {
   // Populate header
   const name      = profile?.name || user.email?.split('@')[0] || 'Snyf User';
   const initial   = name[0]?.toUpperCase() || 'S';
-  const sinceDate = new Date(user.created_at || profile?.created_at || Date.now());
-  const sinceStr  = sinceDate.toLocaleDateString('en-IN', {
-    month: 'long', year: 'numeric',
-  });
+  
+  let sinceStr = '—';
+  try {
+    const rawDate = user.created_at || profile?.created_at;
+    const sinceDate = rawDate ? new Date(rawDate) : new Date();
+    if (!isNaN(sinceDate.getTime())) {
+      sinceStr = sinceDate.toLocaleDateString('en-IN', {
+        month: 'long', year: 'numeric',
+      });
+    }
+  } catch (err) {
+    console.error('Error parsing member since date:', err);
+  }
 
   const avatarUrl = user.user_metadata?.avatar_url || '';
   const avatarEl  = document.getElementById('pf-avatar');
