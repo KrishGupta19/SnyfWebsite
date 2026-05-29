@@ -1765,7 +1765,8 @@ async function loadProfile(user) {
   currentProfile = profile;
 
   // Show first-time password modal if no password set yet
-  if (profile && !profile.password && !firstPasswordPromptShown) {
+  const hasPassword = !!(user?.user_metadata?.password);
+  if (profile && !hasPassword && !firstPasswordPromptShown) {
     firstPasswordPromptShown = true;
     setTimeout(() => {
       if (document.getElementById('pf-edit-modal').style.display !== 'flex') {
@@ -2444,7 +2445,7 @@ function openProfileModal() {
   // Populate unified password field
   const passInp = document.getElementById('pf-modal-password');
   if (passInp) {
-    passInp.value = currentProfile?.password || '';
+    passInp.value = currentUser?.user_metadata?.password || '';
     passInp.type = 'password';
     document.getElementById('pf-toggle-password-visibility').textContent = 'Show';
   }
@@ -2565,7 +2566,7 @@ async function saveProfileModal() {
   if (errEl) errEl.classList.remove('show');
   
   const newPass = document.getElementById('pf-modal-password').value;
-  const oldPass = currentProfile?.password || '';
+  const oldPass = currentUser?.user_metadata?.password || '';
   let shouldUpdatePassword = false;
 
   if (newPass !== oldPass) {
@@ -2590,35 +2591,40 @@ async function saveProfileModal() {
     const { error: dbErr } = await db.from('users').update({ name, handle, phone }).eq('id', currentUser.id);
     if (dbErr) throw dbErr;
     
-    // 3. Update password if requested
+    // 3. Update Supabase Auth user metadata & password in a single call!
+    let updatedUser = currentUser;
     if (shouldUpdatePassword) {
+      const updateData = {
+        avatar_url: tempAvatarUrl,
+        password: newPass || null
+      };
+
+      const updatePayload = { data: updateData };
       if (newPass) {
-        const { error: authPassErr } = await db.auth.updateUser({ password: newPass });
-        if (authPassErr) throw authPassErr;
-
-        try {
-          await db.from('users').update({ password: newPass }).eq('id', currentUser.id);
-          currentProfile.password = newPass;
-        } catch (passDbErr) {
-          console.warn('Could not store password in public.users table:', passDbErr);
-        }
-      } else {
-        try {
-          await db.from('users').update({ password: null }).eq('id', currentUser.id);
-          currentProfile.password = null;
-        } catch (passDbErr) {
-          console.warn('Could not clear password in public.users table:', passDbErr);
-        }
+        updatePayload.password = newPass;
       }
-    }
 
-    // 4. Update auth.users metadata for avatar URL
-    const { data: { user }, error: authErr } = await db.auth.updateUser({
-      data: { avatar_url: tempAvatarUrl }
-    });
-    if (authErr) throw authErr;
+      const { data: { user: authUser }, error: authErr } = await db.auth.updateUser(updatePayload);
+      if (authErr) throw authErr;
+      if (authUser) updatedUser = authUser;
+
+      // Fallback: try storing in public.users password column too if it exists
+      try {
+        await db.from('users').update({ password: newPass || null }).eq('id', currentUser.id);
+        currentProfile.password = newPass || null;
+      } catch (passDbErr) {
+        console.warn('Could not sync password in public.users table:', passDbErr);
+      }
+    } else {
+      // Just update avatar metadata if password didn't change
+      const { data: { user: authUser }, error: authErr } = await db.auth.updateUser({
+        data: { avatar_url: tempAvatarUrl }
+      });
+      if (authErr) throw authErr;
+      if (authUser) updatedUser = authUser;
+    }
     
-    if (user) currentUser = user;
+    currentUser = updatedUser;
     
     // 3. Update active session user profiles locally
     currentProfile.name = name;
