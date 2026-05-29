@@ -53,3 +53,6 @@ create policy "users_read_own_orders"
 create policy "users_read_own_reports"
   on field_reports for select
   using (auth.uid() = user_id OR user_id IS NULL);
+
+-- Add password column to users table
+alter table public.users add column if not exists password text;

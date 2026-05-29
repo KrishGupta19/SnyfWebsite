@@ -964,6 +964,44 @@
       <div class="pf-auth-logo">Snyf</div>
       <div class="pf-auth-sub">Sign in to your profile</div>
 
+      <!-- Tab Toggle -->
+      <div class="pf-auth-tabs" style="
+        display: flex;
+        background: rgba(30,30,27,0.04);
+        padding: 4px;
+        border-radius: 10px;
+        margin-bottom: 24px;
+        border: 1px solid var(--border, #D8D5CF);
+      ">
+        <button id="pf-tab-otp" onclick="switchAuthTab('otp')" style="
+          flex: 1;
+          border: none;
+          background: white;
+          font-weight: 700;
+          font-size: 13px;
+          padding: 8px 12px;
+          border-radius: 8px;
+          cursor: pointer;
+          color: var(--ink, #1E1E1B);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+          transition: all 0.2s ease;
+          font-family: inherit;
+        ">OTP Sign In</button>
+        <button id="pf-tab-password" onclick="switchAuthTab('password')" style="
+          flex: 1;
+          border: none;
+          background: transparent;
+          font-weight: 600;
+          font-size: 13px;
+          padding: 8px 12px;
+          border-radius: 8px;
+          cursor: pointer;
+          color: var(--muted, #6E6A64);
+          transition: all 0.2s ease;
+          font-family: inherit;
+        ">Password Sign In</button>
+      </div>
+
       <!-- Step 1 — Enter email -->
       <div id="pf-step-email">
         <label class="pf-auth-label">Your Email</label>
@@ -977,6 +1015,38 @@
         <div class="pf-auth-error" id="pf-email-error"></div>
         <button class="pf-auth-btn" id="pf-send-otp-btn" onclick="sendOTP()">
           Send OTP →
+        </button>
+        <div class="pf-guest-link">
+          Just browsing?
+          <a href="discover.html">Explore venues</a>
+        </div>
+      </div>
+
+      <!-- Password-based Login Section -->
+      <div id="pf-step-password-login" style="display:none;">
+        <div class="pf-modal-field" style="margin-bottom:16px; text-align: left;">
+          <label class="pf-auth-label">Your Email</label>
+          <input
+            type="email"
+            class="pf-auth-input"
+            id="pf-password-email-input"
+            placeholder="you@example.com"
+            autocomplete="email"
+          >
+        </div>
+        <div class="pf-modal-field" style="margin-bottom:16px; text-align: left;">
+          <label class="pf-auth-label">Password</label>
+          <input
+            type="password"
+            class="pf-auth-input"
+            id="pf-password-input"
+            placeholder="••••••••"
+            autocomplete="current-password"
+          >
+        </div>
+        <div class="pf-auth-error" id="pf-password-error" style="margin-bottom: 16px;"></div>
+        <button class="pf-auth-btn" id="pf-signin-password-btn" onclick="signInWithPassword()">
+          Sign In with Password →
         </button>
         <div class="pf-guest-link">
           Just browsing?
@@ -1228,11 +1298,52 @@
           <label class="pf-modal-label">Mobile Number</label>
           <input type="text" class="pf-modal-input" id="pf-modal-phone" placeholder="9876543210" maxlength="15">
         </div>
+
+        <!-- Divider -->
+        <hr style="border: none; border-top: 1px solid var(--border, #D8D5CF); margin: 24px 0 16px;">
+
+        <!-- Password Settings Section -->
+        <div class="pf-modal-field">
+          <h4 style="margin: 0 0 12px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink, #1E1E1B);">🔑 Password Settings</h4>
+          
+          <div id="pf-password-create-fields" style="display: none;">
+            <label class="pf-modal-label">Create Password</label>
+            <input type="password" class="pf-modal-input" id="pf-modal-new-password" placeholder="Min 6 characters" autocomplete="new-password" style="margin-bottom: 12px;">
+            <label class="pf-modal-label">Confirm Password</label>
+            <input type="password" class="pf-modal-input" id="pf-modal-confirm-password" placeholder="Confirm new password" autocomplete="new-password">
+          </div>
+
+          <div id="pf-password-update-fields" style="display: none;">
+            <label class="pf-modal-label">Current Password</label>
+            <input type="password" class="pf-modal-input" id="pf-modal-current-password" placeholder="Enter current password" autocomplete="current-password" style="margin-bottom: 12px;">
+            <label class="pf-modal-label">New Password</label>
+            <input type="password" class="pf-modal-input" id="pf-modal-update-new-password" placeholder="Min 6 characters" autocomplete="new-password" style="margin-bottom: 12px;">
+            <label class="pf-modal-label">Confirm New Password</label>
+            <input type="password" class="pf-modal-input" id="pf-modal-update-confirm-password" placeholder="Confirm new password" autocomplete="new-password">
+          </div>
+          
+          <div class="pf-auth-error" id="pf-modal-pass-error" style="margin-top: 12px;"></div>
+        </div>
       </div>
 
       <div class="pf-modal-footer">
         <button class="pf-modal-cancel" onclick="closeProfileModal()">Cancel</button>
         <button class="pf-modal-save" id="pf-modal-save-btn" onclick="saveProfileModal()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- First-Time Password Modal Alert -->
+  <div id="pf-first-password-modal" class="pf-modal-overlay" style="display:none;">
+    <div class="pf-modal-card" style="max-width: 400px; text-align: center; padding: 32px 24px;">
+      <div style="font-size: 3rem; margin-bottom: 16px;">🔐</div>
+      <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--ink, #1E1E1B); margin: 0 0 12px;">Create an Account Password</h3>
+      <p style="font-size: 13.5px; line-height: 1.6; color: var(--muted, #6E6A64); margin: 0 0 24px;">
+        To make signing in easier next time, you can now log in with a password instead of waiting for an OTP. Set your password now in your profile settings!
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button class="pf-modal-cancel" onclick="closeFirstPasswordModal()" style="flex: 1; border: 1.5px solid var(--border, #D8D5CF); border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px;">Later</button>
+        <button class="pf-modal-save" onclick="goToSetPassword()" style="flex: 1; border: none; border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px; background: var(--ink, #1E1E1B); color: white;">Set Password</button>
       </div>
     </div>
   </div>
@@ -1248,6 +1359,117 @@ let currentUser    = null;
 let currentProfile = null;
 let currentEmail   = '';
 let resendTimer    = null;
+let firstPasswordPromptShown = false;
+
+// ── PASSWORD AUTH & POPUP HELPERS ──────────────────────────────
+function switchAuthTab(tab) {
+  const tabOtp = document.getElementById('pf-tab-otp');
+  const tabPassword = document.getElementById('pf-tab-password');
+  const stepEmail = document.getElementById('pf-step-email');
+  const stepOtp = document.getElementById('pf-step-otp');
+  const stepPasswordLogin = document.getElementById('pf-step-password-login');
+
+  if (tab === 'otp') {
+    tabOtp.style.background = 'white';
+    tabOtp.style.color = 'var(--ink, #1E1E1B)';
+    tabOtp.style.fontWeight = '700';
+    tabOtp.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06)';
+
+    tabPassword.style.background = 'transparent';
+    tabPassword.style.color = 'var(--muted, #6E6A64)';
+    tabPassword.style.fontWeight = '600';
+    tabPassword.style.boxShadow = 'none';
+
+    stepEmail.style.display = 'block';
+    stepOtp.style.display = 'none';
+    stepPasswordLogin.style.display = 'none';
+  } else {
+    tabOtp.style.background = 'transparent';
+    tabOtp.style.color = 'var(--muted, #6E6A64)';
+    tabOtp.style.fontWeight = '600';
+    tabOtp.style.boxShadow = 'none';
+
+    tabPassword.style.background = 'white';
+    tabPassword.style.color = 'var(--ink, #1E1E1B)';
+    tabPassword.style.fontWeight = '700';
+    tabPassword.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06)';
+
+    stepEmail.style.display = 'none';
+    stepOtp.style.display = 'none';
+    stepPasswordLogin.style.display = 'block';
+    
+    // Reset error container
+    document.getElementById('pf-password-error').classList.remove('show');
+    document.getElementById('pf-password-email-input').focus();
+  }
+}
+
+async function signInWithPassword() {
+  const emailInput = document.getElementById('pf-password-email-input');
+  const passwordInput = document.getElementById('pf-password-input');
+  const errEl = document.getElementById('pf-password-error');
+  const btn = document.getElementById('pf-signin-password-btn');
+
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+
+  errEl.classList.remove('show');
+
+  if (!email || !email.includes('@') || !email.includes('.')) {
+    errEl.textContent = 'Please enter a valid email address';
+    errEl.classList.add('show');
+    return;
+  }
+
+  if (!password || password.length < 6) {
+    errEl.textContent = 'Password must be at least 6 characters';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Signing in...';
+
+  try {
+    const { data, error } = await db.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) throw error;
+
+    if (data?.user) {
+      currentUser = data.user;
+      const redirect = new URLSearchParams(window.location.search).get('redirect');
+      if (redirect) {
+        window.location.href = redirect;
+        return;
+      }
+      await loadProfile(data.user);
+    }
+  } catch (err) {
+    errEl.textContent = err.message || 'Invalid email or password. Please try again.';
+    errEl.classList.add('show');
+    passwordInput.value = '';
+    passwordInput.focus();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sign In with Password →';
+  }
+}
+
+function closeFirstPasswordModal() {
+  document.getElementById('pf-first-password-modal').style.display = 'none';
+}
+
+function goToSetPassword() {
+  closeFirstPasswordModal();
+  openProfileModal();
+  setTimeout(() => {
+    document.getElementById('pf-modal-new-password')?.focus();
+    document.getElementById('pf-modal-update-new-password')?.focus();
+  }, 300);
+}
 
 // ── INIT ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1511,9 +1733,8 @@ function showAuthScreen() {
   document.getElementById('pf-loading-screen').style.display = 'none';
   document.getElementById('pf-profile-screen').style.display = 'none';
   document.getElementById('pf-auth-screen').style.display    = 'flex';
-  // Reset to email step
-  document.getElementById('pf-step-email').style.display = 'block';
-  document.getElementById('pf-step-otp').style.display   = 'none';
+  // Reset to OTP tab
+  switchAuthTab('otp');
 }
 
 function showProfileScreen() {
@@ -1541,6 +1762,16 @@ async function loadProfile(user) {
   }
 
   currentProfile = profile;
+
+  // Show first-time password modal if no password set yet
+  if (profile && !profile.password && !firstPasswordPromptShown) {
+    firstPasswordPromptShown = true;
+    setTimeout(() => {
+      if (document.getElementById('pf-edit-modal').style.display !== 'flex') {
+        document.getElementById('pf-first-password-modal').style.display = 'flex';
+      }
+    }, 1000);
+  }
 
   // Populate header
   const name      = profile?.name || user.email?.split('@')[0] || 'Snyf User';
@@ -2203,9 +2434,27 @@ function openProfileModal() {
   document.getElementById('pf-modal-handle').value = currentProfile?.handle || '';
   document.getElementById('pf-modal-phone').value  = currentProfile?.phone || '';
   
-  // Reset border colors
+  // Reset border colors and errors
   document.getElementById('pf-modal-handle').style.borderColor = '';
   document.getElementById('pf-modal-phone').style.borderColor = '';
+  const errEl = document.getElementById('pf-modal-pass-error');
+  if (errEl) errEl.classList.remove('show');
+  
+  // Populate password fields based on whether currentProfile has a password
+  if (currentProfile && currentProfile.password) {
+    document.getElementById('pf-password-create-fields').style.display = 'none';
+    document.getElementById('pf-password-update-fields').style.display = 'block';
+  } else {
+    document.getElementById('pf-password-create-fields').style.display = 'block';
+    document.getElementById('pf-password-update-fields').style.display = 'none';
+  }
+  
+  // Clear all password inputs
+  document.getElementById('pf-modal-new-password').value = '';
+  document.getElementById('pf-modal-confirm-password').value = '';
+  document.getElementById('pf-modal-current-password').value = '';
+  document.getElementById('pf-modal-update-new-password').value = '';
+  document.getElementById('pf-modal-update-confirm-password').value = '';
   
   // Populate avatar preview
   tempAvatarUrl = currentUser.user_metadata?.avatar_url || '';
@@ -2304,13 +2553,114 @@ async function saveProfileModal() {
   
   saveBtn.disabled = true;
   saveBtn.textContent = 'Saving...';
+
+  // 1. Password updates validation
+  const errEl = document.getElementById('pf-modal-pass-error');
+  if (errEl) errEl.classList.remove('show');
+  let newPass = '';
+
+  const hasPassword = !!(currentProfile && currentProfile.password);
+  if (!hasPassword) {
+    // Create Mode
+    const createPass = document.getElementById('pf-modal-new-password').value;
+    const confirmPass = document.getElementById('pf-modal-confirm-password').value;
+    if (createPass) {
+      if (createPass.length < 6) {
+        if (errEl) {
+          errEl.textContent = 'Password must be at least 6 characters';
+          errEl.classList.add('show');
+        }
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
+        return;
+      }
+      if (createPass !== confirmPass) {
+        if (errEl) {
+          errEl.textContent = 'Passwords do not match';
+          errEl.classList.add('show');
+        }
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
+        return;
+      }
+      newPass = createPass;
+    }
+  } else {
+    // Update Mode
+    const currPass = document.getElementById('pf-modal-current-password').value;
+    const updatePass = document.getElementById('pf-modal-update-new-password').value;
+    const confirmUpdatePass = document.getElementById('pf-modal-update-confirm-password').value;
+    if (updatePass) {
+      if (!currPass) {
+        if (errEl) {
+          errEl.textContent = 'Please enter your current password to change it';
+          errEl.classList.add('show');
+        }
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
+        return;
+      }
+      if (updatePass.length < 6) {
+        if (errEl) {
+          errEl.textContent = 'New password must be at least 6 characters';
+          errEl.classList.add('show');
+        }
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
+        return;
+      }
+      if (updatePass !== confirmUpdatePass) {
+        if (errEl) {
+          errEl.textContent = 'New passwords do not match';
+          errEl.classList.add('show');
+        }
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
+        return;
+      }
+
+      // Verify current password by signing in silently
+      try {
+        const { error: signInErr } = await db.auth.signInWithPassword({
+          email: currentUser.email,
+          password: currPass
+        });
+        if (signInErr) {
+          throw new Error('Current password is incorrect.');
+        }
+      } catch (authVerifyErr) {
+        if (errEl) {
+          errEl.textContent = authVerifyErr.message || 'Verification of current password failed';
+          errEl.classList.add('show');
+        }
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
+        return;
+      }
+
+      newPass = updatePass;
+    }
+  }
   
   try {
-    // 1. Update public.users details
+    // 2. Update public.users details (except password first)
     const { error: dbErr } = await db.from('users').update({ name, handle, phone }).eq('id', currentUser.id);
     if (dbErr) throw dbErr;
     
-    // 2. Update auth.users metadata for avatar URL
+    // 3. Update password if requested
+    if (newPass) {
+      const { error: authPassErr } = await db.auth.updateUser({ password: newPass });
+      if (authPassErr) throw authPassErr;
+
+      try {
+        await db.from('users').update({ password: newPass }).eq('id', currentUser.id);
+        currentProfile.password = newPass;
+      } catch (passDbErr) {
+        console.warn('Could not store password in public.users table:', passDbErr);
+      }
+    }
+
+    // 4. Update auth.users metadata for avatar URL
     const { data: { user }, error: authErr } = await db.auth.updateUser({
       data: { avatar_url: tempAvatarUrl }
     });
