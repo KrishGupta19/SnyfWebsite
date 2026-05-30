@@ -1503,22 +1503,7 @@ async function loadSignedInUserProfile(user) {
 }
 
 async function initAuth() {
-  // Step 1: Immediate check — handles page refresh when already logged in
-  // This is instant and doesn't wait for the listener to fire
-  try {
-    const { data: { user } } = await db.auth.getUser();
-    if (user) {
-      await loadSignedInUserProfile(user);
-      return;
-    }
-  } catch (e) {
-    console.warn('[Snyf] getUser failed:', e.message);
-  }
-
-  // Step 2: No session found — show auth screen immediately
-  showAuthScreen();
-
-  // Step 3: Listen for dynamic sign-in / sign-out events
+  // Step 1: Register listener immediately so we catch all dynamic auth changes
   db.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session?.user) {
       const user = session.user;
@@ -1531,6 +1516,20 @@ async function initAuth() {
       showAuthScreen();
     }
   });
+
+  // Step 2: Immediate check — handles page refresh when already logged in
+  try {
+    const { data: { user } } = await db.auth.getUser();
+    if (user) {
+      await loadSignedInUserProfile(user);
+      return;
+    }
+  } catch (e) {
+    console.warn('[Snyf] getUser failed:', e.message);
+  }
+
+  // Step 3: No session found — show auth screen immediately
+  showAuthScreen();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1791,14 +1790,41 @@ async function loadProfile(user) {
   let profile = await snyfGetProfile(user.id);
 
   if (!profile) {
-    await db.from('users').upsert({
-      id:           user.id,
-      email:        user.email,
-      trust_level:  'scout',
-      report_count: 0,
-      verified:     false,
-    });
-    profile = await snyfGetProfile(user.id);
+    try {
+      const { error: upsertErr } = await db.from('users').upsert({
+        id:           user.id,
+        email:        user.email,
+        trust_level:  'scout',
+        report_count: 0,
+        verified:     false,
+      }, { onConflict: 'id' });
+
+      if (upsertErr) {
+        if (upsertErr.code === '23505') {
+          console.warn('[Profile] Email already exists under different ID. Fetching that profile...');
+          const { data: existingProf } = await db
+            .from('users')
+            .select('*')
+            .eq('email', user.email)
+            .maybeSingle();
+          if (existingProf) {
+            profile = existingProf;
+          }
+        } else {
+          throw upsertErr;
+        }
+      } else {
+        profile = await snyfGetProfile(user.id);
+      }
+    } catch (upsertFail) {
+      console.error('[Profile] Profile upsert failed:', upsertFail);
+      const { data: fallbackProf } = await db
+        .from('users')
+        .select('*')
+        .eq('email', user.email)
+        .maybeSingle();
+      profile = fallbackProf || { id: user.id, email: user.email, trust_level: 'scout' };
+    }
   }
 
   currentProfile = profile;
@@ -1906,7 +1932,7 @@ async function fetchProfileRows(type) {
   if (type === 'orders') {
     const { data, error } = await db
       .from('orders')
-      .select('*')
+      .select('*, venues(name, slug)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(30);
@@ -1937,7 +1963,7 @@ async function fetchAllProfileData() {
   // No Netlify function needed — user session works with RLS
   const [ordersRes, reviewsRes] = await Promise.all([
     db.from('orders')
-      .select('id, venue_id, items, subtotal, gst, service_charge, total, status, table_num, special_instructions, created_at, updated_at')
+      .select('id, venue_id, items, subtotal, gst, service_charge, total, status, table_num, special_instructions, created_at, updated_at, venues(name, slug)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(30),
@@ -1951,30 +1977,9 @@ async function fetchAllProfileData() {
   if (ordersRes.error) throw new Error('Orders: ' + ordersRes.error.message);
   if (reviewsRes.error) throw new Error('Reviews: ' + reviewsRes.error.message);
 
-  const orders  = ordersRes.data || [];
-  const reviews = reviewsRes.data || [];
-
-  // Fetch venue names for orders
-  const venueIds = [...new Set(orders.map(o => o.venue_id).filter(Boolean))];
-  let venueMap = {};
-
-  if (venueIds.length > 0) {
-    const { data: venues } = await db
-      .from('venues')
-      .select('id, name, slug')
-      .in('id', venueIds);
-    (venues || []).forEach(v => { venueMap[v.id] = { name: v.name, slug: v.slug }; });
-  }
-
-  const ordersWithVenues = orders.map(o => ({
-    ...o,
-    venue_name: venueMap[o.venue_id]?.name || null,
-    venue_slug: venueMap[o.venue_id]?.slug || null,
-  }));
-
   return {
-    orders:  ordersWithVenues,
-    reviews: reviews,
+    orders:  ordersRes.data || [],
+    reviews: reviewsRes.data || [],
   };
 }
 

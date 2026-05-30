@@ -108,8 +108,56 @@ Deno.serve(async (req: Request) => {
     });
     if (sessionErr) throw new Error('Session creation failed: ' + sessionErr.message);
 
-    // ── Upsert users table (non-blocking) ─────────────────────
-    (async () => {
+    // ── Perform User ID Migration if old mock data exists ─────
+    try {
+      // Find if there is an existing public user with the same email but different ID
+      const { data: existingUser, error: findErr } = await db
+        .from('users')
+        .select('id')
+        .eq('email', normalizedEmail)
+        .neq('id', userId)
+        .maybeSingle();
+
+      if (!findErr && existingUser) {
+        const oldUserId = existingUser.id;
+        console.log(`[verify-otp] Migrating old user ${oldUserId} to new authenticated user ${userId}`);
+
+        // Update orders to new user ID
+        await db.from('orders')
+          .update({ user_id: userId })
+          .eq('user_id', oldUserId);
+
+        // Update field_reports to new user ID
+        await db.from('field_reports')
+          .update({ user_id: userId })
+          .eq('user_id', oldUserId);
+
+        // Delete blank user profile for new ID if it was already created
+        await db.from('users')
+          .delete()
+          .eq('id', userId);
+
+        // Change ID of old user to the new authenticated user ID
+        const { error: updateProfileErr } = await db.from('users')
+          .update({ id: userId })
+          .eq('id', oldUserId);
+
+        if (updateProfileErr) {
+          throw new Error('Failed to update public user ID: ' + updateProfileErr.message);
+        }
+      } else {
+        // Normal upsert if no old record or already migrated
+        await db.from('users').upsert({
+          id:           userId,
+          email:        normalizedEmail,
+          trust_level:  'scout',
+          report_count: 0,
+          verified:     false,
+        }, { onConflict: 'id', ignoreDuplicates: true });
+      }
+    } catch (e: any) {
+      console.error('[verify-otp] Migration error:', e.message);
+      // Fallback: try standard upsert so login doesn't fail entirely
       try {
         await db.from('users').upsert({
           id:           userId,
@@ -118,10 +166,10 @@ Deno.serve(async (req: Request) => {
           report_count: 0,
           verified:     false,
         }, { onConflict: 'id', ignoreDuplicates: true });
-      } catch (e: any) {
-        console.warn('[verify-otp] users upsert:', e.message);
+      } catch (upsertErr: any) {
+        console.error('[verify-otp] Fallback upsert failed:', upsertErr.message);
       }
-    })();
+    }
 
     return res(200, {
       ok:            true,
