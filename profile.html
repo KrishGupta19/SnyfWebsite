@@ -1899,6 +1899,26 @@ async function fetchProfileRows(type) {
   return payload.rows || [];
 }
 
+async function updateProfileOnServer(payload) {
+  const { data: { session } } = await db.auth.getSession();
+  const token = session?.access_token;
+  if (!token) throw new Error('No active session');
+
+  const res = await fetch('/.netlify/functions/update-profile', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || 'Could not save profile');
+  }
+  return data;
+}
+
 async function loadOrders(userId) {
   try {
     if (!userId) throw new Error('No user ID — please sign out and sign in again.');
@@ -2257,9 +2277,15 @@ async function saveName() {
   if (!name) return;
 
   try {
-    await db.from('users').update({ name }).eq('id', currentUser.id);
-    if (currentProfile) currentProfile.name = name;
-    await loadProfile(currentUser);
+    const result = await updateProfileOnServer({
+      name,
+      handle: currentProfile?.handle || '',
+      phone: currentProfile?.phone || '',
+      avatar_url: currentUser?.user_metadata?.avatar_url || '',
+    });
+    if (result.user) currentUser = result.user;
+    if (result.profile) currentProfile = result.profile;
+    renderName(currentProfile?.name || name);
   } catch (err) {
     dbError('saveName', err);
     renderName(name);
@@ -2418,9 +2444,15 @@ async function saveHandle() {
   }
 
   try {
-    await db.from('users').update({ handle }).eq('id', currentUser.id);
-    if (currentProfile) currentProfile.handle = handle;
-    await loadProfile(currentUser);
+    const result = await updateProfileOnServer({
+      name: currentProfile?.name || '',
+      handle,
+      phone: currentProfile?.phone || '',
+      avatar_url: currentUser?.user_metadata?.avatar_url || '',
+    });
+    if (result.user) currentUser = result.user;
+    if (result.profile) currentProfile = result.profile;
+    renderHandle(currentProfile?.handle || handle);
   } catch (err) {
     dbError('saveHandle', err);
     // Could be duplicate handle
@@ -2645,51 +2677,19 @@ async function saveProfileModal() {
   }
   
   try {
-    // 2. Update public.users details (except password first)
-    const { error: dbErr } = await db.from('users').update({ name, handle, phone }).eq('id', currentUser.id);
-    if (dbErr) throw dbErr;
-    
-    // 3. Update Supabase Auth user metadata & password in a single call!
-    let updatedUser = currentUser;
-    if (shouldUpdatePassword) {
-      const updateData = {
-        avatar_url: tempAvatarUrl,
-        account_password: newPass || null
-      };
+    const result = await updateProfileOnServer({
+      name,
+      handle,
+      phone,
+      avatar_url: tempAvatarUrl,
+      update_password: shouldUpdatePassword,
+      password: newPass,
+    });
 
-      const updatePayload = { data: updateData };
-      if (newPass) {
-        updatePayload.password = newPass;
-      }
+    if (result.user) currentUser = result.user;
+    if (result.profile) currentProfile = result.profile;
 
-      const { data: { user: authUser }, error: authErr } = await db.auth.updateUser(updatePayload);
-      if (authErr) throw authErr;
-      if (authUser) updatedUser = authUser;
-
-      // Fallback: try storing in public.users password column too if it exists
-      try {
-        await db.from('users').update({ password: newPass || null }).eq('id', currentUser.id);
-        currentProfile.password = newPass || null;
-      } catch (passDbErr) {
-        console.warn('Could not sync password in public.users table:', passDbErr);
-      }
-    } else {
-      // Just update avatar metadata if password didn't change
-      const { data: { user: authUser }, error: authErr } = await db.auth.updateUser({
-        data: { avatar_url: tempAvatarUrl }
-      });
-      if (authErr) throw authErr;
-      if (authUser) updatedUser = authUser;
-    }
-    
-    currentUser = updatedUser;
-    
-    // 3. Update active session user profiles locally
-    currentProfile.name = name;
-    currentProfile.handle = handle;
-    currentProfile.phone = phone;
-    
-    // 4. Re-run loadProfile to refresh layout elements
+    // Re-run loadProfile to refresh layout elements
     await loadProfile(currentUser);
     
     // Close modal
