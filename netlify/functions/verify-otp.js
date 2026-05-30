@@ -64,21 +64,30 @@ exports.handler = async (event) => {
       .update({ used: true })
       .eq('id', otpRow.id);
 
-    // Get auth user
-    const { data: authUserData } = await db.auth.admin.getUserByEmail(normalizedEmail)
-      .catch(() => ({ data: null }));
+    // Get auth user ID — try createUser first, if already exists that's fine
+    let authUserId = null;
 
-    let authUserId = authUserData?.user?.id;
+    const { data: created, error: createErr } = await db.auth.admin.createUser({
+      email:         normalizedEmail,
+      email_confirm: true,
+      user_metadata: { source: 'otp_login' },
+    });
 
-    // Create user if not exists
-    if (!authUserId) {
-      const { data: created, error: createErr } = await db.auth.admin.createUser({
-        email:         normalizedEmail,
-        email_confirm: true,
-        user_metadata: { source: 'otp_login' },
-      });
-      if (createErr) throw new Error('Failed to create user: ' + createErr.message);
+    if (!createErr) {
+      // New user created
       authUserId = created.user.id;
+    } else if (
+      createErr.message?.includes('already') ||
+      createErr.message?.includes('registered') ||
+      createErr.status === 422
+    ) {
+      // User exists — find their ID via listUsers
+      const { data: listData } = await db.auth.admin.listUsers({ perPage: 1000 });
+      const found = listData?.users?.find(u => u.email?.toLowerCase() === normalizedEmail);
+      if (!found) throw new Error('Could not find user account.');
+      authUserId = found.id;
+    } else {
+      throw new Error('Failed to prepare account: ' + createErr.message);
     }
 
     // Generate session via magic link exchange

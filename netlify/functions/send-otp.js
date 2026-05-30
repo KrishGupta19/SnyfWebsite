@@ -54,20 +54,20 @@ exports.handler = async (event) => {
 
     if (insertErr) throw new Error('Failed to store OTP: ' + insertErr.message);
 
-    // Ensure auth user exists
-    const { data: existingUser } = await db.auth.admin.getUserByEmail(normalizedEmail)
-      .catch(() => ({ data: null }));
+    // Ensure auth user exists — use createUser directly
+    // If user already exists Supabase returns an error we can safely ignore
+    const { error: createErr } = await db.auth.admin.createUser({
+      email:         normalizedEmail,
+      email_confirm: true,
+      user_metadata: { source: 'otp_login' },
+    });
 
-    if (!existingUser?.user) {
-      const { error: createErr } = await db.auth.admin.createUser({
-        email:         normalizedEmail,
-        email_confirm: true,
-        user_metadata: { source: 'otp_login' },
-      });
-      // Ignore "already exists" errors
-      if (createErr && !createErr.message?.includes('already')) {
-        throw new Error('Failed to create user: ' + createErr.message);
-      }
+    // Only throw if it's NOT an "already registered" error
+    if (createErr &&
+        !createErr.message?.includes('already') &&
+        !createErr.message?.includes('registered') &&
+        createErr.status !== 422) {
+      throw new Error('Failed to prepare account: ' + createErr.message);
     }
 
     // Send email
