@@ -7,7 +7,7 @@ const admin = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-function response(statusCode, body) {
+function res(statusCode, body) {
   return {
     statusCode,
     headers: {
@@ -21,122 +21,118 @@ function response(statusCode, body) {
 }
 
 async function handleUpdate(event) {
-  if (event.httpMethod === 'OPTIONS') return response(200, { ok: true });
-  if (event.httpMethod !== 'POST')    return response(405, { ok: false, error: 'Method Not Allowed' });
+  if (event.httpMethod === 'OPTIONS') return res(200, { ok: true });
+  if (event.httpMethod !== 'POST')    return res(405, { ok: false, error: 'Method Not Allowed' });
 
-  if (!supabaseUrl || !serviceRoleKey) {
-    return response(500, { ok: false, error: 'Service not configured.' });
-  }
+  if (!supabaseUrl || !serviceRoleKey)
+    return res(500, { ok: false, error: 'Service not configured.' });
 
-  // Validate session token
-  const authHeader = event.headers.authorization || event.headers.Authorization || '';
-  const token      = authHeader.replace(/^Bearer\s+/i, '').trim();
+  // Validate token
+  const token = (event.headers.authorization || event.headers.Authorization || '')
+    .replace(/^Bearer\s+/i, '').trim();
 
-  if (!token) return response(401, { ok: false, error: 'Missing session token.' });
+  if (!token) return res(401, { ok: false, error: 'Missing session token.' });
 
+  // Use getUser — faster than getUserByEmail for token validation
   const { data: authData, error: authErr } = await admin.auth.getUser(token);
-  if (authErr || !authData?.user) {
-    return response(401, { ok: false, error: 'Invalid or expired session. Please sign in again.' });
-  }
+  if (authErr || !authData?.user)
+    return res(401, { ok: false, error: 'Session expired. Please sign in again.' });
 
-  const user = authData.user;
-  const body = JSON.parse(event.body || '{}');
+  const user   = authData.user;
+  const body   = JSON.parse(event.body || '{}');
 
-  const name     = (body.name     || '').trim();
-  const handle   = (body.handle   || '').trim().toLowerCase();
-  const phone    = (body.phone    || '').trim();
-  const avatarUrl = body.avatar_url || '';
+  const name           = (body.name     || '').trim();
+  const handle         = (body.handle   || '').trim().toLowerCase();
+  const phone          = (body.phone    || '').trim();
+  const avatarUrl      = (body.avatar_url || '').trim();
   const updatePassword = !!body.update_password;
-  const password = (body.password || '').trim();
+  const password       = (body.password || '').trim();
 
-  // Validate handle format
-  if (handle && !/^[a-z0-9_]{1,30}$/.test(handle)) {
-    return response(400, { ok: false, error: 'Handle can only contain letters, numbers, and underscores.' });
-  }
+  // Validate
+  if (handle && !/^[a-z0-9_]{1,30}$/.test(handle))
+    return res(400, { ok: false, error: 'Handle: letters, numbers, underscores only.' });
 
-  // Validate password length
-  if (updatePassword && password && password.length < 6) {
-    return response(400, { ok: false, error: 'Password must be at least 6 characters.' });
-  }
+  if (updatePassword && password && password.length < 6)
+    return res(400, { ok: false, error: 'Password must be at least 6 characters.' });
 
-  // 1. Update public users table
-  const profilePayload = {
-    id:     user.id,
-    email:  user.email,
-    name:   name   || null,
-    handle: handle || null,
-    phone:  phone  || null,
-  };
-
+  // ── STEP 1: Update public users table (fast — plain Postgres) ──
   const { data: profile, error: profileErr } = await admin
     .from('users')
-    .upsert(profilePayload, { onConflict: 'id' })
+    .upsert({
+      id:     user.id,
+      email:  user.email,
+      name:   name   || null,
+      handle: handle || null,
+      phone:  phone  || null,
+    }, { onConflict: 'id' })
     .select('*')
     .single();
 
   if (profileErr) {
-    console.error('users upsert error:', profileErr);
-    return response(500, { ok: false, error: profileErr.message });
+    // Handle duplicate handle
+    if (profileErr.code === '23505')
+      return res(400, { ok: false, error: 'That handle is already taken.' });
+    return res(500, { ok: false, error: profileErr.message });
   }
 
-  // 2. Update Supabase Auth (metadata + optional password)
-  // Build auth payload
-  const newMetadata = {
+  // ── STEP 2: Update Supabase Auth metadata (slow — do async if no password change) ──
+  const newMeta = {
     ...(user.user_metadata || {}),
     avatar_url: avatarUrl || (user.user_metadata?.avatar_url || ''),
   };
 
-  if (updatePassword) {
-    // Store plaintext in metadata for password sign-in
-    newMetadata.account_password = password || null;
-  }
-
-  const authPayload = { user_metadata: newMetadata };
-
   if (updatePassword && password) {
-    authPayload.password       = password;
-    authPayload.email_confirm  = true;
+    newMeta.account_password = password;
   }
 
+  const authPayload = { user_metadata: newMeta };
+  if (updatePassword && password) {
+    authPayload.password      = password;
+    authPayload.email_confirm = true;
+  }
+
+  if (!updatePassword) {
+    // No password change — update auth metadata in background, return immediately
+    admin.auth.admin.updateUserById(user.id, authPayload)
+      .catch(e => console.warn('auth metadata update:', e.message));
+
+    // Return immediately with profile — don't wait for auth update
+    return res(200, {
+      ok:      true,
+      profile,
+      user:    { ...user, user_metadata: newMeta },
+    });
+  }
+
+  // Password change — must wait for auth update to confirm
   const { data: updatedAuth, error: updateErr } = await admin.auth.admin.updateUserById(
     user.id,
     authPayload
   );
 
   if (updateErr) {
-    console.error('updateUserById error:', updateErr);
-    // Don't fail the whole request — profile was saved, auth update failed
-    // Return partial success so user knows profile saved but password may not have
-    return response(207, {
+    // Profile saved, password failed — partial success
+    return res(207, {
       ok:      true,
       partial: true,
-      warning: 'Profile saved but password update failed. Try again.',
+      warning: 'Profile saved. Password update failed — please try again.',
       profile,
-      user:    user,
+      user,
     });
   }
 
-  return response(200, {
+  return res(200, {
     ok:      true,
     profile,
     user:    updatedAuth.user,
   });
 }
 
-// Wrap with 9-second timeout
 exports.handler = (event) => {
   const timeout = new Promise((_, reject) =>
-    setTimeout(
-      () => reject(new Error('Request timed out. Please try again.')),
-      9000
-    )
+    setTimeout(() => reject(new Error('Timeout. Please try again.')), 9000)
   );
-  return Promise.race([handleUpdate(event), timeout]).catch(err => ({
-    statusCode: 500,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-    },
-    body: JSON.stringify({ ok: false, error: err.message }),
-  }));
+  return Promise.race([handleUpdate(event), timeout]).catch(err =>
+    res(500, { ok: false, error: err.message })
+  );
 };
