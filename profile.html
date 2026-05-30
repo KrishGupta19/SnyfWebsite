@@ -1436,16 +1436,7 @@ async function signInWithPassword() {
     if (error) throw error;
 
     if (data?.user) {
-      currentUser      = data.user;
-      lastLoadedUserId = data.user.id;
-      const redirect = new URLSearchParams(window.location.search).get('redirect');
-      if (redirect) {
-        window.location.href = redirect;
-        return;
-      }
-      profileLoading = true;
-      await loadProfile(data.user);
-      profileLoading = false;
+      await loadSignedInUserProfile(data.user);
     }
   } catch (err) {
     errEl.textContent = err.message || 'Invalid email or password. Please try again.';
@@ -1475,19 +1466,49 @@ function goToSetPassword() {
 let lastLoadedUserId = null;
 let profileLoading   = false;
 
+async function loadSignedInUserProfile(user) {
+  if (!user) return;
+  currentUser      = user;
+  lastLoadedUserId = user.id;
+  profileLoading   = true;
+
+  try {
+    const redirect = new URLSearchParams(window.location.search).get('redirect');
+    if (redirect) {
+      window.location.href = redirect;
+      return;
+    }
+    await loadProfile(user);
+  } catch (err) {
+    console.error('[Snyf] loadProfile error:', err);
+    showProfileScreen();
+    const ordersEl = document.getElementById('pf-orders-list');
+    const reviewsEl = document.getElementById('pf-reviews-list');
+    if (ordersEl) {
+      ordersEl.innerHTML = `
+        <div class="pf-empty">
+          <div class="pf-empty-title">Could not load profile data</div>
+          <div class="pf-empty-sub">Please refresh once. If it continues, sign out and sign back in.</div>
+        </div>`;
+    }
+    if (reviewsEl) {
+      reviewsEl.innerHTML = `
+        <div class="pf-empty">
+          <div class="pf-empty-title">Could not load profile data</div>
+        </div>`;
+    }
+  } finally {
+    profileLoading = false;
+  }
+}
+
 async function initAuth() {
   // Step 1: Immediate check — handles page refresh when already logged in
   // This is instant and doesn't wait for the listener to fire
   try {
     const { data: { user } } = await db.auth.getUser();
     if (user) {
-      currentUser      = user;
-      lastLoadedUserId = user.id;
-      profileLoading   = true;
-      const redirect = new URLSearchParams(window.location.search).get('redirect');
-      if (redirect) { window.location.href = redirect; return; }
-      await loadProfile(user);
-      profileLoading = false;
+      await loadSignedInUserProfile(user);
       return;
     }
   } catch (e) {
@@ -1502,19 +1523,7 @@ async function initAuth() {
     if (event === 'SIGNED_IN' && session?.user) {
       const user = session.user;
       if (lastLoadedUserId === user.id || profileLoading) return;
-      lastLoadedUserId = user.id;
-      currentUser      = user;
-      profileLoading   = true;
-      try {
-        const redirect = new URLSearchParams(window.location.search).get('redirect');
-        if (redirect) { window.location.href = redirect; return; }
-        await loadProfile(user);
-      } catch (err) {
-        console.error('[Snyf] loadProfile error:', err);
-        showAuthScreen();
-      } finally {
-        profileLoading = false;
-      }
+      await loadSignedInUserProfile(user);
     } else if (event === 'SIGNED_OUT') {
       lastLoadedUserId = null;
       currentUser      = null;
@@ -1681,14 +1690,8 @@ async function verifyOTP() {
   const { user, error } = await snyfVerifyOTP(currentEmail, token);
 
   if (user) {
-    currentUser = user;
     if (resendTimer) clearInterval(resendTimer);
-    const redirect = new URLSearchParams(window.location.search).get('redirect');
-    if (redirect) {
-      window.location.href = redirect;
-      return;
-    }
-    await loadProfile(user);
+    await loadSignedInUserProfile(user);
   } else {
     errEl.textContent = error?.message || 'Invalid or expired OTP. Try again.';
     errEl.classList.add('show');
@@ -1881,26 +1884,34 @@ async function loadProfile(user) {
 let allOrders = [];
 let activeVenueFilter = null;
 
+async function fetchProfileRows(type) {
+  const { data: { session } } = await db.auth.getSession();
+  const token = session?.access_token;
+  if (!token) throw new Error('No active session');
+
+  const res = await fetch(`/.netlify/functions/profile-data?type=${encodeURIComponent(type)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok || !payload.ok) {
+    throw new Error(payload.error || `Could not load ${type}`);
+  }
+  return payload.rows || [];
+}
+
 async function loadOrders(userId) {
-  const listEl  = document.getElementById('pf-orders-list');
   try {
     if (!userId) throw new Error('No user ID — please sign out and sign in again.');
 
-    // Fetch orders without join first (simpler query, avoids CORS preflight complexity)
-    const { data: orders, error } = await db
-      .from('orders')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    allOrders = orders || [];
+    allOrders = await fetchProfileRows('orders');
     renderOrdersList(allOrders);
     showVenueFilters();
 
   } catch (err) {
     dbError('loadOrders', err);
+    allOrders = [];
+    renderOrdersList(allOrders);
+    return;
     listEl.innerHTML = `
       <div class="pf-empty">
         <div class="pf-empty-title">Could not load orders</div>
@@ -2096,17 +2107,10 @@ window.filterOrders = function() {
 let allReviews = [];
 
 async function loadReviews(userId) {
-  const listEl  = document.getElementById('pf-reviews-list');
   try {
-    const { data: reviews, error } = await db
-      .from('field_reports')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+    if (!userId) throw new Error('No user ID');
 
-    if (error) throw error;
-
-    allReviews = reviews || [];
+    allReviews = await fetchProfileRows('reviews');
     renderReviewsList(allReviews);
 
     // Recompute trust level silently
@@ -2114,6 +2118,9 @@ async function loadReviews(userId) {
 
   } catch (err) {
     dbError('loadReviews', err);
+    allReviews = [];
+    renderReviewsList(allReviews);
+    return;
     listEl.innerHTML = `
       <div class="pf-empty">
         <div class="pf-empty-title">Could not load reviews</div>

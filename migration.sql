@@ -44,6 +44,11 @@ create policy "users_update_own"
   on users for update
   using (auth.uid() = id);
 
+drop policy if exists "users_insert_own" on users;
+create policy "users_insert_own"
+  on users for insert
+  with check (auth.uid() = id);
+
 -- RLS: users can read their own orders
 create policy "users_read_own_orders"
   on orders for select

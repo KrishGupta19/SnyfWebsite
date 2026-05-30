@@ -1,11 +1,24 @@
 const { createClient } = require('@supabase/supabase-js');
 const { Resend } = require('resend');
+const crypto = require('crypto');
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+function hashOtp(email, otp) {
+    return crypto
+        .createHash('sha256')
+        .update(`${email}:${otp}:${supabaseKey}`)
+        .digest('hex');
+}
+
+async function findAuthUserByEmail(email) {
+    const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+    return users?.find(user => user.email?.toLowerCase() === email) || null;
+}
 
 exports.handler = async (event) => {
     // Enable CORS
@@ -40,56 +53,51 @@ exports.handler = async (event) => {
 
         const normalizedEmail = email.trim().toLowerCase();
 
-        // 1. Check if user is in waitlist or registered users
-        const { data: wlUser, error: wlErr } = await supabase
-            .from('waitlist')
-            .select('*')
-            .eq('email', normalizedEmail)
-            .maybeSingle();
-
-        const { data: dbUser, error: dbErr } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', normalizedEmail)
-            .maybeSingle();
-
-        if (!wlUser && !dbUser) {
-            return {
-                statusCode: 403,
-                headers: { 'Access-Control-Allow-Origin': '*' },
-                body: JSON.stringify({ 
-                    ok: false, 
-                    error: 'Your email is not on the waitlist. Please register on the homepage waitlist first!' 
-                }),
-            };
+        if (!supabaseUrl || !supabaseKey || !process.env.RESEND_API_KEY) {
+            throw new Error('OTP service is not configured correctly.');
         }
 
-        // 2. Generate 4-digit OTP
+        // 1. Generate 4-digit OTP. Login OTPs are separate from homepage waitlist.
         const otp = Math.floor(1000 + Math.random() * 9000).toString();
         const expiry = Date.now() + 5 * 60 * 1000; // 5 minutes validity
 
-        // 3. Store OTP in waitlist table's notes column
-        if (wlUser) {
-            const { error: updateErr } = await supabase
-                .from('waitlist')
-                .update({ notes: `otp:${otp}:${expiry}` })
-                .eq('id', wlUser.id);
-            if (updateErr) throw new Error('Failed to save OTP to waitlist: ' + updateErr.message);
-        } else {
-            const { error: insertErr } = await supabase
-                .from('waitlist')
-                .insert({
-                    email: normalizedEmail,
-                    name: dbUser.name || '',
-                    type: 'user',
-                    status: 'new',
-                    notes: `otp:${otp}:${expiry}`,
-                    source: 'login_otp'
-                });
-            if (insertErr) throw new Error('Failed to register login session: ' + insertErr.message);
+        // 2. Store a hashed OTP on the auth user. Do not write login state to waitlist.
+        let authUser = await findAuthUserByEmail(normalizedEmail);
+
+        if (!authUser) {
+            const { data: existingPublicUser } = await supabase
+                .from('users')
+                .select('id')
+                .eq('email', normalizedEmail)
+                .maybeSingle();
+
+            const createPayload = {
+                email: normalizedEmail,
+                email_confirm: true,
+                user_metadata: { source: 'otp_login' },
+            };
+
+            // If this email already has profile/order data, keep the same UUID.
+            if (existingPublicUser?.id) {
+                createPayload.id = existingPublicUser.id;
+            }
+
+            const { data: created, error: createErr } = await supabase.auth.admin.createUser(createPayload);
+            if (createErr) throw new Error('Failed to prepare login: ' + createErr.message);
+            authUser = created.user;
         }
 
-        // 4. Send Email via Resend
+        const { error: otpErr } = await supabase.auth.admin.updateUserById(authUser.id, {
+            app_metadata: {
+                ...(authUser.app_metadata || {}),
+                snyf_otp_hash: hashOtp(normalizedEmail, otp),
+                snyf_otp_expires_at: new Date(expiry).toISOString(),
+            },
+        });
+
+        if (otpErr) throw new Error('Failed to save OTP: ' + otpErr.message);
+
+        // 3. Send Email via Resend
         const fromEmail = process.env.RESEND_FROM_EMAIL || 'hello@snyf.co.in';
         const { data, error: mailErr } = await resend.emails.send({
             from: `Snyf <${fromEmail}>`,

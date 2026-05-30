@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const crypto = require('crypto');
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -13,6 +14,18 @@ const admin = createClient(supabaseUrl, serviceRoleKey, {
 const anon = createClient(supabaseUrl, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false }
 });
+
+function hashOtp(email, otp) {
+    return crypto
+        .createHash('sha256')
+        .update(`${email}:${otp}:${serviceRoleKey}`)
+        .digest('hex');
+}
+
+async function findAuthUserByEmail(email) {
+    const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 });
+    return users?.find(user => user.email?.toLowerCase() === email) || null;
+}
 
 exports.handler = async (event) => {
     if (event.httpMethod === 'OPTIONS') {
@@ -44,14 +57,14 @@ exports.handler = async (event) => {
         const normalizedEmail = email.trim().toLowerCase();
         const otpToken = token.trim();
 
-        // 1. Fetch waitlist record + stored OTP
-        const { data: wlUser } = await admin
-            .from('waitlist')
-            .select('*')
-            .eq('email', normalizedEmail)
-            .maybeSingle();
+        if (!supabaseUrl || !serviceRoleKey || !anonKey) {
+            throw new Error('OTP service is not configured correctly.');
+        }
 
-        if (!wlUser || !wlUser.notes || !wlUser.notes.startsWith('otp:')) {
+        // 1. Find the auth user and validate the OTP stored by send-otp.
+        let authUser = await findAuthUserByEmail(normalizedEmail);
+
+        if (!authUser?.app_metadata?.snyf_otp_hash || !authUser?.app_metadata?.snyf_otp_expires_at) {
             return {
                 statusCode: 400,
                 headers: { 'Access-Control-Allow-Origin': '*' },
@@ -59,20 +72,15 @@ exports.handler = async (event) => {
             };
         }
 
-        // Parse "otp:CODE:EXPIRY"
-        const parts = wlUser.notes.split(':');
-        const storedCode = parts[1];
-        const expiry = parseInt(parts[2], 10);
-
-        // 2. Validate OTP
-        if (storedCode !== otpToken) {
+        if (authUser.app_metadata.snyf_otp_hash !== hashOtp(normalizedEmail, otpToken)) {
             return {
                 statusCode: 400,
                 headers: { 'Access-Control-Allow-Origin': '*' },
                 body: JSON.stringify({ ok: false, error: 'Invalid verification code. Please try again.' }),
             };
         }
-        if (Date.now() > expiry) {
+
+        if (Date.now() > new Date(authUser.app_metadata.snyf_otp_expires_at).getTime()) {
             return {
                 statusCode: 400,
                 headers: { 'Access-Control-Allow-Origin': '*' },
@@ -80,40 +88,14 @@ exports.handler = async (event) => {
             };
         }
 
-        // Clear OTP immediately to prevent reuse
-        await admin.from('waitlist').update({ notes: null }).eq('id', wlUser.id);
-
-        // 3. Find or create the auth user
-        // IMPORTANT: Check public users table first to reuse their existing UUID.
-        // This ensures orders/reviews (linked to the old UUID) still load correctly.
-        let authUser = null;
-
-        const { data: { users: allAuthUsers } } = await admin.auth.admin.listUsers({ perPage: 1000 });
-        authUser = allAuthUsers?.find(u => u.email === normalizedEmail) || null;
-
-        if (!authUser) {
-            // Check if there's an existing public user record with a specific UUID
-            const { data: existingPublicUser } = await admin
-                .from('users')
-                .select('id')
-                .eq('email', normalizedEmail)
-                .maybeSingle();
-
-            const createPayload = {
-                email: normalizedEmail,
-                email_confirm: true,
-                user_metadata: { source: 'otp_login' },
-            };
-
-            // If public user exists, force the same UUID so all their data stays linked
-            if (existingPublicUser?.id) {
-                createPayload.id = existingPublicUser.id;
-            }
-
-            const { data: created, error: createErr } = await admin.auth.admin.createUser(createPayload);
-            if (createErr) throw new Error('Failed to create auth user: ' + createErr.message);
-            authUser = created.user;
-        }
+        // Clear OTP immediately to prevent reuse.
+        await admin.auth.admin.updateUserById(authUser.id, {
+            app_metadata: {
+                ...(authUser.app_metadata || {}),
+                snyf_otp_hash: null,
+                snyf_otp_expires_at: null,
+            },
+        });
 
         // 4. Generate a magic link server-side, then immediately exchange it for session tokens
         //    using verifyOtp() on the anon client — no redirects, no expiry race conditions.
@@ -135,19 +117,17 @@ exports.handler = async (event) => {
         // 5. Ensure public users table has a matching row for this auth user
         const { data: publicUser } = await admin
             .from('users')
-            .select('id')
+            .select('id, trust_level, report_count, verified')
             .eq('email', normalizedEmail)
             .maybeSingle();
 
-        if (!publicUser) {
-            await admin.from('users').upsert({
-                id: authUser.id,
-                email: normalizedEmail,
-                trust_level: 'scout',
-                report_count: 0,
-                verified: false,
-            });
-        }
+        await admin.from('users').upsert({
+            id: authUser.id,
+            email: normalizedEmail,
+            trust_level: publicUser?.trust_level || 'scout',
+            report_count: publicUser?.report_count || 0,
+            verified: publicUser?.verified || false,
+        }, { onConflict: 'id' });
 
         // Return session tokens to the client — client calls db.auth.setSession()
         return {
