@@ -1,27 +1,20 @@
 const { createClient } = require('@supabase/supabase-js');
 const crypto           = require('crypto');
 
-const supabaseUrl    = process.env.SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const anonKey        = process.env.SUPABASE_ANON_KEY;
+const db   = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+);
+const anon = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+);
 
-const admin = createClient(supabaseUrl, serviceRoleKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
-const anon = createClient(supabaseUrl, anonKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
-
-function hashOtp(email, otp) {
-  return crypto
-    .createHash('sha256')
-    .update(`${email}:${otp}:${serviceRoleKey}`)
-    .digest('hex');
-}
-
-function cors(statusCode, body) {
+function cors(status, body) {
   return {
-    statusCode,
+    statusCode: status,
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
@@ -32,97 +25,94 @@ function cors(statusCode, body) {
   };
 }
 
-async function handleRequest(event) {
+exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return cors(200, { ok: true });
-  if (event.httpMethod !== 'POST')    return cors(405, { ok: false, error: 'Method Not Allowed' });
+  if (event.httpMethod !== 'POST')    return cors(405, { ok: false, error: 'Method not allowed' });
 
-  const { email, token } = JSON.parse(event.body || '{}');
-  if (!email || !token)
-    return cors(400, { ok: false, error: 'Email and token are required' });
+  try {
+    const { email, token } = JSON.parse(event.body || '{}');
+    if (!email || !token)
+      return cors(400, { ok: false, error: 'Email and code required' });
 
-  const normalizedEmail = email.trim().toLowerCase();
-  const otpToken        = token.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+    const code            = token.trim();
 
-  // ── KEY FIX: Use listUsers with email filter instead of getUserByEmail
-  // getUserByEmail does NOT return app_metadata in all Supabase versions
-  // listUsers with filter is more reliable for reading app_metadata
-  const { data: listData, error: listErr } = await admin.auth.admin.listUsers({
-    perPage: 1,
-    // Note: listUsers doesn't support email filter directly
-    // so we fetch by page and find manually — but limit to 1000 for speed
-  });
+    // Hash the submitted code
+    const submittedHash = crypto.createHash('sha256')
+      .update(`${normalizedEmail}:${code}:${process.env.SUPABASE_SERVICE_ROLE_KEY}`)
+      .digest('hex');
 
-  // Actually use the correct approach: getUserById after finding via admin API
-  // The most reliable way to get app_metadata is via listUsers scan
-  // For small user bases this is fine; for large bases use a separate otp table
-  let authUser = null;
-  if (!listErr && listData?.users) {
-    authUser = listData.users.find(u => u.email?.toLowerCase() === normalizedEmail) || null;
+    // Look up OTP record directly from table — fast Postgres lookup
+    const { data: otpRow, error: otpErr } = await db
+      .from('otp_codes')
+      .select('*')
+      .eq('email', normalizedEmail)
+      .eq('used', false)
+      .gte('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (otpErr || !otpRow)
+      return cors(400, { ok: false, error: 'No active OTP. Please request a new code.' });
+
+    if (otpRow.code_hash !== submittedHash)
+      return cors(400, { ok: false, error: 'Invalid code. Please try again.' });
+
+    // Mark OTP as used
+    await db.from('otp_codes')
+      .update({ used: true })
+      .eq('id', otpRow.id);
+
+    // Get auth user
+    const { data: authUserData } = await db.auth.admin.getUserByEmail(normalizedEmail)
+      .catch(() => ({ data: null }));
+
+    let authUserId = authUserData?.user?.id;
+
+    // Create user if not exists
+    if (!authUserId) {
+      const { data: created, error: createErr } = await db.auth.admin.createUser({
+        email:         normalizedEmail,
+        email_confirm: true,
+        user_metadata: { source: 'otp_login' },
+      });
+      if (createErr) throw new Error('Failed to create user: ' + createErr.message);
+      authUserId = created.user.id;
+    }
+
+    // Generate session via magic link exchange
+    const { data: linkData, error: linkErr } = await db.auth.admin.generateLink({
+      type:  'magiclink',
+      email: normalizedEmail,
+    });
+    if (linkErr) throw new Error('generateLink failed: ' + linkErr.message);
+
+    const { data: sessionData, error: sessionErr } = await anon.auth.verifyOtp({
+      token_hash: linkData.properties.hashed_token,
+      type:       'magiclink',
+    });
+    if (sessionErr) throw new Error('Session failed: ' + sessionErr.message);
+
+    // Upsert public users row async
+    db.from('users').upsert({
+      id:           authUserId,
+      email:        normalizedEmail,
+      trust_level:  'scout',
+      report_count: 0,
+      verified:     false,
+    }, { onConflict: 'id', ignoreDuplicates: true })
+    .catch(e => console.warn('users upsert:', e.message));
+
+    return cors(200, {
+      ok:            true,
+      access_token:  sessionData.session.access_token,
+      refresh_token: sessionData.session.refresh_token,
+      user:          sessionData.session.user,
+    });
+
+  } catch (err) {
+    console.error('[verify-otp]', err.message);
+    return cors(500, { ok: false, error: err.message });
   }
-
-  if (!authUser) {
-    return cors(400, { ok: false, error: 'Account not found. Please send OTP again.' });
-  }
-
-  const meta = authUser.app_metadata || {};
-
-  if (!meta.snyf_otp_hash || !meta.snyf_otp_expires_at) {
-    return cors(400, { ok: false, error: 'No active OTP. Please request a new code.' });
-  }
-
-  if (meta.snyf_otp_hash !== hashOtp(normalizedEmail, otpToken)) {
-    return cors(400, { ok: false, error: 'Invalid code. Please try again.' });
-  }
-
-  if (Date.now() > new Date(meta.snyf_otp_expires_at).getTime()) {
-    return cors(400, { ok: false, error: 'Code expired. Please request a new one.' });
-  }
-
-  // Clear OTP async — don't block response
-  admin.auth.admin.updateUserById(authUser.id, {
-    app_metadata: {
-      ...meta,
-      snyf_otp_hash:       null,
-      snyf_otp_expires_at: null,
-    },
-  }).catch(e => console.warn('OTP clear:', e.message));
-
-  // Generate session via magic link exchange
-  const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
-    type:  'magiclink',
-    email: normalizedEmail,
-  });
-  if (linkErr) throw new Error('generateLink failed: ' + linkErr.message);
-
-  const { data: sessionData, error: sessionErr } = await anon.auth.verifyOtp({
-    token_hash: linkData.properties.hashed_token,
-    type:       'magiclink',
-  });
-  if (sessionErr) throw new Error('verifyOtp failed: ' + sessionErr.message);
-
-  // Upsert users table async — don't block
-  admin.from('users').upsert({
-    id:           authUser.id,
-    email:        normalizedEmail,
-    trust_level:  'scout',
-    report_count: 0,
-    verified:     false,
-  }, { onConflict: 'id', ignoreDuplicates: true })
-  .catch(e => console.warn('users upsert:', e.message));
-
-  return cors(200, {
-    ok:            true,
-    access_token:  sessionData.session.access_token,
-    refresh_token: sessionData.session.refresh_token,
-    user:          sessionData.session.user,
-  });
-}
-
-exports.handler = (event) => {
-  const timeout = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error('Timeout — please try again')), 9000)
-  );
-  return Promise.race([handleRequest(event), timeout]).catch(err =>
-    cors(500, { ok: false, error: err.message })
-  );
 };

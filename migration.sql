@@ -61,3 +61,23 @@ create policy "users_read_own_reports"
 
 -- Add password column to users table
 alter table public.users add column if not exists password text;
+
+-- OTP storage table (replaces app_metadata approach)
+create table if not exists otp_codes (
+  id         uuid default gen_random_uuid() primary key,
+  email      text not null,
+  code_hash  text not null,
+  expires_at timestamptz not null,
+  used       boolean default false,
+  created_at timestamptz default now()
+);
+
+-- Only keep latest OTP per email
+create index if not exists otp_email_idx on otp_codes (email);
+
+-- Auto-delete expired codes after 1 hour
+alter table otp_codes enable row level security;
+
+-- Service role only — never exposed to browser
+create policy "svc_otp_codes"
+  on otp_codes for all using (true);
