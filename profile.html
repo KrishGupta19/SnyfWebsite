@@ -1958,18 +1958,31 @@ async function updateProfileOnServer(payload) {
   const token = session?.access_token;
   if (!token) throw new Error('No active session');
 
-  const res = await fetch('/.netlify/functions/update-profile', {
+  const res  = await fetch('/.netlify/functions/update-profile', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      Authorization:  `Bearer ${token}`,
     },
     body: JSON.stringify(payload),
   });
+
   const data = await res.json().catch(() => ({}));
+
+  // 207 = partial success (profile saved, password update had issue)
+  if (res.status === 207 && data.ok) {
+    if (data.warning) {
+      console.warn('[Profile] Partial save:', data.warning);
+      // Show non-blocking warning after modal closes
+      setTimeout(() => showToast?.(data.warning, 'warning'), 1000);
+    }
+    return data;
+  }
+
   if (!res.ok || !data.ok) {
     throw new Error(data.error || 'Could not save profile');
   }
+
   return data;
 }
 
