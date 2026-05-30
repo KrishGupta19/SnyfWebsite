@@ -55,12 +55,15 @@ async function snyfGetProfile(userId) {
   } catch { return null; }
 }
 
-// Sign in with email OTP via Netlify functions and Resend
+// Sign in with email OTP via Supabase Edge Functions
 async function snyfSignInOTP(email) {
   try {
-    const res = await fetch('/.netlify/functions/send-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch(`${SNYF_URL}/functions/v1/send-otp`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${SNYF_KEY}`,
+      },
       body: JSON.stringify({ email }),
     });
     const data = await res.json();
@@ -70,30 +73,30 @@ async function snyfSignInOTP(email) {
     return { ok: true };
   } catch (err) {
     console.error('snyfSignInOTP error:', err);
-    return { ok: false, error: err.message || 'Network error occurred while sending OTP' };
+    return { ok: false, error: err.message || 'Network error' };
   }
 }
 
 async function snyfVerifyOTP(email, token) {
   try {
-    const res = await fetch('/.netlify/functions/verify-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch(`${SNYF_URL}/functions/v1/verify-otp`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${SNYF_KEY}`,
+      },
       body: JSON.stringify({ email, token }),
     });
     const data = await res.json();
     if (!res.ok || !data.ok) {
       return { user: null, error: new Error(data.error || 'Invalid or expired OTP') };
     }
-    // Server returns session tokens directly — set them immediately, no redirect needed
     if (data.access_token && data.refresh_token) {
       const { data: sessionData, error: sessionErr } = await db.auth.setSession({
-        access_token: data.access_token,
+        access_token:  data.access_token,
         refresh_token: data.refresh_token,
       });
-      if (sessionErr) {
-        return { user: null, error: sessionErr };
-      }
+      if (sessionErr) return { user: null, error: sessionErr };
       return { user: sessionData.user, error: null };
     }
     return { user: null, error: new Error('Session establishment failed') };
