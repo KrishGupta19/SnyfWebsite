@@ -1872,11 +1872,26 @@ async function loadProfile(user) {
   const navLink = document.getElementById('nav-profile-link');
   if (navLink) navLink.textContent = initial;
 
-  // Load data in parallel
-  await Promise.all([
-    loadOrders(user.id),
-    loadReviews(user.id),
-  ]);
+  // Single function call — one cold start, one network round trip
+  try {
+    const { orders, reviews } = await fetchAllProfileData();
+
+    allOrders = orders;
+    renderOrdersList(orders);
+    showVenueFilters();
+
+    renderReviewsList(reviews);
+    updateProfileStats(orders, reviews);
+
+    // Silently recompute trust level
+    if (user?.id) recomputeTrustLevel(user.id).catch(() => {});
+
+  } catch (err) {
+    dbError('loadProfileData', err);
+    // Show graceful empty states
+    renderOrdersList([]);
+    renderReviewsList([]);
+  }
 }
 
 // ── LOAD ORDERS ───────────────────────────────────────────────
@@ -1897,6 +1912,45 @@ async function fetchProfileRows(type) {
     throw new Error(payload.error || `Could not load ${type}`);
   }
   return payload.rows || [];
+}
+
+// Single call that fetches orders + reviews + venue names together
+async function fetchAllProfileData() {
+  const { data: { session } } = await db.auth.getSession();
+  const token = session?.access_token;
+  if (!token) throw new Error('No active session');
+
+  const res = await fetch('/.netlify/functions/profile-data?type=all', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok || !payload.ok) {
+    throw new Error(payload.error || 'Could not load profile data');
+  }
+  return {
+    orders:  payload.orders  || [],
+    reviews: payload.reviews || [],
+  };
+}
+
+// Update profile stats metrics in the header
+function updateProfileStats(orders, reviews) {
+  allOrders = orders || [];
+  allReviews = reviews || [];
+
+  const totalCountOrders = allOrders.length;
+  const ordersStatEl = document.getElementById('pf-stat-orders');
+  if (ordersStatEl) ordersStatEl.textContent = totalCountOrders;
+
+  const uniqueVenues = new Set(
+    allOrders.map(o => o.venue_id).filter(Boolean)
+  ).size;
+  const venuesStatEl = document.getElementById('pf-stat-venues');
+  if (venuesStatEl) venuesStatEl.textContent = uniqueVenues;
+
+  const totalCountReviews = allReviews.length;
+  const reviewsStatEl = document.getElementById('pf-stat-reviews');
+  if (reviewsStatEl) reviewsStatEl.textContent = totalCountReviews;
 }
 
 async function updateProfileOnServer(payload) {

@@ -16,8 +16,13 @@ function hashOtp(email, otp) {
 }
 
 async function findAuthUserByEmail(email) {
-    const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-    return users?.find(user => user.email?.toLowerCase() === email) || null;
+  try {
+    const { data, error } = await supabase.auth.admin.getUserByEmail(email);
+    if (error || !data?.user) return null;
+    return data.user;
+  } catch {
+    return null;
+  }
 }
 
 exports.handler = async (event) => {
