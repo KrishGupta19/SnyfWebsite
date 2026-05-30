@@ -6,11 +6,6 @@ const db   = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY,
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
-const anon = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
 
 function cors(status, body) {
   return {
@@ -27,7 +22,7 @@ function cors(status, body) {
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return cors(200, { ok: true });
-  if (event.httpMethod !== 'POST')    return cors(405, { ok: false, error: 'Method not allowed' });
+  if (event.httpMethod !== 'POST')    return cors(405, { ok: false });
 
   try {
     const { email, token } = JSON.parse(event.body || '{}');
@@ -37,12 +32,13 @@ exports.handler = async (event) => {
     const normalizedEmail = email.trim().toLowerCase();
     const code            = token.trim();
 
-    // Hash the submitted code
-    const submittedHash = crypto.createHash('sha256')
+    // Hash submitted code
+    const submittedHash = crypto
+      .createHash('sha256')
       .update(`${normalizedEmail}:${code}:${process.env.SUPABASE_SERVICE_ROLE_KEY}`)
       .digest('hex');
 
-    // Look up OTP record directly from table — fast Postgres lookup
+    // ── STEP 1: Verify OTP from table (fast Postgres lookup) ──
     const { data: otpRow, error: otpErr } = await db
       .from('otp_codes')
       .select('*')
@@ -59,55 +55,57 @@ exports.handler = async (event) => {
     if (otpRow.code_hash !== submittedHash)
       return cors(400, { ok: false, error: 'Invalid code. Please try again.' });
 
-    // Mark OTP as used
+    // ── STEP 2: Mark OTP used (fast) ──
     await db.from('otp_codes')
       .update({ used: true })
       .eq('id', otpRow.id);
 
-    // Get auth user ID — try createUser first, if already exists that's fine
-    let authUserId = null;
-
-    const { data: created, error: createErr } = await db.auth.admin.createUser({
+    // ── STEP 3: Get or create user, then generate session ──
+    // Try creating user first
+    let userId = null;
+    const { data: newUser, error: createErr } = await db.auth.admin.createUser({
       email:         normalizedEmail,
       email_confirm: true,
       user_metadata: { source: 'otp_login' },
     });
 
-    if (!createErr) {
-      // New user created
-      authUserId = created.user.id;
-    } else if (
-      createErr.message?.includes('already') ||
-      createErr.message?.includes('registered') ||
-      createErr.status === 422
-    ) {
-      // User exists — find their ID via listUsers
-      const { data: listData } = await db.auth.admin.listUsers({ perPage: 1000 });
-      const found = listData?.users?.find(u => u.email?.toLowerCase() === normalizedEmail);
-      if (!found) throw new Error('Could not find user account.');
-      authUserId = found.id;
+    if (!createErr && newUser?.user) {
+      userId = newUser.user.id;
     } else {
-      throw new Error('Failed to prepare account: ' + createErr.message);
+      // User exists — find via listUsers
+      const { data: list } = await db.auth.admin.listUsers({ perPage: 1000 });
+      const found = list?.users?.find(u => u.email?.toLowerCase() === normalizedEmail);
+      if (!found) return cors(400, { ok: false, error: 'Account not found.' });
+      userId = found.id;
     }
 
-    // Generate session via magic link exchange
+    // ── STEP 4: Generate session using admin generateLink ──
     const { data: linkData, error: linkErr } = await db.auth.admin.generateLink({
       type:  'magiclink',
       email: normalizedEmail,
     });
-    if (linkErr) throw new Error('generateLink failed: ' + linkErr.message);
+
+    if (linkErr) throw new Error('generateLink: ' + linkErr.message);
+
+    // Exchange hashed token for session using anon client
+    const anon = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_ANON_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
 
     const { data: sessionData, error: sessionErr } = await anon.auth.verifyOtp({
       token_hash: linkData.properties.hashed_token,
       type:       'magiclink',
     });
-    if (sessionErr) throw new Error('Session failed: ' + sessionErr.message);
 
-    // Upsert public users row async — wrapped in async IIFE
-    (async () => {
+    if (sessionErr) throw new Error('verifyOtp: ' + sessionErr.message);
+
+    // ── STEP 5: Upsert users table (async, don't block) ──
+    ;(async () => {
       try {
         await db.from('users').upsert({
-          id:           authUserId,
+          id:           userId,
           email:        normalizedEmail,
           trust_level:  'scout',
           report_count: 0,
