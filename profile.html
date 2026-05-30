@@ -1900,36 +1900,81 @@ let allOrders = [];
 let activeVenueFilter = null;
 
 async function fetchProfileRows(type) {
-  const { data: { session } } = await db.auth.getSession();
-  const token = session?.access_token;
-  if (!token) throw new Error('No active session');
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) throw new Error('No active session');
 
-  const res = await fetch(`/.netlify/functions/profile-data?type=${encodeURIComponent(type)}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const payload = await res.json().catch(() => ({}));
-  if (!res.ok || !payload.ok) {
-    throw new Error(payload.error || `Could not load ${type}`);
+  if (type === 'orders') {
+    const { data, error } = await db
+      .from('orders')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(30);
+    if (error) throw error;
+    return data || [];
   }
-  return payload.rows || [];
+
+  if (type === 'reviews') {
+    const { data, error } = await db
+      .from('field_reports')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(30);
+    if (error) throw error;
+    return data || [];
+  }
+
+  return [];
 }
 
 // Single call that fetches orders + reviews + venue names together
 async function fetchAllProfileData() {
-  const { data: { session } } = await db.auth.getSession();
-  const token = session?.access_token;
-  if (!token) throw new Error('No active session');
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) throw new Error('No active session');
 
-  const res = await fetch('/.netlify/functions/profile-data?type=all', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const payload = await res.json().catch(() => ({}));
-  if (!res.ok || !payload.ok) {
-    throw new Error(payload.error || 'Could not load profile data');
+  // Fetch orders and reviews in parallel directly from Supabase
+  // No Netlify function needed — user session works with RLS
+  const [ordersRes, reviewsRes] = await Promise.all([
+    db.from('orders')
+      .select('id, venue_id, items, subtotal, gst, service_charge, total, status, table_num, special_instructions, created_at, updated_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(30),
+    db.from('field_reports')
+      .select('id, venue_id, venue_name, food, ambience, service, value, wait_time, note, verified, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(30),
+  ]);
+
+  if (ordersRes.error) throw new Error('Orders: ' + ordersRes.error.message);
+  if (reviewsRes.error) throw new Error('Reviews: ' + reviewsRes.error.message);
+
+  const orders  = ordersRes.data || [];
+  const reviews = reviewsRes.data || [];
+
+  // Fetch venue names for orders
+  const venueIds = [...new Set(orders.map(o => o.venue_id).filter(Boolean))];
+  let venueMap = {};
+
+  if (venueIds.length > 0) {
+    const { data: venues } = await db
+      .from('venues')
+      .select('id, name, slug')
+      .in('id', venueIds);
+    (venues || []).forEach(v => { venueMap[v.id] = { name: v.name, slug: v.slug }; });
   }
+
+  const ordersWithVenues = orders.map(o => ({
+    ...o,
+    venue_name: venueMap[o.venue_id]?.name || null,
+    venue_slug: venueMap[o.venue_id]?.slug || null,
+  }));
+
   return {
-    orders:  payload.orders  || [],
-    reviews: payload.reviews || [],
+    orders:  ordersWithVenues,
+    reviews: reviews,
   };
 }
 
