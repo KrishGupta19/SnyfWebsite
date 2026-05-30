@@ -259,7 +259,7 @@ export function MenuManager() {
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
               {cat} ({items.filter(i => (i.category || 'Uncategorised') === cat).length})
             </h3>
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               {items
                 .filter(i => (i.category || 'Uncategorised') === cat)
                 .map(item => (

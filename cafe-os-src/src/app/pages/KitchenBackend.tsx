@@ -710,50 +710,50 @@ export function KitchenBackend() {
                 )}
 
                 {/* Order header */}
-                <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border">
-                  <div className={`w-2 h-16 rounded-full flex-shrink-0 ${
-                    isLate(order.created_at)   ? 'bg-red-500'    :
-                    order.status === 'received'  ? 'bg-blue-500'   :
-                    order.status === 'preparing' ? 'bg-yellow-500' :
-                                                   'bg-green-500'
+                <div className="flex items-center gap-5 p-6 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border">
+                  <div className={`w-3 h-20 rounded-full flex-shrink-0 ${
+                    isLate(order.created_at)   ? 'bg-red-500 shadow-md shadow-red-500/20'    :
+                    order.status === 'received'  ? 'bg-blue-500 shadow-md shadow-blue-500/20'   :
+                    order.status === 'preparing' ? 'bg-yellow-500 shadow-md shadow-yellow-500/20' :
+                                                   'bg-green-500 shadow-md shadow-green-500/20'
                   }`} />
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <h2 className="font-bold">
+                    <div className="flex items-center justify-between gap-4 mb-2.5 flex-wrap">
+                      <div className="flex items-center gap-4 flex-wrap">
+                        <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
                           Order #{order.id.slice(-6).toUpperCase()}
                         </h2>
                         {order.table_num && (
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 ${
+                          <span className={`px-4 py-1.5 rounded-full text-base font-bold flex items-center gap-1.5 border border-current/10 shadow-sm ${
                             order.table_verified
                               ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                               : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                           }`}>
                             Table {order.table_num}
-                            <span className="font-bold">{order.table_verified ? '✓' : '?'}</span>
+                            <span className="font-extrabold">{order.table_verified ? '✓' : '?'}</span>
                           </span>
                         )}
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                        <span className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-extrabold uppercase tracking-wider border border-current/10 shadow-sm ${getStatusColor(order.status)}`}>
                           {ORDER_STATUS_LABELS[order.status]}
                         </span>
-                        <span className="text-sm font-bold text-primary">
+                        <span className="text-xl sm:text-2xl font-black text-primary tracking-tight">
                           ₹{(order.total || 0).toLocaleString('en-IN')}
                         </span>
                       </div>
                       <button
                         onClick={() => openEditModal(order)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-accent-foreground rounded-lg text-xs font-semibold hover:bg-accent/70 transition-all border border-border"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-accent text-accent-foreground rounded-xl text-sm font-bold hover:bg-accent/70 hover:scale-[1.02] active:scale-95 transition-all border border-border shadow-sm cursor-pointer"
                       >
-                        <Edit className="w-3.5 h-3.5" />
+                        <Edit className="w-4 h-4" />
                         Edit Order
                       </button>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="w-4 h-4 flex-shrink-0" />
+                    <div className="flex items-center gap-2 text-sm sm:text-base font-semibold text-muted-foreground">
+                      <Clock className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-muted-foreground/70" />
                       <span>{timeElapsed(order.created_at)}</span>
                       {isLate(order.created_at) && (
-                        <span className="text-red-600 dark:text-red-400 font-medium">
+                        <span className="text-red-600 dark:text-red-400 font-bold animate-pulse">
                           • Running late
                         </span>
                       )}

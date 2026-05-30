@@ -28,6 +28,6 @@ export default defineConfig({
   base:  '/cafe-os/',           // base path for all assets
   build: {
     outDir:     '../cafe-os',  // outputs into main Snyf project (e:\Snyf\cafe-os)
-    emptyOutDir: true,
+    emptyOutDir: false,
   },
 });
