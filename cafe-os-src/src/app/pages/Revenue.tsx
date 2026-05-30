@@ -110,6 +110,7 @@ export function Revenue() {
         const monthlyData = [];
         for (let i = 4; i >= 0; i--) {
           const d = new Date();
+          d.setDate(1); // Avoid day-overflow (e.g. Feb 30th overflowing to Mar 2nd)
           d.setMonth(d.getMonth() - i);
           const monthName = d.toLocaleDateString('en-US', { month: 'short' });
           const targetMonth = d.getMonth();

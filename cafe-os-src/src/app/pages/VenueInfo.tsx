@@ -84,9 +84,50 @@ export function VenueInfo() {
   }
 
   async function deletePhoto(photoId: string) {
+    if (!venue?.id) return;
     await db.from('venue_photos').delete().eq('id', photoId);
+    
+    // Fetch remaining photos and re-index them
+    const { data } = await db
+      .from('venue_photos')
+      .select('*')
+      .eq('venue_id', venue.id)
+      .order('sort_order');
+      
+    if (data && data.length > 0) {
+      const promises = data.map((photo, index) => {
+        return db
+          .from('venue_photos')
+          .update({ sort_order: index })
+          .eq('id', photo.id);
+      });
+      await Promise.all(promises);
+    }
+    
     fetchPhotos();
   }
+
+  async function makeHero(photoId: string) {
+    if (!venue?.id) return;
+    const targetPhoto = photos.find(p => p.id === photoId);
+    if (!targetPhoto) return;
+
+    // Filter out targetPhoto, then prepend it to remainingPhotos
+    const remainingPhotos = photos.filter(p => p.id !== photoId);
+    const newPhotosOrder = [targetPhoto, ...remainingPhotos];
+
+    // Update sort_order for each photo in the database
+    const promises = newPhotosOrder.map((photo, index) => {
+      return db
+        .from('venue_photos')
+        .update({ sort_order: index })
+        .eq('id', photo.id);
+    });
+
+    await Promise.all(promises);
+    fetchPhotos();
+  }
+
 
   return (
     <div className="p-8 space-y-8 max-w-2xl">
@@ -217,9 +258,19 @@ export function VenueInfo() {
                   onError={e => (e.currentTarget.style.display = 'none')}
                 />
                 <p className="text-xs text-muted-foreground flex-1 truncate">{photo.url}</p>
-                <span className="text-xs font-mono text-muted-foreground flex-shrink-0 px-2 py-0.5 bg-accent rounded-full">
-                  {i === 0 ? '★ Hero' : `#${i + 1}`}
-                </span>
+                {i === 0 ? (
+                  <span className="text-xs font-semibold px-3 py-1 bg-cyan-500 text-white rounded-full flex items-center gap-1 shadow-sm select-none">
+                    ★ Hero
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => makeHero(photo.id)}
+                    className="text-xs font-semibold text-muted-foreground hover:text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-950/30 px-3 py-1 rounded-full border border-border hover:border-cyan-300 transition-all active:scale-95 cursor-pointer"
+                  >
+                    Make Hero
+                  </button>
+                )}
                 <button
                   onClick={() => deletePhoto(photo.id)}
                   className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors flex-shrink-0"

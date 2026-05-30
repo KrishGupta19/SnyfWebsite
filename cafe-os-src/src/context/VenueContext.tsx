@@ -133,7 +133,7 @@ function LoginScreen({
                 type="text"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
-                placeholder={`${slug}_admin`}
+                placeholder=""
                 className="w-full px-4 py-3 bg-input-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                 autoComplete="username"
               />
@@ -146,7 +146,7 @@ function LoginScreen({
                   type={showPass ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••••"
+                  placeholder=""
                   className="w-full px-4 py-3 pr-14 bg-input-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                   autoComplete="current-password"
                 />
