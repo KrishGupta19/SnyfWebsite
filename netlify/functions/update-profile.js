@@ -83,8 +83,13 @@ exports.handler = async (event) => {
 
     if (!updatePassword) {
       // Fire and forget — don't block response on this
-      db.auth.admin.updateUserById(user.id, { user_metadata: newMeta })
-        .catch(e => console.warn('[update-profile] metadata:', e.message));
+      (async () => {
+        try {
+          await db.auth.admin.updateUserById(user.id, { user_metadata: newMeta });
+        } catch (e) {
+          console.warn('[update-profile] metadata:', e.message);
+        }
+      })();
 
       return res(200, {
         ok:      true,

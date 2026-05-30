@@ -103,15 +103,20 @@ exports.handler = async (event) => {
     });
     if (sessionErr) throw new Error('Session failed: ' + sessionErr.message);
 
-    // Upsert public users row async
-    db.from('users').upsert({
-      id:           authUserId,
-      email:        normalizedEmail,
-      trust_level:  'scout',
-      report_count: 0,
-      verified:     false,
-    }, { onConflict: 'id', ignoreDuplicates: true })
-    .catch(e => console.warn('users upsert:', e.message));
+    // Upsert public users row async — wrapped in async IIFE
+    (async () => {
+      try {
+        await db.from('users').upsert({
+          id:           authUserId,
+          email:        normalizedEmail,
+          trust_level:  'scout',
+          report_count: 0,
+          verified:     false,
+        }, { onConflict: 'id', ignoreDuplicates: true });
+      } catch (e) {
+        console.warn('users upsert:', e.message);
+      }
+    })();
 
     return cors(200, {
       ok:            true,
