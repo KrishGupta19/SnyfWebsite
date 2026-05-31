@@ -52,35 +52,22 @@ Deno.serve(async (req: Request) => {
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
 
-    // Delete old OTPs for this email
-    await db.from('otp_codes').delete().eq('email', normalizedEmail);
+    // Parallelized Database operations and Resend Email dispatch
+    const dbWritePromise = (async () => {
+      // 1. Delete old OTPs for this email
+      await db.from('otp_codes').delete().eq('email', normalizedEmail);
 
-    // Store new OTP hash
-    const { error: insertErr } = await db.from('otp_codes').insert({
-      email:      normalizedEmail,
-      code_hash:  hash,
-      expires_at: expires,
-      used:       false,
-    });
-    if (insertErr) throw new Error('Failed to store OTP: ' + insertErr.message);
+      // 2. Store new OTP hash
+      const { error: insertErr } = await db.from('otp_codes').insert({
+        email:      normalizedEmail,
+        code_hash:  hash,
+        expires_at: expires,
+        used:       false,
+      });
+      if (insertErr) throw new Error('Failed to store OTP: ' + insertErr.message);
+    })();
 
-    // Ensure auth user exists — ignore "already registered" error
-    const { error: createErr } = await db.auth.admin.createUser({
-      email:         normalizedEmail,
-      email_confirm: true,
-      user_metadata: { source: 'otp_login' },
-    });
-    if (
-      createErr &&
-      !createErr.message?.includes('already') &&
-      !createErr.message?.includes('registered') &&
-      (createErr as any).status !== 422
-    ) {
-      throw new Error('User setup failed: ' + createErr.message);
-    }
-
-    // Send email via Resend
-    const { error: mailErr } = await resend.emails.send({
+    const mailPromise = resend.emails.send({
       from:    `Snyf <${fromEmail}>`,
       to:      normalizedEmail,
       subject: 'Your Snyf sign-in code',
@@ -100,7 +87,9 @@ Deno.serve(async (req: Request) => {
           <p style="font-size:11px;color:#6E6A64;font-family:monospace;margin:0;">— The Snyf Team</p>
         </div>`,
     });
-    if (mailErr) throw new Error('Email send failed: ' + mailErr.message);
+
+    const [_, mailRes] = await Promise.all([dbWritePromise, mailPromise]);
+    if (mailRes.error) throw new Error('Email send failed: ' + mailRes.error.message);
 
     return res(200, { ok: true });
 

@@ -558,7 +558,13 @@ async function loadVenues() {
         scores:   { food: 5.0, ambience: 5.0, service: 5.0, value: 5.0, wait: 5.0 },
         images:   (v.venue_photos || [])
                     .sort((a, b) => a.sort_order - b.sort_order)
-                    .map(p => p.url)
+                    .map(p => {
+                      const url = p.url || '';
+                      if (url.includes('pjygywbgwujkvpexmxuu.supabase.co/storage/v1/object/public/')) {
+                        return `${url}?width=450&quality=70&format=webp`;
+                      }
+                      return url;
+                    })
                     .filter(Boolean),
         page:     `${v.slug}`,
         featured: v.featured || false,
