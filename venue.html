@@ -2467,7 +2467,7 @@
       initVenuePage();
 
       // Log visit silently (Phase 4 analytics)
-      logVisit(venue.id);
+      logVisit(venue.id, urlTable);
 
     } catch (err) {
       dbError('loadVenueData', err);
@@ -2885,19 +2885,28 @@
     loadCart();
   }
 
-  async function logVisit(venueId) {
+  async function logVisit(venueId, tableNum = null) {
     // Only log once per session per venue
     const key = `snyf_visit_${VENUE_SLUG}`;
     if (sessionStorage.getItem(key)) return;
 
     try {
-      await db.from('visits').insert({
+      const insertData = {
         venue_id:   venueId,
         session_id: snyfSessionId(),
         source:     new URLSearchParams(window.location.search).get('src') || 'direct',
         device:     window.innerWidth <= 768 ? 'mobile' : 'desktop',
         referrer:   document.referrer || null,
-      });
+      };
+
+      if (tableNum) {
+        const parsedTable = parseInt(tableNum);
+        if (!isNaN(parsedTable)) {
+          insertData.table_num = parsedTable;
+        }
+      }
+
+      await db.from('visits').insert(insertData);
       sessionStorage.setItem(key, '1');
     } catch (err) {
       // Silent fail — visits are analytics only
