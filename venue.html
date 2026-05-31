@@ -2645,48 +2645,83 @@
 
       overlay.innerHTML = `
         <div class="table-prompt-card">
-          <div class="table-prompt-title">Seated at Table?</div>
-          <p class="table-prompt-desc">Enter your table number so the waiter knows where to assist you.</p>
+          <div class="table-prompt-title">Which Table Are You At?</div>
+          <div class="table-prompt-desc">Enter your table number to place your order. The kitchen needs this to deliver to you.</div>
           <div class="table-input-wrapper">
             <input type="tel" id="table-num-field" class="table-num-input" placeholder="#" maxLength="3" pattern="[0-9]*" inputmode="numeric" />
           </div>
           <div class="table-prompt-actions">
-            <button id="table-prompt-cancel" class="table-prompt-btn cancel">Cancel</button>
-            <button id="table-prompt-submit" class="table-prompt-btn submit">Confirm</button>
+            <button class="table-prompt-btn confirm" id="table-confirm-btn">
+              Confirm Table →
+            </button>
           </div>
         </div>
       `;
 
       document.body.appendChild(overlay);
 
-      document.getElementById('table-prompt-cancel').onclick = () => {
-        overlay.style.opacity = '0';
-        overlay.firstElementChild.style.transform = 'scale(0.92) translateY(10px)';
-        setTimeout(() => { overlay.style.display = 'none'; }, 300);
-      };
+      // Make confirm button disabled until number entered
+      const confirmBtn  = overlay.querySelector('#table-confirm-btn') ||
+                          overlay.querySelector('.table-prompt-btn.confirm');
+      const tableInput  = overlay.querySelector('.table-num-input') ||
+                          overlay.querySelector('#table-num-input');
 
-      document.getElementById('table-prompt-submit').onclick = () => {
-        const val = document.getElementById('table-num-field').value.trim();
-        if (!val) {
-          showToast('Please enter a valid table number.');
-          return;
-        }
-        sessionStorage.setItem('snyf_table_num', val);
-        overlay.style.opacity = '0';
-        overlay.firstElementChild.style.transform = 'scale(0.92) translateY(10px)';
-        setTimeout(() => {
-          overlay.style.display = 'none';
-          if (callback) callback(val);
-        }, 300);
-      };
+      if (confirmBtn && tableInput) {
+        // Start disabled
+        confirmBtn.disabled = true;
+        confirmBtn.style.opacity = '0.4';
+        confirmBtn.style.cursor  = 'not-allowed';
+
+        tableInput.addEventListener('input', () => {
+          const val = tableInput.value.trim();
+          const isValid = val !== '' && /^\d+$/.test(val) && parseInt(val) > 0;
+          confirmBtn.disabled      = !isValid;
+          confirmBtn.style.opacity = isValid ? '1' : '0.4';
+          confirmBtn.style.cursor  = isValid ? 'pointer' : 'not-allowed';
+        });
+
+        // Allow Enter key to confirm
+        tableInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            const val = tableInput.value.trim();
+            if (val && /^\d+$/.test(val) && parseInt(val) > 0) {
+              confirmBtn.click();
+            }
+          }
+        });
+      }
+
+      // Auto-focus input
+      setTimeout(() => tableInput?.focus(), 100);
+
+      if (confirmBtn) {
+        confirmBtn.onclick = () => {
+          const val = (document.getElementById('table-num-field') || tableInput).value.trim();
+          if (!val) {
+            showToast('Please enter a valid table number.');
+            return;
+          }
+          sessionStorage.setItem('snyf_table_num', val);
+          overlay.style.opacity = '0';
+          overlay.firstElementChild.style.transform = 'scale(0.92) translateY(10px)';
+          setTimeout(() => {
+            overlay.style.display = 'none';
+            if (callback) callback(val);
+          }, 300);
+        };
+      }
     }
 
-    document.getElementById('table-num-field').value = '';
+    const field = document.getElementById('table-num-field');
+    if (field) {
+      field.value = '';
+      field.dispatchEvent(new Event('input'));
+    }
     overlay.style.display = 'flex';
     setTimeout(() => {
       overlay.style.opacity = '1';
       overlay.firstElementChild.style.transform = 'scale(1) translateY(0)';
-      document.getElementById('table-num-field').focus();
+      if (field) field.focus();
     }, 15);
   }
 
@@ -3489,6 +3524,23 @@
       return;
     }
 
+    // ── Table number gate ─────────────────────────────────────
+    // If no table number set (came from discover, not QR scan)
+    // show table prompt before proceeding
+    const existingTable = getSavedTableNumber();
+    if (!existingTable) {
+      showTablePrompt((enteredTable) => {
+        if (enteredTable) {
+          // Save to session — persists until submitReviewAndReturn clears it
+          sessionStorage.setItem('snyf_table_num', String(enteredTable).trim());
+          sessionStorage.setItem('snyf_verified_table_num', '');
+          // Now proceed with order
+          confirmOrder();
+        }
+      });
+      return;
+    }
+
     const orderItems = Object.values(cart).map(({ item, qty }) => ({
       id:    item.id,
       name:  item.name,
@@ -4017,7 +4069,13 @@
       orderSubscription = null;
     }
     gameActive = false;
-    
+
+    // Clear table number — next order will ask again
+    // This runs when customer taps "Submit & Back to Menu"
+    // which is the payment received / order done action
+    sessionStorage.removeItem('snyf_table_num');
+    sessionStorage.removeItem('snyf_verified_table_num');
+
     cart = {};
     updateOrderBar();
     renderDishes();
