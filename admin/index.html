@@ -745,17 +745,9 @@
           <div class="sec-head">
             <div><div class="sec-title">Discover Control</div><div class="sec-sub">Control what appears on snyf.co.in/discover</div></div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start;">
-            <div>
-              <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:14px;">Venue Order — Drag to Reorder</div>
-              <div id="discover-order-list"></div>
-            </div>
-            <div class="card">
-              <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:14px;">Ticker Events</div>
-              <div id="ticker-events-list" style="margin-bottom:12px;display:flex;flex-direction:column;gap:6px;"></div>
-              <button class="btn btn--ghost btn--sm" style="width:100%;justify-content:center;" onclick="addTickerEvent()">+ Add Event</button>
-              <button class="btn btn--primary btn--sm" style="width:100%;justify-content:center;margin-top:8px;" onclick="saveTickerEvents()">Save Ticker</button>
-            </div>
+          <div style="max-width:720px;">
+            <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:14px;">Venue Order — Drag to Reorder</div>
+            <div id="discover-order-list"></div>
           </div>
         </div>
 
@@ -1010,11 +1002,7 @@ let WAITLIST_DATA = [];
 let ACTIVITY_DATA = [];
 let ORDERS_DATA = [];
 let VISITS_DATA = [];
-let TICKER_EVENTS_DATA = [
-  '⬡ Snyf platform is live',
-  '◈ Add your first venue to get started',
-  '⚠ No field reports yet — awaiting community data',
-];
+// Ticker events removed
 let SCORE_HISTORY = [];
 
 const DIMS = [
@@ -1341,7 +1329,6 @@ async function initAdminApp() {
   renderAnalyticsReports();
   renderWaitlist();
   renderDiscoverControl();
-  renderTickerEditor();
   initAddVenueSliders();
   populateQRVenues();
 }
@@ -2315,26 +2302,7 @@ function renderDiscoverControl() {
     </div>`).join('');
 }
 
-// TICKER EDITOR
-function renderTickerEditor() {
-  const list = document.getElementById('ticker-events-list');
-  if (!list) return;
-  list.innerHTML = TICKER_EVENTS_DATA.map(ev => `
-    <div style="display:flex;gap:6px;align-items:center;">
-      <input class="input" type="text" value="${ev}" style="flex:1;font-size:11px;padding:7px 10px;">
-      <button class="btn btn--xs btn--danger" onclick="this.closest('div').remove()">✕</button>
-    </div>`).join('');
-}
-
-function addTickerEvent() {
-  const list = document.getElementById('ticker-events-list');
-  const div  = document.createElement('div');
-  div.style.cssText = 'display:flex;gap:6px;align-items:center;';
-  div.innerHTML = `<input class="input" type="text" placeholder="New ticker event..." style="flex:1;font-size:11px;padding:7px 10px;"><button class="btn btn--xs btn--danger" onclick="this.closest('div').remove()">✕</button>`;
-  list.appendChild(div);
-}
-
-function saveTickerEvents() { showToast('✓ Ticker events saved', 'success'); }
+// Ticker events logic removed
 
 // ADD VENUE MODAL
 function initAddVenueSliders() {
