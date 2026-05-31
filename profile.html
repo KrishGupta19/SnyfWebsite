@@ -1760,11 +1760,25 @@ function backToEmail() {
 
 // ── SIGN OUT ──────────────────────────────────────────────────
 async function handleSignOut() {
-  await snyfSignOut();
-  currentUser    = null;
-  currentProfile = null;
-  currentEmail   = '';
+  try {
+    // Clear storage immediately to prevent re-authentication during network lag
+    localStorage.removeItem('sb-pjygywbgwujkvpexmxuu-auth-token');
+    sessionStorage.clear();
+  } catch (e) {}
+
+  currentUser      = null;
+  currentProfile   = null;
+  currentEmail     = '';
+  lastLoadedUserId = null;
+  profileLoading   = false;
   showAuthScreen();
+
+  // Call signout asynchronously in the background so the UI is instant
+  try {
+    await snyfSignOut();
+  } catch (err) {
+    console.warn('[Profile] Background signout warning:', err);
+  }
 }
 
 // ── SCREEN MANAGEMENT ─────────────────────────────────────────
@@ -1786,83 +1800,16 @@ function showProfileScreen() {
 async function loadProfile(user) {
   showProfileScreen();
 
-  // Get or create user profile
-  let profile = await snyfGetProfile(user.id);
-
-  if (!profile) {
-    try {
-      const { error: upsertErr } = await db.from('users').upsert({
-        id:           user.id,
-        email:        user.email,
-        trust_level:  'scout',
-        report_count: 0,
-        verified:     false,
-      }, { onConflict: 'id' });
-
-      if (upsertErr) {
-        if (upsertErr.code === '23505') {
-          console.warn('[Profile] Email already exists under different ID. Fetching that profile...');
-          const { data: existingProf } = await db
-            .from('users')
-            .select('*')
-            .eq('email', user.email)
-            .maybeSingle();
-          if (existingProf) {
-            profile = existingProf;
-          }
-        } else {
-          throw upsertErr;
-        }
-      } else {
-        profile = await snyfGetProfile(user.id);
-      }
-    } catch (upsertFail) {
-      console.error('[Profile] Profile upsert failed:', upsertFail);
-      const { data: fallbackProf } = await db
-        .from('users')
-        .select('*')
-        .eq('email', user.email)
-        .maybeSingle();
-      profile = fallbackProf || { id: user.id, email: user.email, trust_level: 'scout' };
-    }
-  }
-
-  currentProfile = profile;
-
-  // Show first-time password modal if no password set yet
-  // Show first-time password modal if no password set yet
-  const hasPassword = !!(user?.user_metadata?.account_password);
-  if (profile && !hasPassword && !firstPasswordPromptShown) {
-    firstPasswordPromptShown = true;
-    setTimeout(() => {
-      if (document.getElementById('pf-edit-modal').style.display !== 'flex') {
-        document.getElementById('pf-first-password-modal').style.display = 'flex';
-      }
-    }, 1000);
-  }
-
-  // Populate header
-  const name      = profile?.name || user.email?.split('@')[0] || 'Snyf User';
-  const initial   = name[0]?.toUpperCase() || 'S';
+  // 1. Render immediate fallback name and email from active session (instant!)
+  const fallbackName = user.email?.split('@')[0] || 'Snyf User';
+  const initial = fallbackName[0]?.toUpperCase() || 'S';
+  renderName(fallbackName);
+  document.getElementById('pf-user-email').textContent = user.email || '—';
   
-  let sinceStr = '—';
-  try {
-    const rawDate = user.created_at || profile?.created_at;
-    const sinceDate = rawDate ? new Date(rawDate) : new Date();
-    if (!isNaN(sinceDate.getTime())) {
-      sinceStr = sinceDate.toLocaleDateString('en-IN', {
-        month: 'long', year: 'numeric',
-      });
-    }
-  } catch (err) {
-    console.error('Error parsing member since date:', err);
-  }
-
   const avatarUrl = user.user_metadata?.avatar_url || '';
   const avatarEl  = document.getElementById('pf-avatar');
   avatarEl.style.background = '';
   avatarEl.innerHTML = '';
-  
   if (avatarUrl) {
     if (avatarUrl.startsWith('gradient:')) {
       avatarEl.style.background = avatarUrl.replace('gradient:', '');
@@ -1876,32 +1823,95 @@ async function loadProfile(user) {
     avatarEl.style.color = 'var(--ink, #1E1E1B)';
   }
 
-  renderName(name);
-  document.getElementById('pf-user-email').textContent = user.email || '—';
-  
-  // Mobile display
-  const phoneEl = document.getElementById('pf-user-phone');
-  if (profile?.phone) {
-    phoneEl.textContent = profile.phone;
-    phoneEl.style.display = 'block';
-  } else {
-    phoneEl.style.display = 'none';
+  let sinceStr = '—';
+  try {
+    const rawDate = user.created_at;
+    const sinceDate = rawDate ? new Date(rawDate) : new Date();
+    if (!isNaN(sinceDate.getTime())) {
+      sinceStr = sinceDate.toLocaleDateString('en-IN', {
+        month: 'long', year: 'numeric',
+      });
+    }
+  } catch (err) {
+    console.error('Error parsing member since date:', err);
   }
-
   document.getElementById('pf-user-since').textContent = `Member since ${sinceStr}`;
-
-  // Load existing handle
-  const handle = profile?.handle || '';
-  renderHandle(handle);
 
   // Update nav profile link
   const navLink = document.getElementById('nav-profile-link');
   if (navLink) navLink.textContent = initial;
 
-  // Single function call — one cold start, one network round trip
-  try {
-    const { orders, reviews } = await fetchAllProfileData();
+  // 2. Fetch full profile details in background (non-blocking)
+  snyfGetProfile(user.id).then(async (profile) => {
+    if (!profile) {
+      try {
+        const { error: upsertErr } = await db.from('users').upsert({
+          id:           user.id,
+          email:        user.email,
+          trust_level:  'scout',
+          report_count: 0,
+          verified:     false,
+        }, { onConflict: 'id' });
 
+        if (upsertErr) {
+          if (upsertErr.code === '23505') {
+            const { data: existingProf } = await db
+              .from('users')
+              .select('*')
+              .eq('email', user.email)
+              .maybeSingle();
+            if (existingProf) profile = existingProf;
+          } else {
+            throw upsertErr;
+          }
+        } else {
+          profile = await snyfGetProfile(user.id);
+        }
+      } catch (upsertFail) {
+        console.error('[Profile] Profile upsert failed:', upsertFail);
+        const { data: fallbackProf } = await db
+          .from('users')
+          .select('*')
+          .eq('email', user.email)
+          .maybeSingle();
+        profile = fallbackProf || { id: user.id, email: user.email, trust_level: 'scout' };
+      }
+    }
+
+    currentProfile = profile;
+
+    // Show first-time password modal if no password set yet
+    const hasPassword = !!(user?.user_metadata?.account_password);
+    if (profile && !hasPassword && !firstPasswordPromptShown) {
+      firstPasswordPromptShown = true;
+      setTimeout(() => {
+        if (document.getElementById('pf-edit-modal').style.display !== 'flex') {
+          document.getElementById('pf-first-password-modal').style.display = 'flex';
+        }
+      }, 1000);
+    }
+
+    // Update name & handle with real profile values
+    const name = profile?.name || fallbackName;
+    renderName(name);
+    
+    // Mobile number display
+    const phoneEl = document.getElementById('pf-user-phone');
+    if (profile?.phone) {
+      phoneEl.textContent = profile.phone;
+      phoneEl.style.display = 'block';
+    } else {
+      phoneEl.style.display = 'none';
+    }
+
+    const handle = profile?.handle || '';
+    renderHandle(handle);
+  }).catch(err => {
+    console.error('[Profile] Background profile loading error:', err);
+  });
+
+  // 3. Fetch orders & reviews in parallel in the background (non-blocking)
+  fetchAllProfileData().then(({ orders, reviews }) => {
     allOrders = orders;
     renderOrdersList(orders);
     showVenueFilters();
@@ -1909,15 +1919,13 @@ async function loadProfile(user) {
     renderReviewsList(reviews);
     updateProfileStats(orders, reviews);
 
-    // Silently recompute trust level
+    // Silently recompute trust level in background
     if (user?.id) recomputeTrustLevel(user.id).catch(() => {});
-
-  } catch (err) {
+  }).catch(err => {
     dbError('loadProfileData', err);
-    // Show graceful empty states
     renderOrdersList([]);
     renderReviewsList([]);
-  }
+  });
 }
 
 // ── LOAD ORDERS ───────────────────────────────────────────────
