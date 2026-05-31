@@ -3,19 +3,24 @@ import { db } from '../lib/supabase';
 import { Venue } from '../lib/types';
 
 interface VenueContextType {
-  venue:    Venue | null;
-  slug:     string;
-  isLoaded: boolean;
-  logout:   () => void;
+  venue:        Venue | null;
+  slug:         string;
+  isLoaded:     boolean;
+  logout:       () => void;
+  username:     string;
+  credentialId: string;
 }
 
 const VenueContext = createContext<VenueContextType>({
   venue: null, slug: '', isLoaded: false, logout: () => {},
+  username: '', credentialId: '',
 });
 
 export function VenueProvider({ children }: { children: ReactNode }) {
   const [venue,    setVenue]    = useState<Venue | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [username,     setUsername]     = useState('');
+  const [credentialId, setCredentialId] = useState('');
 
   const getSlugFromUrl = () => {
     const searchSlug = new URLSearchParams(window.location.search).get('slug');
@@ -35,6 +40,11 @@ export function VenueProvider({ children }: { children: ReactNode }) {
     if (stored) {
       try { setVenue(JSON.parse(stored)); } catch {}
     }
+    // Restore credential info
+    const storedUsername = sessionStorage.getItem(`snyf_admin_username_${slug}`);
+    const storedCredId   = sessionStorage.getItem(`snyf_admin_cred_id_${slug}`);
+    if (storedUsername) setUsername(storedUsername);
+    if (storedCredId)   setCredentialId(storedCredId);
     setIsLoaded(true);
   }, [slug]);
 
@@ -63,6 +73,20 @@ export function VenueProvider({ children }: { children: ReactNode }) {
 
       setVenue(venueData as Venue);
       sessionStorage.setItem(`snyf_admin_${slug}`, JSON.stringify(venueData));
+      
+      // Fetch and store credential info for password changes
+      const { data: credData } = await db
+        .from('venue_credentials')
+        .select('id, username')
+        .eq('venue_id', cred.venue_id)
+        .single();
+
+      if (credData) {
+        setUsername(credData.username);
+        setCredentialId(credData.id);
+        sessionStorage.setItem(`snyf_admin_username_${slug}`, credData.username);
+        sessionStorage.setItem(`snyf_admin_cred_id_${slug}`, credData.id);
+      }
       return true;
 
     } catch { return false; }
@@ -70,12 +94,16 @@ export function VenueProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setVenue(null);
+    setUsername('');
+    setCredentialId('');
     sessionStorage.removeItem(`snyf_admin_${slug}`);
+    sessionStorage.removeItem(`snyf_admin_username_${slug}`);
+    sessionStorage.removeItem(`snyf_admin_cred_id_${slug}`);
     window.location.reload();
   };
 
   return (
-    <VenueContext.Provider value={{ venue, slug, isLoaded, logout }}>
+    <VenueContext.Provider value={{ venue, slug, isLoaded, logout, username, credentialId }}>
       {!venue && isLoaded
         ? <LoginScreen slug={slug} onLogin={login} />
         : children

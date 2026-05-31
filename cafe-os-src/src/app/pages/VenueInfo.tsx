@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, Trash2, GripVertical, KeyRound, Eye, EyeOff, Lock, Unlock, ShieldAlert } from 'lucide-react';
+import { Save, Trash2, GripVertical, KeyRound, Eye, EyeOff, Lock, Unlock, ShieldAlert, Key } from 'lucide-react';
 import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
 import { useLock } from '../../context/LockContext';
@@ -9,7 +9,7 @@ import { ImageUploader } from '../components/ImageUploader';
 
 export function VenueInfo() {
   const navigate = useNavigate();
-  const { venue, slug }          = useVenue();
+  const { venue, slug, username, credentialId } = useVenue();
   const [saving,   setSaving]    = useState(false);
   const [saved,    setSaved]     = useState(false);
   const [photos,   setPhotos]    = useState<VenuePhoto[]>([]);
@@ -18,6 +18,14 @@ export function VenueInfo() {
   const [newPIN, setNewPIN] = useState('');
   const [showPIN, setShowPIN] = useState(false);
   const [pinSaved, setPinSaved] = useState(false);
+
+  const [newPassword,     setNewPassword]     = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPass,     setShowNewPass]     = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [passError,       setPassError]       = useState('');
+  const [passSaving,      setPassSaving]      = useState(false);
+  const [passSaved,       setPassSaved]       = useState(false);
 
   const [form, setForm] = useState({
     name: '', description: '', tagline: '',
@@ -65,6 +73,53 @@ export function VenueInfo() {
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
+  }
+
+  async function changePassword() {
+    setPassError('');
+
+    // Validate
+    if (!newPassword) {
+      setPassError('Please enter a new password.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPassError('Password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPassError('Passwords do not match.');
+      return;
+    }
+    if (!credentialId) {
+      setPassError('Could not identify credentials. Please sign out and sign in again.');
+      return;
+    }
+
+    setPassSaving(true);
+
+    try {
+      const { error } = await db
+        .from('venue_credentials')
+        .update({
+          password_hash: newPassword,
+          last_changed:  new Date().toISOString(),
+          changed_by:    'venue_admin',
+        })
+        .eq('id', credentialId);
+
+      if (error) throw error;
+
+      setNewPassword('');
+      setConfirmPassword('');
+      setPassSaved(true);
+      setTimeout(() => setPassSaved(false), 3000);
+
+    } catch (err: any) {
+      setPassError(err.message || 'Failed to update password. Please try again.');
+    } finally {
+      setPassSaving(false);
+    }
   }
 
   /** Called by ImageUploader with the final public URL */
@@ -296,6 +351,158 @@ export function VenueInfo() {
             onUpload={handlePhotoUploaded}
             label={`Add Photo ${photos.length + 1} of 4`}
           />
+        )}
+      </div>
+
+      {/* Admin Password */}
+      <div className="bg-card rounded-2xl border border-border p-6 space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+            <Key className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-base">Admin Password</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Change your Café OS login password. Update super admin is notified automatically.
+            </p>
+          </div>
+        </div>
+
+        {/* Current username — read only */}
+        <div>
+          <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            Username
+          </label>
+          <div className="px-4 py-3 bg-accent/40 rounded-lg text-sm font-mono text-muted-foreground select-all border border-border">
+            {username || '—'}
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Username cannot be changed. Contact Snyf support if needed.
+          </p>
+        </div>
+
+        {/* New password */}
+        <div>
+          <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            New Password
+          </label>
+          <div className="relative">
+            <input
+              type={showNewPass ? 'text' : 'password'}
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              placeholder="Min. 6 characters"
+              className="w-full px-4 py-3 pr-12 bg-input-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowNewPass(!showNewPass)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+            >
+              {showNewPass
+                ? <EyeOff className="w-4 h-4" />
+                : <Eye    className="w-4 h-4" />
+              }
+            </button>
+          </div>
+        </div>
+
+        {/* Confirm password */}
+        <div>
+          <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            Confirm New Password
+          </label>
+          <div className="relative">
+            <input
+              type={showConfirmPass ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              placeholder="Re-enter new password"
+              className="w-full px-4 py-3 pr-12 bg-input-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPass(!showConfirmPass)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+            >
+              {showConfirmPass
+                ? <EyeOff className="w-4 h-4" />
+                : <Eye    className="w-4 h-4" />
+              }
+            </button>
+          </div>
+        </div>
+
+        {/* Password strength indicator */}
+        {newPassword.length > 0 && (
+          <div className="space-y-1">
+            <div className="flex gap-1">
+              {[1,2,3,4].map(i => (
+                <div
+                  key={i}
+                  className={`h-1 flex-1 rounded-full transition-colors ${
+                    newPassword.length >= i * 3
+                      ? i <= 2 ? 'bg-yellow-400' : 'bg-green-500'
+                      : 'bg-accent'
+                  }`}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {newPassword.length < 6
+                ? 'Too short'
+                : newPassword.length < 9
+                ? 'Acceptable'
+                : newPassword.length < 12
+                ? 'Good'
+                : 'Strong'}
+            </p>
+          </div>
+        )}
+
+        {/* Match indicator */}
+        {confirmPassword.length > 0 && (
+          <p className={`text-xs font-medium ${
+            newPassword === confirmPassword
+              ? 'text-green-600 dark:text-green-400'
+              : 'text-destructive'
+          }`}>
+            {newPassword === confirmPassword ? '✓ Passwords match' : '✕ Passwords do not match'}
+          </p>
+        )}
+
+        {/* Error */}
+        {passError && (
+          <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3">
+            {passError}
+          </p>
+        )}
+
+        {/* Save button */}
+        <button
+          onClick={changePassword}
+          disabled={
+            passSaving ||
+            !newPassword ||
+            !confirmPassword ||
+            newPassword !== confirmPassword ||
+            newPassword.length < 6
+          }
+          className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Key className="w-4 h-4" />
+          {passSaving ? 'Updating...' : passSaved ? '✓ Password Updated!' : 'Update Password'}
+        </button>
+
+        {passSaved && (
+          <div className="p-4 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-xl text-sm">
+            <p className="font-semibold">Password updated successfully.</p>
+            <p className="text-xs mt-1 opacity-75">
+              Use your new password next time you sign in to Café OS.
+            </p>
+          </div>
         )}
       </div>
 
