@@ -45,6 +45,17 @@
       border-color: rgba(111,183,214,0.35);
     }
 
+    .dv-card--featured {
+      background: rgba(255, 250, 240, 0.72) !important;
+      border: 1.5px solid rgba(212, 168, 83, 0.38) !important;
+      box-shadow: 0 4px 20px rgba(212, 168, 83, 0.06);
+    }
+
+    .dv-card--featured:hover {
+      border-color: rgba(212, 168, 83, 0.65) !important;
+      box-shadow: 0 12px 40px rgba(212, 168, 83, 0.18);
+    }
+
     /* LEFT — image carousel */
     .dv-card-images {
       position: relative;
@@ -524,7 +535,7 @@ async function loadVenues() {
       .select(`
         id, slug, name, zone, category,
         description, tagline,
-        featured, sort_order, hours,
+        featured, sort_order, hours, show_on_discover,
         venue_photos ( url, sort_order, alt_text )
       `)
       .eq('status', 'active')
@@ -532,25 +543,27 @@ async function loadVenues() {
 
     if (error) throw error;
 
-    VENUES = (data || []).map(v => ({
-      slug:     v.slug,
-      name:     v.name,
-      zone:     v.zone     || '',
-      category: v.category || '',
-      desc:     v.description || '',
-      tagline:  v.tagline  || '',
-      isOpen:   true,
-      hours:    v.hours    || 'Check venue for hours',
-      vibes:    [],
-      scores:   { food: 5.0, ambience: 5.0, service: 5.0, value: 5.0, wait: 5.0 },
-      images:   (v.venue_photos || [])
-                  .sort((a, b) => a.sort_order - b.sort_order)
-                  .map(p => p.url)
-                  .filter(Boolean),
-      page:     `${v.slug}`,
-      featured: v.featured || false,
-      id:       v.id,
-    }));
+    VENUES = (data || [])
+      .filter(v => v.show_on_discover !== false)
+      .map(v => ({
+        slug:     v.slug,
+        name:     v.name,
+        zone:     v.zone     || '',
+        category: v.category || '',
+        desc:     v.description || '',
+        tagline:  v.tagline  || '',
+        isOpen:   true,
+        hours:    v.hours    || 'Check venue for hours',
+        vibes:    [],
+        scores:   { food: 5.0, ambience: 5.0, service: 5.0, value: 5.0, wait: 5.0 },
+        images:   (v.venue_photos || [])
+                    .sort((a, b) => a.sort_order - b.sort_order)
+                    .map(p => p.url)
+                    .filter(Boolean),
+        page:     `${v.slug}`,
+        featured: v.featured || false,
+        id:       v.id,
+      }));
 
     try {
       const { data: reports, error: reportsErr } = await db
@@ -624,6 +637,10 @@ async function loadVenues() {
         return true;
       })
       .sort((a, b) => {
+        // Pin featured venues to the top
+        if (a.featured && !b.featured) return -1;
+        if (!a.featured && b.featured) return 1;
+
         if (activeSort === 'score')  return overallScore(b) - overallScore(a);
         if (activeSort === 'name')   return a.name.localeCompare(b.name);
         if (activeSort === 'newest') return VENUES.indexOf(b) - VENUES.indexOf(a);
@@ -643,10 +660,11 @@ async function loadVenues() {
     const targetUrl = isLocal ? `/venue.html?slug=${venue.slug}` : `/${venue.slug}`;
 
     return `
-    <div class="dv-card" data-idx="${idx}" data-slug="${venue.slug}">
+    <div class="dv-card ${venue.featured ? 'dv-card--featured' : ''}" data-idx="${idx}" data-slug="${venue.slug}">
 
       <!-- LEFT — image carousel -->
       <div class="dv-card-images" id="imgs-${venue.slug}">
+        ${venue.featured ? `<div class="dv-partner-badge" style="color:var(--gold); border-color:rgba(212,168,83,0.4); background:rgba(30,30,27,0.85); font-weight:700; display:block;">★ Featured</div>` : ''}
         <div class="dv-img-track" id="track-${venue.slug}">
           ${venue.images.length > 0 ? venue.images.map((src, i) => `
             <img
