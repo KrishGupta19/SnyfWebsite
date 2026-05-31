@@ -13,7 +13,7 @@
 
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="supabase.js"></script>
+  <script src="/supabase.js"></script>
 
   <style>
 
@@ -2319,14 +2319,14 @@
   }
 
   const getVenueSlug = () => {
-    const searchSlug = new URLSearchParams(window.location.search).get('slug');
-    if (searchSlug) return searchSlug;
+    let searchSlug = new URLSearchParams(window.location.search).get('slug');
+    if (searchSlug) return decodeURIComponent(searchSlug).trim().toLowerCase();
     
     const parts = window.location.pathname.split('/').filter(Boolean);
     if (parts.length > 0) {
       const lastPart = parts[parts.length - 1];
       if (lastPart !== 'venue.html' && lastPart !== 'discover.html' && lastPart !== 'admin' && lastPart !== 'index.html') {
-        return lastPart;
+        return decodeURIComponent(lastPart).trim().toLowerCase();
       }
     }
     return '';
