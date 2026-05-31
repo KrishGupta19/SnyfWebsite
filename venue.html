@@ -9,6 +9,9 @@
   <meta name="description" content="Order from Snyf-verified venues in NCR.">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://pjygywbgwujkvpexmxuu.supabase.co" crossorigin>
+  <link rel="dns-prefetch" href="https://pjygywbgwujkvpexmxuu.supabase.co">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Oswald:wght@700;900&display=swap" rel="stylesheet">
 
   <!-- Supabase -->
@@ -1946,6 +1949,37 @@
       color: var(--muted);
       flex-shrink: 0;
     }
+
+    /* ── Skeleton loader ── */
+    .dish-card--skeleton {
+      background: linear-gradient(
+        90deg,
+        var(--hover, #ECE9E2) 25%,
+        rgba(246,245,242,0.9) 50%,
+        var(--hover, #ECE9E2) 75%
+      );
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.4s ease-in-out infinite;
+      border-radius: 18px;
+      height: 100px;
+      pointer-events: none;
+      border: none;
+      opacity: 1 !important;
+    }
+
+    @keyframes skeleton-shimmer {
+      0%   { background-position:  200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── Image optimization ── */
+    .menu-hero-img {
+      background: var(--hover);
+    }
+
+    .dish-img-wrap {
+      background: var(--hover);
+    }
   </style>
 </head>
 <body>
@@ -2307,6 +2341,16 @@
   // ══════════════════════════════════════════════════════════════
   let VENUE_DATA = null;
 
+  // ── Image optimization — appends Supabase transform params ──
+  function optimizeImageUrl(url, width, quality) {
+    if (!url) return '';
+    if (!url.includes('supabase.co/storage')) return url;
+    var w = width   || 400;
+    var q = quality || 70;
+    var sep = url.includes('?') ? '&' : '?';
+    return url + sep + 'width=' + w + '&quality=' + q + '&format=webp';
+  }
+
   // Read slug from URL query param (local dev) or pathname (production rewrite)
   function escapeHtml(str) {
     if (!str) return '';
@@ -2340,14 +2384,10 @@
     }
 
     try {
-      // Fetch venue + photos + menu items in one query
+      // ── Phase 1: Venue basics only (~100ms) — shows page frame immediately ──
       const { data: venue, error } = await db
         .from('venues')
-        .select(`
-          *,
-          venue_photos ( * ),
-          menu_items ( * )
-        `)
+        .select('id, slug, name, zone, category, description, tagline, status, hours, location')
         .eq('slug', VENUE_SLUG)
         .eq('status', 'active')
         .single();
@@ -2357,116 +2397,137 @@
         return;
       }
 
-      // Sort photos and menu items
-      const photos  = (venue.venue_photos || [])
-                        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-      const items   = (venue.menu_items   || [])
-                        .filter(i => i.available !== false)
-                        .sort((a, b)   => (a.sort_order || 0) - (b.sort_order || 0));
-
-      // Silent scan count increment if table QR was scanned
-      const params = new URLSearchParams(window.location.search);
-      const urlTable = params.get('table') || params.get('t') || params.get('tableNum') || params.get('table_num');
-      if (urlTable && venue.id) {
-        silentlyIncrementScanCount(venue.id, urlTable.trim());
-      }
-
-      // Build unique category list from menu items
-      const cats = [...new Set(items.map(i => i.category).filter(Boolean))];
-
-      // Fetch verified/unflagged reports for this venue
-      let scores = { food: 5.0, ambience: 5.0, service: 5.0, value: 5.0, wait: 5.0 };
-      let verifiedCount = 0;
-      try {
-        const { data: reports, error: reportsErr } = await db
-          .from('field_reports')
-          .select('food, ambience, service, value, wait_time')
-          .eq('venue_id', venue.id)
-          .eq('verified', true)
-          .eq('flagged', false);
-
-        if (!reportsErr && reports && reports.length > 0) {
-          verifiedCount = reports.length;
-          const sums = reports.reduce((acc, curr) => ({
-            food: acc.food + (curr.food || 5),
-            ambience: acc.ambience + (curr.ambience || 5),
-            service: acc.service + (curr.service || 5),
-            value: acc.value + (curr.value || 5),
-            wait: acc.wait + (curr.wait_time || 5)
-          }), { food: 0, ambience: 0, service: 0, value: 0, wait: 0 });
-
-          scores = {
-            food: sums.food / reports.length,
-            ambience: sums.ambience / reports.length,
-            service: sums.service / reports.length,
-            value: sums.value / reports.length,
-            wait: sums.wait / reports.length
-          };
-        }
-      } catch (e) {
-        console.warn('Failed to calculate scores from reports:', e);
-      }
-
-      // Build VENUE_DATA in the same shape the existing JS expects
+      // Build minimal VENUE_DATA so initVenuePage renders immediately
       VENUE_DATA = {
         id:            venue.id,
         name:          venue.name,
         logoLetter:    venue.name ? venue.name[0].toUpperCase() : 'S',
         tags:          [venue.category, venue.zone].filter(Boolean).join(' · '),
         desc:          venue.description || '',
-        heroImg:       photos[0]?.url || '',
-        scores,
-        verifiedCount: `${verifiedCount} verified visit${verifiedCount !== 1 ? 's' : ''}`,
-        categories:    ['Recommended', ...cats],
-        menu: items.map(item => ({
+        heroImg:       '',
+        scores:        { food: 5.0, ambience: 5.0, service: 5.0, value: 5.0, wait: 5.0 },
+        verifiedCount: '',
+        categories:    ['All'],
+        menu:          [],
+      };
+
+      document.title = venue.name + ' — Snyf';
+      initVenuePage(); // renders page frame + skeleton menu immediately
+
+      // ── Phase 2: Photos + Menu + Reports in parallel ──
+      const params   = new URLSearchParams(window.location.search);
+      const urlTable = params.get('table') || params.get('t') || params.get('tableNum') || params.get('table_num');
+
+      const [photosRes, menuRes, reportsRes] = await Promise.all([
+        db.from('venue_photos')
+          .select('id, url, sort_order, alt_text')
+          .eq('venue_id', venue.id)
+          .order('sort_order'),
+        db.from('menu_items')
+          .select('id, name, description, price, category, photo_url, image_url, tag, available, sort_order')
+          .eq('venue_id', venue.id)
+          .eq('available', true)
+          .order('sort_order'),
+        db.from('field_reports')
+          .select('food, ambience, service, value, wait_time')
+          .eq('venue_id', venue.id)
+          .eq('verified', true)
+          .eq('flagged', false),
+      ]);
+
+      // Process photos
+      const photos = (photosRes.data || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      if (photos[0]?.url) {
+        VENUE_DATA.heroImg = optimizeImageUrl(photos[0].url, 800, 75);
+        const heroImg = document.getElementById('hero-img');
+        if (heroImg) {
+          heroImg.src = VENUE_DATA.heroImg;
+          heroImg.alt = venue.name;
+        }
+      }
+
+      // Process menu items
+      const items = (menuRes.data || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      const cats  = [...new Set(items.map(i => i.category).filter(Boolean))];
+      VENUE_DATA.categories = ['Recommended', ...cats];
+      VENUE_DATA.menu = items.map(function(item) {
+        return {
           id:       item.id,
           name:     item.name,
           desc:     item.description || item.desc || '',
           price:    parseFloat(item.price),
           category: item.category,
-          tag:      item.tag   || null,
-          img:      item.image_url || item.photo_url || item.img || '',
-        })),
-      };
+          tag:      item.tag || null,
+          img:      optimizeImageUrl(item.photo_url || item.image_url || '', 400, 70),
+        };
+      });
 
-      // Check if current user has already rated this venue
+      // Process trust scores
+      const reports = reportsRes.data || [];
+      if (reports.length > 0) {
+        VENUE_DATA.verifiedCount = reports.length + ' verified visit' + (reports.length !== 1 ? 's' : '');
+        var sums = reports.reduce(function(acc, curr) {
+          return {
+            food:     acc.food     + (curr.food     || 5),
+            ambience: acc.ambience + (curr.ambience || 5),
+            service:  acc.service  + (curr.service  || 5),
+            value:    acc.value    + (curr.value    || 5),
+            wait:     acc.wait     + (curr.wait_time || 5),
+          };
+        }, { food: 0, ambience: 0, service: 0, value: 0, wait: 0 });
+        VENUE_DATA.scores = {
+          food:     sums.food     / reports.length,
+          ambience: sums.ambience / reports.length,
+          service:  sums.service  / reports.length,
+          value:    sums.value    / reports.length,
+          wait:     sums.wait     / reports.length,
+        };
+      }
+
+      // Re-render with full data
+      renderTrustDims();
+      renderCats();
+      renderDishes();
+
+      // Silent scan count increment if table QR was scanned
+      if (urlTable && venue.id) {
+        silentlyIncrementScanCount(venue.id, urlTable.trim());
+      }
+
+      // Check user + rating in background
       window._hasRatedVenue = false;
-      window._currentUser = null;
+      window._currentUser   = null;
       window._currentProfile = null;
       try {
-        const user = await snyfGetUser();
+        var user = await snyfGetUser();
         window._currentUser = user;
         if (user) {
-          const profile = await snyfGetProfile(user.id);
+          var profile = await snyfGetProfile(user.id);
           window._currentProfile = profile;
-          const name = profile?.name || user.email?.split('@')[0] || 'S';
-          const profIcon = document.getElementById('menu-profile-icon');
-          const profInitial = document.getElementById('menu-profile-initial');
+          var name = profile?.name || user.email?.split('@')[0] || 'S';
+          var profIcon    = document.getElementById('menu-profile-icon');
+          var profInitial = document.getElementById('menu-profile-initial');
           if (profIcon && profInitial) {
-            profIcon.style.display = 'none';
-            profInitial.textContent = name[0].toUpperCase();
+            profIcon.style.display    = 'none';
+            profInitial.textContent   = name[0].toUpperCase();
             profInitial.style.display = 'block';
           }
-
-          const { data: userReport } = await db
+          var ratingRes = await db
             .from('field_reports')
             .select('id')
             .eq('venue_id', venue.id)
             .eq('user_id', user.id)
             .limit(1);
-          window._hasRatedVenue = userReport && userReport.length > 0;
+          window._hasRatedVenue = ratingRes.data && ratingRes.data.length > 0;
         }
       } catch (e) {
         console.warn('Could not query user rating on load:', e);
       }
 
-      // Update page title and meta
-      document.title = `${venue.name} — Snyf`;
+      // Re-render rating box with user context
+      renderDirectRateBox();
 
-      // Initialise page with real data
-      initVenuePage();
-
-      // Log visit silently (Phase 4 analytics)
+      // Log visit silently
       logVisit(venue.id, urlTable);
 
     } catch (err) {
@@ -2846,9 +2907,9 @@
   function initVenuePage() {
     if (!VENUE_DATA) return;
 
-    // Populate hero image
+    // Populate hero image — only set if not already set by Phase 2
     const heroImg = document.getElementById('hero-img');
-    if (heroImg) {
+    if (heroImg && VENUE_DATA.heroImg) {
       heroImg.src = VENUE_DATA.heroImg;
       heroImg.alt = VENUE_DATA.name;
     }
@@ -3170,12 +3231,21 @@
   // ══════════════════════════════════════════
   function renderDishes() {
     const wrap = document.getElementById('menu-dishes');
+
+    // Show skeleton if menu not loaded yet (Phase 1 — data still loading)
+    if (!VENUE_DATA?.menu || VENUE_DATA.menu.length === 0) {
+      wrap.innerHTML = Array(4).fill(0).map(() =>
+        '<div class="dish-card dish-card--skeleton"></div>'
+      ).join('');
+      return;
+    }
+
     const filtered = activeCategory === 'Recommended'
       ? VENUE_DATA.menu
       : VENUE_DATA.menu.filter(d => d.category === activeCategory);
 
     if (filtered.length === 0) {
-      wrap.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--muted)">No items in this category yet</div>`;
+      wrap.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--muted)">No items in this category yet</div>';
       return;
     }
 
