@@ -1644,29 +1644,38 @@ async function sendOTP() {
   btn.disabled    = true;
   btn.textContent = 'Sending...';
 
-  const res = await snyfSignInOTP(email);
+  try {
+    const res = await snyfSignInOTP(email);
 
-  if (res.ok) {
-    currentEmail = email;
-    document.getElementById('pf-email-display').textContent = email;
-    document.getElementById('pf-step-email').style.display  = 'none';
-    document.getElementById('pf-step-otp').style.display    = 'block';
+    if (res.ok) {
+      currentEmail = email;
+      document.getElementById('pf-email-display').textContent = email;
+      document.getElementById('pf-step-email').style.display  = 'none';
+      document.getElementById('pf-step-otp').style.display    = 'block';
 
-    // Focus first OTP box
-    setTimeout(() => {
-      document.getElementById('otp-0')?.focus();
-    }, 100);
+      // Focus first OTP box
+      setTimeout(() => {
+        document.getElementById('otp-0')?.focus();
+      }, 100);
 
-    // Start resend countdown
-    startResendCountdown();
+      // Start resend countdown
+      startResendCountdown();
 
-  } else {
-    errEl.textContent = res.error || 'Could not send OTP. Try again.';
+    } else {
+      errEl.textContent = res.error || 'Could not send OTP. Try again.';
+      errEl.classList.add('show');
+      btn.disabled    = false;
+      btn.textContent = 'Send OTP →';
+    }
+  } catch (err) {
+    console.error('sendOTP error:', err);
+    errEl.textContent = err.message || 'Could not send OTP. Try again.';
     errEl.classList.add('show');
     btn.disabled    = false;
     btn.textContent = 'Send OTP →';
   }
 }
+
 
 // ── VERIFY OTP ────────────────────────────────────────────────
 async function verifyOTP() {
