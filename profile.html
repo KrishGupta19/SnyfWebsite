@@ -1769,25 +1769,34 @@ function backToEmail() {
 
 // ── SIGN OUT ──────────────────────────────────────────────────
 async function handleSignOut() {
-  try {
-    // Clear storage immediately to prevent re-authentication during network lag
-    localStorage.removeItem('sb-pjygywbgwujkvpexmxuu-auth-token');
-    sessionStorage.clear();
-  } catch (e) {}
-
+  // 1. Instant UI reset
   currentUser      = null;
   currentProfile   = null;
   currentEmail     = '';
   lastLoadedUserId = null;
   profileLoading   = false;
+
+  // Reset navbar profile text back to 'Profile'
+  const navLink = document.getElementById('nav-profile-link');
+  if (navLink) navLink.textContent = 'Profile';
+
+  // Clear input fields
+  const emailInp = document.getElementById('pf-email-input');
+  if (emailInp) emailInp.value = '';
+
   showAuthScreen();
 
-  // Call signout asynchronously in the background so the UI is instant
+  // 2. Perform official Supabase signout cleanly
   try {
     await snyfSignOut();
   } catch (err) {
     console.warn('[Profile] Background signout warning:', err);
   }
+
+  // 3. Clear application session storage
+  try {
+    sessionStorage.clear();
+  } catch (e) {}
 }
 
 // ── SCREEN MANAGEMENT ─────────────────────────────────────────
@@ -1795,6 +1804,18 @@ function showAuthScreen() {
   document.getElementById('pf-loading-screen').style.display = 'none';
   document.getElementById('pf-profile-screen').style.display = 'none';
   document.getElementById('pf-auth-screen').style.display    = 'flex';
+
+  // Reset Send OTP button to default state
+  const otpBtn = document.getElementById('pf-send-otp-btn');
+  if (otpBtn) {
+    otpBtn.disabled = false;
+    otpBtn.textContent = 'Send OTP →';
+  }
+
+  // Clear email error if any
+  const errEl = document.getElementById('pf-email-error');
+  if (errEl) errEl.classList.remove('show');
+
   // Reset to OTP tab
   switchAuthTab('otp');
 }
