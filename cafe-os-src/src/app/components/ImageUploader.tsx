@@ -37,6 +37,67 @@ export function ImageUploader({
 
   /* ── helpers ─────────────────────────────────────────── */
 
+  /**
+   * High-performance browser-side image converter/compressor
+   * Converts PNG, JPEG, HEIC, etc., into optimized WebP formats on-the-fly.
+   */
+  function convertToWebP(file: File, maxDimension = 1200, quality = 0.82): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Resize to cap high-resolution camera uploads to a modern 1200px boundary
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Could not get 2D canvas context'));
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convert canvas buffer to optimized WebP format
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error('WebP canvas conversion returned empty blob'));
+              }
+            },
+            'image/webp',
+            quality
+          );
+        };
+        img.onerror = () => {
+          reject(new Error('Failed to load image source'));
+        };
+        img.src = event.target?.result as string;
+      };
+      reader.onerror = () => {
+        reject(new Error('Failed to parse file source'));
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function uploadFile(file: File) {
     setError('');
     if (!file.type.startsWith('image/')) {
@@ -49,12 +110,26 @@ export function ImageUploader({
     }
 
     setUploading(true);
-    const ext  = file.name.split('.').pop() || 'jpg';
-    const path = `${folder ? folder + '/' : ''}${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+    let uploadBlob: Blob | File = file;
+    let finalExt = file.name.split('.').pop() || 'jpg';
+    let finalType = file.type;
+
+    try {
+      // Dynamic browser-side compression & format transformation to WebP
+      const webpBlob = await convertToWebP(file);
+      uploadBlob = webpBlob;
+      finalExt = 'webp';
+      finalType = 'image/webp';
+    } catch (err) {
+      console.warn('WebP conversion failed, falling back to original file format:', err);
+    }
+
+    const path = `${folder ? folder + '/' : ''}${Date.now()}-${Math.random().toString(36).slice(2)}.${finalExt}`;
 
     const { error: upErr } = await db.storage
       .from(bucket)
-      .upload(path, file, { upsert: true, contentType: file.type });
+      .upload(path, uploadBlob, { upsert: true, contentType: finalType });
 
     if (upErr) {
       setError('Upload failed: ' + upErr.message);
