@@ -9,11 +9,12 @@ interface VenueContextType {
   logout:       () => void;
   username:     string;
   credentialId: string;
+  updateUsername: (newUsername: string) => void;
 }
 
 const VenueContext = createContext<VenueContextType>({
   venue: null, slug: '', isLoaded: false, logout: () => {},
-  username: '', credentialId: '',
+  username: '', credentialId: '', updateUsername: () => {},
 });
 
 export function VenueProvider({ children }: { children: ReactNode }) {
@@ -102,8 +103,13 @@ export function VenueProvider({ children }: { children: ReactNode }) {
     window.location.reload();
   };
 
+  const updateUsername = (newUsername: string) => {
+    setUsername(newUsername);
+    sessionStorage.setItem(`snyf_admin_username_${slug}`, newUsername);
+  };
+
   return (
-    <VenueContext.Provider value={{ venue, slug, isLoaded, logout, username, credentialId }}>
+    <VenueContext.Provider value={{ venue, slug, isLoaded, logout, username, credentialId, updateUsername }}>
       {!venue && isLoaded
         ? <LoginScreen slug={slug} onLogin={login} />
         : children
