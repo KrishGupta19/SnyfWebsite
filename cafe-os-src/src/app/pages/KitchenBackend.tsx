@@ -167,16 +167,37 @@ export function KitchenBackend() {
   function playAlert() {
     try {
       const ctx  = getAudioContext();
-      const osc  = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.3);
+      const now  = ctx.currentTime;
+      const duration = 2.5; // Bell sound duration of 2.5 seconds
+
+      // Frequencies corresponding to standard bell overtones (harmonics + minor/major triad resonance)
+      const frequencies = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98]; // C5, E5, G5, C6, E6, G6 (rich C Major chime)
+
+      frequencies.forEach((freq, index) => {
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        
+        // Add frequency detuning for a rich, warm, metallic chorus/vibrato
+        osc.detune.setValueAtTime(index * 6, now);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        // Bell envelope: instant attack (20ms) and exponential decay
+        const initialGain = index === 0 ? 0.25 : 0.15 / (index + 1);
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(initialGain, now + 0.02);
+
+        // Higher frequencies decay faster to replicate authentic bell acoustics
+        const decayTime = duration * Math.pow(0.8, index);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + Math.max(0.6, decayTime));
+
+        osc.start(now);
+        osc.stop(now + duration);
+      });
     } catch { /* silent if audio unavailable */ }
   }
 

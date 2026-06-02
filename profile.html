@@ -1034,14 +1034,14 @@
         ">Password Sign In</button>
       </div>
 
-      <!-- Step 1 — Enter email or phone -->
+      <!-- Step 1 — Enter email -->
       <div id="pf-step-email">
-        <label class="pf-auth-label">Email or Phone Number</label>
+        <label class="pf-auth-label">Email Address</label>
         <input
           type="text"
           class="pf-auth-input"
           id="pf-email-input"
-          placeholder="you@example.com or +1234567890"
+          placeholder="you@example.com"
           autocomplete="username"
         >
         <div class="pf-auth-error" id="pf-email-error"></div>
@@ -1057,12 +1057,12 @@
       <!-- Password-based Login Section -->
       <div id="pf-step-password-login" style="display:none;">
         <div class="pf-modal-field" style="margin-bottom:16px; text-align: left;">
-          <label class="pf-auth-label">Email or Phone Number</label>
+          <label class="pf-auth-label">Email Address</label>
           <input
             type="text"
             class="pf-auth-input"
             id="pf-password-email-input"
-            placeholder="you@example.com or +1234567890"
+            placeholder="you@example.com"
             autocomplete="username"
           >
         </div>
@@ -1459,7 +1459,7 @@ async function signInWithPassword() {
   errEl.classList.remove('show');
 
   if (!email) {
-    errEl.textContent = 'Please enter your email or phone number';
+    errEl.textContent = 'Please enter your email address';
     errEl.classList.add('show');
     return;
   }
@@ -1477,7 +1477,7 @@ async function signInWithPassword() {
   } else {
     const phoneRegex = /^\+?[0-9\s\-()]{7,15}$/;
     if (!phoneRegex.test(email)) {
-      errEl.textContent = 'Please enter a valid email address or phone number';
+      errEl.textContent = 'Please enter a valid email address';
       errEl.classList.add('show');
       return;
     }
@@ -1701,7 +1701,7 @@ async function sendOTP() {
   errEl.classList.remove('show');
 
   if (!email) {
-    errEl.textContent = 'Please enter your email or phone number';
+    errEl.textContent = 'Please enter your email address';
     errEl.classList.add('show');
     return;
   }
@@ -1716,7 +1716,7 @@ async function sendOTP() {
   } else {
     const phoneRegex = /^\+?[0-9\s\-()]{7,15}$/;
     if (!phoneRegex.test(email)) {
-      errEl.textContent = 'Please enter a valid email address or phone number';
+      errEl.textContent = 'Please enter a valid email address';
       errEl.classList.add('show');
       return;
     }
