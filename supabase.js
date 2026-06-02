@@ -1,10 +1,18 @@
-const SNYF_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'https://pjygywbgwujkvpexmxuu.supabase.co'
-  : window.location.origin + '/supabase-api';
+// Direct Supabase URL — used for ALL db calls (REST + Realtime WebSocket).
+// Netlify proxy (/supabase-api) cannot handle WebSocket upgrades, so if we
+// passed the proxy URL to createClient it would permanently break Realtime.
+const SNYF_URL = 'https://pjygywbgwujkvpexmxuu.supabase.co';
 const SNYF_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqeWd5d2Jnd3Vqa3ZwZXhteHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxOTg1OTgsImV4cCI6MjA5NDc3NDU5OH0.Z7P3Lzl9ye5XiEMOn2WTBh_8DJHd4QliUE5cbweag1c';
+
+// Proxy URL — only used for explicit fetch() calls (e.g. OTP edge functions)
+// where we need to bypass ISP-level blocks on the Supabase domain.
+const SNYF_PROXY_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? SNYF_URL
+  : window.location.origin + '/supabase-api';
 
 const { createClient } = supabase;
 const db = createClient(SNYF_URL, SNYF_KEY);
+
 
 function dbError(ctx, err) {
   console.error(`[Snyf DB] ${ctx}:`, err?.message || err);
