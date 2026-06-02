@@ -80,22 +80,8 @@ Deno.serve(async (req: Request) => {
     };
     if (updatePassword && password) newMeta.account_password = password;
 
-    const shouldUpdatePhone = phone && phone !== (user.phone || '');
-    const updateParams: any = { user_metadata: newMeta };
-    
-    if (updatePassword && password) {
-      updateParams.password = password;
-      updateParams.email_confirm = true;
-    }
-    if (shouldUpdatePhone) {
-      updateParams.phone = phone;
-      updateParams.phone_confirm = true;
-    }
-
-    const hasAuthUpdates = (updatePassword && password) || shouldUpdatePhone;
-
-    if (!hasAuthUpdates) {
-      // ── No auth change: fire and forget auth metadata ───
+    if (!updatePassword) {
+      // ── No password change: fire and forget auth metadata ───
       (async () => {
         try {
           await db.auth.admin.updateUserById(user.id, { user_metadata: newMeta });
@@ -111,18 +97,18 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // ── Auth change: must await ───────────────────────────
+    // ── Password change: must await ───────────────────────────
     const { data: updatedAuth, error: updateErr } = await db.auth.admin.updateUserById(
       user.id,
-      updateParams
+      { user_metadata: newMeta, password, email_confirm: true }
     );
 
     if (updateErr) {
-      // Profile saved, only auth update failed
+      // Profile saved, only password update failed
       return res(207, {
         ok:      true,
         partial: true,
-        warning: 'Profile saved. Authentication credentials update failed — please try again.',
+        warning: 'Profile saved. Password update failed — please try again.',
         profile,
         user,
       });

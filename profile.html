@@ -922,38 +922,6 @@
       opacity: 0.6;
       cursor: not-allowed;
     }
-
-    /* Toast Alert Styling */
-    .pf-toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(100px);
-      background: var(--ink, #1E1E1B);
-      color: #fff;
-      padding: 12px 24px;
-      border-radius: 12px;
-      font-size: 13px;
-      font-weight: 600;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-      z-index: 10000;
-      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
-      opacity: 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      pointer-events: none;
-    }
-    .pf-toast.show {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
-    .pf-toast--warning {
-      background: var(--orange, #D97A4A);
-    }
-    .pf-toast--info {
-      background: var(--cyan, #6FB7D6);
-    }
   </style>
 </head>
 
@@ -1036,13 +1004,13 @@
 
       <!-- Step 1 — Enter email -->
       <div id="pf-step-email">
-        <label class="pf-auth-label">Email Address</label>
+        <label class="pf-auth-label">Your Email</label>
         <input
-          type="text"
+          type="email"
           class="pf-auth-input"
           id="pf-email-input"
           placeholder="you@example.com"
-          autocomplete="username"
+          autocomplete="email"
         >
         <div class="pf-auth-error" id="pf-email-error"></div>
         <button class="pf-auth-btn" id="pf-send-otp-btn" onclick="sendOTP()">
@@ -1057,13 +1025,13 @@
       <!-- Password-based Login Section -->
       <div id="pf-step-password-login" style="display:none;">
         <div class="pf-modal-field" style="margin-bottom:16px; text-align: left;">
-          <label class="pf-auth-label">Email Address</label>
+          <label class="pf-auth-label">Your Email</label>
           <input
-            type="text"
+            type="email"
             class="pf-auth-input"
             id="pf-password-email-input"
             placeholder="you@example.com"
-            autocomplete="username"
+            autocomplete="email"
           >
         </div>
         <div class="pf-modal-field" style="margin-bottom:16px; text-align: left;">
@@ -1375,25 +1343,11 @@
         <button class="pf-modal-save" onclick="goToSetPassword()" style="flex: 1; border: none; border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px; background: var(--ink, #1E1E1B); color: white;">Set Password</button>
       </div>
     </div>
-  <!-- Toast Notification -->
-  <div id="pf-toast" class="pf-toast"></div>
+  </div>
 
 </div>
 
 <script>
-function showToast(message, type = 'info') {
-  const toast = document.getElementById('pf-toast');
-  if (!toast) return;
-  toast.textContent = message;
-  toast.className = 'pf-toast show';
-  if (type === 'warning') toast.classList.add('pf-toast--warning');
-  if (type === 'info') toast.classList.add('pf-toast--info');
-  
-  setTimeout(() => {
-    toast.classList.remove('show');
-  }, 4000);
-}
-
 // ══════════════════════════════════════════════════════════════
 // PROFILE PAGE — COMPLETE LOGIC
 // ══════════════════════════════════════════════════════════════
@@ -1458,32 +1412,10 @@ async function signInWithPassword() {
 
   errEl.classList.remove('show');
 
-  if (!email) {
-    errEl.textContent = 'Please enter your email address';
+  if (!email || !email.includes('@') || !email.includes('.')) {
+    errEl.textContent = 'Please enter a valid email address';
     errEl.classList.add('show');
     return;
-  }
-
-  const isEmail = email.includes('@');
-  let credentials = {};
-
-  if (isEmail) {
-    if (!email.includes('.')) {
-      errEl.textContent = 'Please enter a valid email address';
-      errEl.classList.add('show');
-      return;
-    }
-    credentials = { email, password };
-  } else {
-    const phoneRegex = /^\+?[0-9\s\-()]{7,15}$/;
-    if (!phoneRegex.test(email)) {
-      errEl.textContent = 'Please enter a valid email address';
-      errEl.classList.add('show');
-      return;
-    }
-    const cleanPhone = email.replace(/[^0-9+]/g, '');
-    const dummyEmail = `phone-${cleanPhone}@snyf.co.in`.toLowerCase();
-    credentials = { email: dummyEmail, password };
   }
 
   if (!password || password.length < 6) {
@@ -1496,7 +1428,10 @@ async function signInWithPassword() {
   btn.textContent = 'Signing in...';
 
   try {
-    const { data, error } = await db.auth.signInWithPassword(credentials);
+    const { data, error } = await db.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     if (error) throw error;
 
@@ -1504,7 +1439,7 @@ async function signInWithPassword() {
       await loadSignedInUserProfile(data.user);
     }
   } catch (err) {
-    errEl.textContent = err.message || 'Invalid credentials. Please try again.';
+    errEl.textContent = err.message || 'Invalid email or password. Please try again.';
     errEl.classList.add('show');
     passwordInput.value = '';
     passwordInput.focus();
@@ -1700,46 +1635,24 @@ async function sendOTP() {
 
   errEl.classList.remove('show');
 
-  if (!email) {
-    errEl.textContent = 'Please enter your email address';
+  if (!email || !email.includes('@') || !email.includes('.')) {
+    errEl.textContent = 'Please enter a valid email address';
     errEl.classList.add('show');
     return;
-  }
-
-  const isEmail = email.includes('@');
-  if (isEmail) {
-    if (!email.includes('.')) {
-      errEl.textContent = 'Please enter a valid email address';
-      errEl.classList.add('show');
-      return;
-    }
-  } else {
-    const phoneRegex = /^\+?[0-9\s\-()]{7,15}$/;
-    if (!phoneRegex.test(email)) {
-      errEl.textContent = 'Please enter a valid email address';
-      errEl.classList.add('show');
-      return;
-    }
   }
 
   btn.disabled    = true;
   btn.textContent = 'Sending...';
 
   try {
-    const cleanEmailOrPhone = isEmail ? email : email.replace(/[^0-9+]/g, '');
-    const res = await snyfSignInOTP(cleanEmailOrPhone);
+    const res = await snyfSignInOTP(email);
 
     if (res.ok) {
-      currentEmail = cleanEmailOrPhone;
+      currentEmail = email;
       clearOTPBoxes(); // Clean slate for new OTP digits
-      document.getElementById('pf-email-display').textContent = cleanEmailOrPhone;
+      document.getElementById('pf-email-display').textContent = email;
       document.getElementById('pf-step-email').style.display  = 'none';
       document.getElementById('pf-step-otp').style.display    = 'block';
-
-      if (res.debugOtp) {
-        showToast(`[Dev Mode] OTP: ${res.debugOtp}`, 'info');
-        console.log(`[Dev Mode] Generated OTP for testing: ${res.debugOtp}`);
-      }
 
       // Focus first OTP box
       setTimeout(() => {
@@ -1821,15 +1734,11 @@ async function resendOTP() {
   const res = await snyfSignInOTP(currentEmail);
 
   if (res.ok) {
-    if (res.debugOtp) {
-      showToast(`[Dev Mode] OTP: ${res.debugOtp}`, 'info');
-      console.log(`[Dev Mode] Generated OTP for testing: ${res.debugOtp}`);
-    }
     startResendCountdown();
   } else {
     btn.disabled    = false;
     btn.textContent = 'Resend OTP';
-    showToast(res.error || 'Failed to resend OTP. Please try again.', 'warning');
+    alert(res.error || 'Failed to resend OTP. Please try again.');
   }
 }
 

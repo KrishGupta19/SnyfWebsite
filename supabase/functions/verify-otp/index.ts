@@ -18,13 +18,11 @@ Deno.serve(async (req: Request) => {
   if (req.method !== 'POST')   return res(405, { ok: false, error: 'Method not allowed' });
 
   try {
-    const { email, phone, token } = await req.json();
-    const input = (email || phone || '').trim();
-    if (!input || !token)
-      return res(400, { ok: false, error: 'Email/Phone and code required' });
+    const { email, token } = await req.json();
+    if (!email || !token)
+      return res(400, { ok: false, error: 'Email and code required' });
 
-    const isPhone = !input.includes('@');
-    const normalizedIdentifier = isPhone ? input : input.toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
     const code            = token.trim();
 
     const supabaseUrl    = Deno.env.get('SUPABASE_URL')!;
@@ -46,7 +44,7 @@ Deno.serve(async (req: Request) => {
     const encoder       = new TextEncoder();
     const hashBuf       = await crypto.subtle.digest(
       'SHA-256',
-      encoder.encode(`${normalizedIdentifier}:${code}:${serviceRoleKey}`)
+      encoder.encode(`${normalizedEmail}:${code}:${serviceRoleKey}`)
     );
     const submittedHash = Array.from(new Uint8Array(hashBuf))
       .map(b => b.toString(16).padStart(2, '0'))
@@ -56,7 +54,7 @@ Deno.serve(async (req: Request) => {
     const { data: otpRow, error: otpErr } = await db
       .from('otp_codes')
       .select('*')
-      .eq('email', normalizedIdentifier)
+      .eq('email', normalizedEmail)
       .eq('used', false)
       .gte('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false })
@@ -74,60 +72,33 @@ Deno.serve(async (req: Request) => {
 
     // ── Get or create auth user ───────────────────────────────
     let userId: string;
-    let authUser: any = null;
 
-    const { data: listData, error: listErr } = await db.auth.admin.listUsers({
-      perPage: 1000,
-    });
-    if (listErr) throw new Error('listUsers failed: ' + listErr.message);
-
-    const cleanInputPhone = isPhone ? normalizedIdentifier.replace(/[^0-9+]/g, '') : '';
-    const dummyEmail = isPhone ? `phone-${cleanInputPhone}@snyf.co.in`.toLowerCase() : '';
-
-    const found = listData?.users?.find((u: any) => {
-      if (isPhone) {
-        const cleanUPhone = u.phone?.replace(/[^0-9+]/g, '');
-        return cleanUPhone === cleanInputPhone || u.phone === normalizedIdentifier || u.email?.toLowerCase() === dummyEmail;
-      } else {
-        return u.email?.toLowerCase() === normalizedIdentifier;
-      }
+    const { data: newUser, error: createErr } = await db.auth.admin.createUser({
+      email:         normalizedEmail,
+      email_confirm: true,
+      user_metadata: { source: 'otp_login' },
     });
 
-    if (found) {
-      userId = found.id;
-      authUser = found;
-    } else {
-      const createParams: any = {
-        user_metadata: { source: 'otp_login' }
-      };
-
-      if (isPhone) {
-        createParams.email = dummyEmail;
-        createParams.email_confirm = true;
-        createParams.phone = normalizedIdentifier;
-        createParams.phone_confirm = true;
-      } else {
-        createParams.email = normalizedIdentifier;
-        createParams.email_confirm = true;
-      }
-
-      const { data: newUser, error: createErr } = await db.auth.admin.createUser(createParams);
-      if (createErr || !newUser?.user) {
-        throw new Error('Failed to create user: ' + (createErr?.message || 'unknown error'));
-      }
+    if (!createErr && newUser?.user) {
+      // New user created
       userId = newUser.user.id;
-      authUser = newUser.user;
-    }
-
-    const userEmail = authUser.email;
-    if (!userEmail) {
-      throw new Error('Failed to identify email address for auth user.');
+    } else {
+      // User exists — find via listUsers (small user base, fast enough)
+      const { data: listData, error: listErr } = await db.auth.admin.listUsers({
+        perPage: 1000,
+      });
+      if (listErr) throw new Error('listUsers failed: ' + listErr.message);
+      const found = listData?.users?.find(
+        (u: any) => u.email?.toLowerCase() === normalizedEmail
+      );
+      if (!found) return res(400, { ok: false, error: 'Account not found. Please send OTP again.' });
+      userId = found.id;
     }
 
     // ── Generate session ──────────────────────────────────────
     const { data: linkData, error: linkErr } = await db.auth.admin.generateLink({
       type:  'magiclink',
-      email: userEmail,
+      email: normalizedEmail,
     });
     if (linkErr) throw new Error('generateLink failed: ' + linkErr.message);
 
@@ -139,29 +110,13 @@ Deno.serve(async (req: Request) => {
 
     // ── Perform User ID Migration if old mock data exists ─────
     try {
-      // Find if there is an existing public user with the same identifier but different ID
-      let existingUser = null;
-      let findErr = null;
-
-      if (isPhone) {
-        const { data, error } = await db
-          .from('users')
-          .select('id')
-          .eq('phone', normalizedIdentifier)
-          .neq('id', userId)
-          .maybeSingle();
-        existingUser = data;
-        findErr = error;
-      } else {
-        const { data, error } = await db
-          .from('users')
-          .select('id')
-          .eq('email', normalizedIdentifier)
-          .neq('id', userId)
-          .maybeSingle();
-        existingUser = data;
-        findErr = error;
-      }
+      // Find if there is an existing public user with the same email but different ID
+      const { data: existingUser, error: findErr } = await db
+        .from('users')
+        .select('id')
+        .eq('email', normalizedEmail)
+        .neq('id', userId)
+        .maybeSingle();
 
       if (!findErr && existingUser) {
         const oldUserId = existingUser.id;
@@ -192,38 +147,25 @@ Deno.serve(async (req: Request) => {
         }
       } else {
         // Normal upsert if no old record or already migrated
-        const upsertPayload: any = {
+        await db.from('users').upsert({
           id:           userId,
+          email:        normalizedEmail,
           trust_level:  'scout',
           report_count: 0,
           verified:     false,
-        };
-        if (isPhone) {
-          upsertPayload.phone = normalizedIdentifier;
-          upsertPayload.email = userEmail;
-        } else {
-          upsertPayload.email = normalizedIdentifier;
-        }
-
-        await db.from('users').upsert(upsertPayload, { onConflict: 'id', ignoreDuplicates: true });
+        }, { onConflict: 'id', ignoreDuplicates: true });
       }
     } catch (e: any) {
       console.error('[verify-otp] Migration error:', e.message);
       // Fallback: try standard upsert so login doesn't fail entirely
       try {
-        const upsertPayload: any = {
+        await db.from('users').upsert({
           id:           userId,
+          email:        normalizedEmail,
           trust_level:  'scout',
           report_count: 0,
           verified:     false,
-        };
-        if (isPhone) {
-          upsertPayload.phone = normalizedIdentifier;
-          upsertPayload.email = userEmail;
-        } else {
-          upsertPayload.email = normalizedIdentifier;
-        }
-        await db.from('users').upsert(upsertPayload, { onConflict: 'id', ignoreDuplicates: true });
+        }, { onConflict: 'id', ignoreDuplicates: true });
       } catch (upsertErr: any) {
         console.error('[verify-otp] Fallback upsert failed:', upsertErr.message);
       }
