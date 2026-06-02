@@ -55,37 +55,41 @@ async function snyfGetProfile(userId) {
   } catch { return null; }
 }
 
-// Sign in with email OTP via Supabase Edge Functions
-async function snyfSignInOTP(email) {
+// Sign in with email or phone OTP via Supabase Edge Functions
+async function snyfSignInOTP(emailOrPhone) {
   try {
+    const isPhone = !emailOrPhone.includes('@');
+    const payload = isPhone ? { phone: emailOrPhone } : { email: emailOrPhone };
     const res = await fetch(`${SNYF_URL}/functions/v1/send-otp`, {
       method:  'POST',
       headers: {
         'Content-Type':  'application/json',
         'Authorization': `Bearer ${SNYF_KEY}`,
       },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify(payload),
     });
     const data = await res.json();
     if (!res.ok || !data.ok) {
       return { ok: false, error: data.error || 'Failed to send OTP' };
     }
-    return { ok: true };
+    return { ok: true, debugOtp: data.debugOtp };
   } catch (err) {
     console.error('snyfSignInOTP error:', err);
     return { ok: false, error: err.message || 'Network error' };
   }
 }
 
-async function snyfVerifyOTP(email, token) {
+async function snyfVerifyOTP(emailOrPhone, token) {
   try {
+    const isPhone = !emailOrPhone.includes('@');
+    const payload = isPhone ? { phone: emailOrPhone, token } : { email: emailOrPhone, token };
     const res = await fetch(`${SNYF_URL}/functions/v1/verify-otp`, {
       method:  'POST',
       headers: {
         'Content-Type':  'application/json',
         'Authorization': `Bearer ${SNYF_KEY}`,
       },
-      body: JSON.stringify({ email, token }),
+      body: JSON.stringify(payload),
     });
     const data = await res.json();
     if (!res.ok || !data.ok) {
