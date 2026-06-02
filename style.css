@@ -7843,3 +7843,16 @@ body.visual-mode-on .vm-mesh { opacity: 1; }
         margin: 0 !important;
     }
 }
+
+/* ──────────────────────────────────────────────────────────
+   DYNAMIC MENU CHUNKED LOADING SPINNER
+   ────────────────────────────────────────────────────────── */
+.load-more-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border, #D8D5CF);
+    border-top-color: var(--cyan, #6FB7D6);
+    border-radius: 50%;
+    animation: spin-fast 0.8s linear infinite;
+}
+

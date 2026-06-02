@@ -3260,6 +3260,8 @@
   let trackInterval = null;
   let trackState = 0;
   let orderSubscription = null;
+  let itemsToShow = 10;
+  let dishesObserver = null;
 
   const ORDER_STATES = [
     { label: 'Order Received',   icon: '✓' },
@@ -3479,12 +3481,14 @@
 
   function setCategory(cat) {
     activeCategory = cat;
+    itemsToShow = 10;
     renderCats();
     renderDishes();
   }
 
   function handleSearch(val) {
     searchQuery = val;
+    itemsToShow = 10;
     const clearBtn = document.getElementById('menu-search-clear');
     if (clearBtn) {
       clearBtn.style.display = val.trim() !== '' ? 'flex' : 'none';
@@ -3496,13 +3500,14 @@
     const input = document.getElementById('menu-search-input');
     if (input) input.value = '';
     searchQuery = '';
+    itemsToShow = 10;
     const clearBtn = document.getElementById('menu-search-clear');
     if (clearBtn) clearBtn.style.display = 'none';
     renderDishes();
   }
 
   // ══════════════════════════════════════════
-  // RENDER — Dishes
+  // RENDER — Dishes (Chunked / Lazy loaded)
   // ══════════════════════════════════════════
   function renderDishes() {
     const wrap = document.getElementById('menu-dishes');
@@ -3532,7 +3537,10 @@
       return;
     }
 
-    wrap.innerHTML = filtered.map((dish, i) => {
+    // Get current chunk of menu items to render
+    const chunk = filtered.slice(0, itemsToShow);
+
+    let html = chunk.map((dish, i) => {
       const inCart = cart[dish.id];
       const qty    = inCart ? inCart.qty : 0;
 
@@ -3542,7 +3550,7 @@
                      : '';
 
       return `
-      <div class="dish-card" id="dish-${dish.id}" style="animation-delay:${i * 0.06}s">
+      <div class="dish-card" id="dish-${dish.id}" style="animation-delay:${i * 0.04}s">
         <div class="dish-body">
           <div class="dish-name">${dish.name}</div>
           <div class="dish-desc">${dish.desc}</div>
@@ -3573,10 +3581,47 @@
       </div>`;
     }).join('');
 
+    // If there are more items to load in the current category/filter, append the sensor element
+    if (filtered.length > itemsToShow) {
+      html += `
+        <div id="menu-load-more-sensor" style="height: 50px; display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 15px;">
+          <div class="load-more-spinner"></div>
+        </div>
+      `;
+    }
+
+    wrap.innerHTML = html;
+
     // Trigger dish reveal animation
     requestAnimationFrame(() => {
       wrap.querySelectorAll('.dish-card').forEach(card => card.classList.add('visible'));
     });
+
+    // Set up the scroll-spy IntersectionObserver for loading the next group of items
+    setupLoadMoreObserver(filtered.length);
+  }
+
+  function setupLoadMoreObserver(totalCount) {
+    if (dishesObserver) {
+      dishesObserver.disconnect();
+      dishesObserver = null;
+    }
+
+    const sensor = document.getElementById('menu-load-more-sensor');
+    if (!sensor) return;
+
+    dishesObserver = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        if (itemsToShow < totalCount) {
+          itemsToShow += 10;
+          renderDishes();
+        }
+      }
+    }, {
+      rootMargin: '100px 0px 300px 0px', // trigger before reaching bottom to ensure seamless scrolling
+    });
+
+    dishesObserver.observe(sensor);
   }
 
   // ══════════════════════════════════════════
