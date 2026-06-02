@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Clock, ChefHat, CheckCircle, Wifi, WifiOff, Edit, Plus, Minus, Trash2, X, Bell, Lock, ShieldAlert } from 'lucide-react';
+import { Clock, ChefHat, CheckCircle, Wifi, WifiOff, Edit, Plus, Minus, Trash2, X, Bell, Lock, ShieldAlert, Search } from 'lucide-react';
 import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
 import { useLock } from '../../context/LockContext';
@@ -14,6 +14,8 @@ export function KitchenBackend() {
   const [orders,    setOrders]      = useState<Order[]>([]);
   const [menuItems, setMenuItems]   = useState<MenuItem[]>([]);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [searchItemQuery, setSearchItemQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
   const [loading,   setLoading]     = useState(true);
   const [connected, setConnected]   = useState(false);
   const [newOrderId, setNewOrderId] = useState<string | null>(null);
@@ -21,6 +23,13 @@ export function KitchenBackend() {
   const [activeFilter, setActiveFilter] = useState<'pending' | 'completed'>('pending');
   const channelRef                  = useRef<ReturnType<typeof db.channel> | null>(null);
   const audioContextRef             = useRef<AudioContext | null>(null);
+
+  useEffect(() => {
+    if (!editingOrder) {
+      setSearchItemQuery('');
+      setSearchFocused(false);
+    }
+  }, [editingOrder]);
 
   function getAudioContext() {
     if (!audioContextRef.current) {
@@ -970,27 +979,67 @@ export function KitchenBackend() {
               {/* Add New Item */}
               <div className="space-y-3">
                 <h4 className="font-semibold text-sm">Add Item to Order</h4>
-                <div className="flex gap-2">
-                  <select
-                    className="flex-1 bg-background border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                    defaultValue=""
-                    onChange={(e) => {
-                      const selectedId = e.target.value;
-                      if (!selectedId) return;
-                      const item = menuItems.find(mi => mi.id === selectedId);
-                      if (item) addItemToOrder(item);
-                      e.target.value = ""; // reset selection
-                    }}
-                  >
-                    <option value="" disabled>Select an item to add...</option>
-                    {menuItems
-                      .filter(mi => !editingOrder.items.some(oi => oi.id === mi.id))
-                      .map(mi => (
-                        <option key={mi.id} value={mi.id}>
-                          {mi.name} — ₹{mi.price}
-                        </option>
-                      ))}
-                  </select>
+                <div className="relative">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search and select menu items..."
+                      value={searchItemQuery}
+                      onChange={(e) => setSearchItemQuery(e.target.value)}
+                      onFocus={() => setSearchFocused(true)}
+                      onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+                      className="w-full bg-background border border-border rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    {searchItemQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchItemQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Suggestions list */}
+                  {(searchFocused || searchItemQuery.trim() !== '') && (
+                    <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-xl shadow-lg max-h-60 overflow-y-auto py-1">
+                      {menuItems
+                        .filter(mi => !editingOrder.items.some(oi => oi.id === mi.id))
+                        .filter(mi => mi.name.toLowerCase().includes(searchItemQuery.toLowerCase()))
+                        .length === 0 ? (
+                        <p className="text-xs text-muted-foreground italic px-4 py-3 text-center">
+                          {menuItems.filter(mi => !editingOrder.items.some(oi => oi.id === mi.id)).length === 0 
+                            ? 'All menu items already added' 
+                            : 'No matching items found'}
+                        </p>
+                      ) : (
+                        menuItems
+                          .filter(mi => !editingOrder.items.some(oi => oi.id === mi.id))
+                          .filter(mi => mi.name.toLowerCase().includes(searchItemQuery.toLowerCase()))
+                          .map(mi => (
+                            <button
+                              key={mi.id}
+                              type="button"
+                              onClick={() => {
+                                addItemToOrder(mi);
+                                setSearchItemQuery('');
+                              }}
+                              className="w-full text-left px-4 py-2 flex justify-between items-center hover:bg-accent transition-colors border-b border-border/30 last:border-b-0"
+                            >
+                              <div className="min-w-0 pr-2">
+                                <p className="font-medium text-foreground text-sm truncate">{mi.name}</p>
+                                {mi.category && (
+                                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{mi.category}</p>
+                                )}
+                              </div>
+                              <div className="text-primary font-semibold text-xs shrink-0">₹{mi.price}</div>
+                            </button>
+                          ))
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
