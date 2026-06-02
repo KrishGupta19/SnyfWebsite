@@ -63,6 +63,19 @@ export function KitchenBackend() {
     };
   }, [venue?.id]);
 
+  useEffect(() => {
+    if (!venue?.id) return;
+    
+    // Fallback polling: fetch orders every 10 seconds when not connected to realtime
+    const interval = setInterval(() => {
+      if (!connected) {
+        fetchOrders();
+      }
+    }, 10000);
+    
+    return () => clearInterval(interval);
+  }, [venue?.id, connected]);
+
   async function fetchMenuItems() {
     try {
       const { data, error } = await db
@@ -81,7 +94,9 @@ export function KitchenBackend() {
   // ── Fetch active orders ──────────────────────────────────────
   async function fetchOrders() {
     if (!venue?.id) return;
-    setLoading(true);
+    const isInitialLoad = orders.length === 0;
+    if (isInitialLoad) setLoading(true);
+    
     try {
       const { data, error } = await db
         .from('orders')
@@ -90,11 +105,49 @@ export function KitchenBackend() {
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
-      setOrders((data || []) as Order[]);
+
+      const newOrders = (data || []) as Order[];
+
+      // If we are not connected and already have orders loaded, check for new/updated items
+      if (!isInitialLoad && !connected) {
+        newOrders.forEach(newOrder => {
+          const oldOrder = orders.find(o => o.id === newOrder.id);
+          if (!oldOrder) {
+            // New order placed!
+            setNewOrderId(newOrder.id);
+            setTimeout(() => setNewOrderId(null), 4000);
+            
+            const count = getHelpCallCount(newOrder.special_instructions);
+            if (count > 0) {
+              playHelpCallAlarm(count);
+            } else {
+              playAlert();
+            }
+          } else {
+            // Check if items added (addon)
+            const oldQty = (oldOrder.items || []).reduce((sum: number, item: any) => sum + (item.qty || 0), 0);
+            const newQty = (newOrder.items || []).reduce((sum: number, item: any) => sum + (item.qty || 0), 0);
+            if (newQty > oldQty) {
+              playAlert();
+              setUpdatedOrderId(newOrder.id);
+              setTimeout(() => setUpdatedOrderId(null), 4000);
+            }
+
+            // Check if help call count increased
+            const oldHelpCount = getHelpCallCount(oldOrder.special_instructions);
+            const newHelpCount = getHelpCallCount(newOrder.special_instructions);
+            if (newHelpCount > oldHelpCount) {
+              playHelpCallAlarm(newHelpCount);
+            }
+          }
+        });
+      }
+
+      setOrders(newOrders);
     } catch (err) {
       console.error('[Kitchen] fetchOrders:', err);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) setLoading(false);
     }
   }
 
