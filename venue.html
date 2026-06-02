@@ -2458,142 +2458,7 @@
 
   // ── Dynamically map premium fallback food images from Unsplash ──
   function getFoodFallbackImage(name) {
-    if (!name) return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=70'; // Vibrant salad
-    
-    const n = name.toLowerCase().trim();
-    
-    // Soup (active and beautiful tomato/creamy soup)
-    if (n.includes('soup')) {
-      return 'https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?w=400&auto=format&fit=crop&q=70';
-    }
-    // French Fries
-    if (n.includes('fries') || n.includes('finger chip')) {
-      return 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&auto=format&fit=crop&q=70';
-    }
-    // Spring Rolls / Rolls
-    if (n.includes('spring roll') || n.includes('springroll')) {
-      return 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&auto=format&fit=crop&q=70';
-    }
-    if (n.includes('roll') || n.includes('wrap')) {
-      return 'https://images.unsplash.com/photo-1626700051175-6518c4793f4f?w=400&auto=format&fit=crop&q=70'; // Kathi roll / wrap
-    }
-    // Paneer Tikka / Kebabs
-    if (n.includes('malai tikka') || n.includes('paneer malai')) {
-      return 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=400&auto=format&fit=crop&q=70'; // Malai Tikka platter
-    }
-    if (n.includes('tikka') || n.includes('tandoori') || n.includes('kebab')) {
-      return 'https://images.unsplash.com/photo-1633945274405-b6c8069047b0?w=400&auto=format&fit=crop&q=70'; // Spicy tikka platter
-    }
-    // Dosa / South Indian street food
-    if (n.includes('dosa') || n.includes('idli') || n.includes('uthappam')) {
-      return 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=400&auto=format&fit=crop&q=70'; // Golden paper masala dosa
-    }
-    // Paneer Curries
-    if (n.includes('paneer')) {
-      return 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400&auto=format&fit=crop&q=70'; // Shahi paneer gravy
-    }
-    // Pizza
-    if (n.includes('pizza')) {
-      return 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&auto=format&fit=crop&q=70';
-    }
-    // Garlic Bread
-    if (n.includes('garlic bread') || n.includes('garlicbread')) {
-      return 'https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=400&auto=format&fit=crop&q=70'; // Crisp garlic bread slices
-    }
-    // Burgers
-    if (n.includes('burger') || n.includes('slider')) {
-      return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&auto=format&fit=crop&q=70';
-    }
-    // Pasta / Spaghetti
-    if (n.includes('pasta') || n.includes('spaghetti') || n.includes('macaroni')) {
-      return 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&auto=format&fit=crop&q=70';
-    }
-    // Noodles
-    if (n.includes('noodle') || n.includes('chowmein') || n.includes('chow mein') || n.includes('ramen')) {
-      return 'https://images.unsplash.com/photo-1585032226651-759b368d7246?w=400&auto=format&fit=crop&q=70';
-    }
-    // Momos / Dumplings
-    if (n.includes('momo') || n.includes('dim sum') || n.includes('dumpling')) {
-      return 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=400&auto=format&fit=crop&q=70';
-    }
-    // Biryani / Rice
-    if (n.includes('biryani') || n.includes('pulao')) {
-      return 'https://images.unsplash.com/photo-1633945274405-b6c8069047b0?w=400&auto=format&fit=crop&q=70';
-    }
-    if (n.includes('rice') || n.includes('fried rice') || n.includes('friedrice')) {
-      return 'https://images.unsplash.com/photo-1603133872878-30cb64673623?w=400&auto=format&fit=crop&q=70'; // Premium fried rice wok
-    }
-    // Sandwiches
-    if (n.includes('sandwich') || n.includes('toast') || n.includes('panini')) {
-      return 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=400&auto=format&fit=crop&q=70';
-    }
-    // Samosa / Kachori / Pakora / Indian Fritters
-    if (n.includes('samosa') || n.includes('kachori') || n.includes('pakora') || n.includes('snack')) {
-      return 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=400&auto=format&fit=crop&q=70';
-    }
-    // Street Food
-    if (n.includes('chaat') || n.includes('golgappa') || n.includes('pani puri')) {
-      return 'https://images.unsplash.com/photo-1601050690597-df056fb4ce78?w=400&auto=format&fit=crop&q=70';
-    }
-    // Coffee
-    if (n.includes('coffee') || n.includes('latte') || n.includes('cappuccino')) {
-      return 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&auto=format&fit=crop&q=70';
-    }
-    // Tea
-    if (n.includes('tea') || n.includes('chai')) {
-      return 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=400&auto=format&fit=crop&q=70';
-    }
-    // Shake / Smoothie
-    if (n.includes('shake') || n.includes('smoothie')) {
-      return 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=400&auto=format&fit=crop&q=70';
-    }
-    // Mocktails & Beverages
-    if (n.includes('mojito') || n.includes('mocktail') || n.includes('drink') || n.includes('beverage') || n.includes('soda')) {
-      return 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400&auto=format&fit=crop&q=70';
-    }
-    // Cakes / Pastries
-    if (n.includes('cake') || n.includes('pastry') || n.includes('pancake')) {
-      return 'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=400&auto=format&fit=crop&q=70';
-    }
-    // Ice Cream
-    if (n.includes('ice cream') || n.includes('gelato') || n.includes('kulfi') || n.includes('sundae')) {
-      return 'https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=400&auto=format&fit=crop&q=70';
-    }
-    // Brownie / Chocolate
-    if (n.includes('brownie') || n.includes('muffin') || n.includes('cookie') || n.includes('chocolate')) {
-      return 'https://images.unsplash.com/photo-1564355808539-22fda35bed7e?w=400&auto=format&fit=crop&q=70';
-    }
-    // Rotis / Breads
-    if (n.includes('roti') || n.includes('naan') || n.includes('parantha') || n.includes('parotta')) {
-      return 'https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=400&auto=format&fit=crop&q=70';
-    }
-    // Dal / Curry
-    if (n.includes('dal') || n.includes('curry') || n.includes('gravy')) {
-      return 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&auto=format&fit=crop&q=70';
-    }
-    // Salad
-    if (n.includes('salad')) {
-      return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&auto=format&fit=crop&q=70';
-    }
-    
-    // Deterministic 12-item high-quality hash pool to completely prevent duplicates
-    const hashes = [
-      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=70', // Salad bowl
-      'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=400&auto=format&fit=crop&q=70', // Flatlay spread
-      'https://images.unsplash.com/photo-1493770348161-369560ae357d?w=400&auto=format&fit=crop&q=70', // Breakfast spread
-      'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=400&auto=format&fit=crop&q=70', // Skewers & dip
-      'https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=400&auto=format&fit=crop&q=70', // French toast fruit
-      'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=400&auto=format&fit=crop&q=70', // Gourmet sandwich
-      'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=400&auto=format&fit=crop&q=70', // Pasta pesto
-      'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&auto=format&fit=crop&q=70', // Pizza slice
-      'https://images.unsplash.com/photo-1481931098730-318b6f776db0?w=400&auto=format&fit=crop&q=70', // Asian gourmet
-      'https://images.unsplash.com/photo-1517093602195-b40af9688b46?w=400&auto=format&fit=crop&q=70', // Dessert platter
-      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&auto=format&fit=crop&q=70', // Steak flatlay
-      'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&auto=format&fit=crop&q=70'  // Healthy greens
-    ];
-    let sum = 0;
-    for (let i = 0; i < n.length; i++) sum += n.charCodeAt(i);
-    return hashes[sum % hashes.length];
+    return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
   }
 
   // Read slug from URL query param (local dev) or pathname (production rewrite)
@@ -2705,7 +2570,7 @@
         var rawImg = item.photo_url || item.image_url || '';
         var finalImg = optimizeImageUrl(rawImg, 400, 70);
         if (!finalImg || finalImg.trim() === '') {
-          finalImg = getFoodFallbackImage(item.name);
+          finalImg = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         }
         return {
           id:       item.id,
@@ -3647,6 +3512,8 @@
                    : '';
 
     const delayStyle = useDelay ? `style="animation-delay:${index * 0.04}s"` : '';
+    const isLogo = dish.img.startsWith('data:');
+    const imgStyle = isLogo ? 'style="background: var(--white);"' : '';
 
     return `
     <div class="dish-card" id="dish-${dish.id}" ${delayStyle}>
@@ -3672,8 +3539,8 @@
       </div>
       <div class="dish-img-container">
         <div class="dish-img-wrap">
-          <img class="dish-img" src="${dish.img}" alt="${dish.name}" loading="lazy"
-            onerror="this.onerror=null; this.src=getFoodFallbackImage('${escapeJsString(dish.name)}')">
+          <img class="dish-img" src="${dish.img}" alt="${dish.name}" loading="lazy" ${imgStyle}
+            onerror="this.onerror=null; this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; this.style.background='var(--white)';">
           ${dish.tag ? `<span class="dish-tag ${tagClass}">${dish.tag}</span>` : ''}
         </div>
       </div>

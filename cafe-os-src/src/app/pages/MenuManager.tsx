@@ -269,14 +269,16 @@ export function MenuManager() {
                       item.available ? 'border-border' : 'border-border opacity-60'
                     }`}
                   >
-                    {item.photo_url && (
-                      <img
-                        src={item.photo_url}
-                        alt={item.name}
-                        className="w-full h-36 object-cover"
-                        onError={e => (e.currentTarget.style.display = 'none')}
-                      />
-                    )}
+                    <img
+                      src={item.photo_url || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}
+                      alt={item.name}
+                      className="w-full h-36 object-cover"
+                      style={!item.photo_url ? { background: 'var(--card)' } : {}}
+                      onError={e => {
+                        e.currentTarget.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                        e.currentTarget.style.background = 'var(--card)';
+                      }}
+                    />
                     <div className="p-4">
                       <div className="flex items-start justify-between mb-2 gap-2">
                         <div className="flex-1 min-w-0">
