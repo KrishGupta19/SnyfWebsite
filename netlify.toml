@@ -16,6 +16,13 @@
   status = 301
   force  = true
 
+# ── Supabase Proxy to bypass ISP blocks ──────────────────────────
+[[redirects]]
+  from   = "/supabase-api/*"
+  to     = "https://pjygywbgwujkvpexmxuu.supabase.co/:splat"
+  status = 200
+  force  = true
+
 # ── Known static pages — must come BEFORE catch-all ──────────
 [[redirects]]
   from   = "/community"

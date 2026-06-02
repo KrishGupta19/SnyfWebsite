@@ -2071,7 +2071,7 @@ async function updateProfileOnServer(payload) {
   const token = session?.access_token;
   if (!token) throw new Error('No active session');
 
-  const baseUrl = 'https://pjygywbgwujkvpexmxuu.supabase.co';
+  const baseUrl = SNYF_URL;
   const res  = await fetch(`${baseUrl}/functions/v1/update-profile`, {
     method: 'POST',
     headers: {
