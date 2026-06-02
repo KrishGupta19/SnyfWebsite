@@ -3509,6 +3509,9 @@
   // ══════════════════════════════════════════
   // RENDER — Dishes (Chunked / Lazy loaded)
   // ══════════════════════════════════════════
+  // ══════════════════════════════════════════
+  // RENDER — Dishes (Chunked / Lazy loaded with In-place Reconciliation)
+  // ══════════════════════════════════════════
   function renderDishes() {
     const wrap = document.getElementById('menu-dishes');
 
@@ -3534,71 +3537,147 @@
 
     if (filtered.length === 0) {
       wrap.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--muted)">No items found matching your search</div>';
+      if (dishesObserver) {
+        dishesObserver.disconnect();
+        dishesObserver = null;
+      }
       return;
     }
 
     // Get current chunk of menu items to render
     const chunk = filtered.slice(0, itemsToShow);
 
-    let html = chunk.map((dish, i) => {
+    // Detect if we need a full render (first load, category switch, or search)
+    const hasSkeletons = wrap.querySelector('.dish-card--skeleton') !== null;
+    const currentCardCount = wrap.querySelectorAll('.dish-card:not(.dish-card--skeleton)').length;
+
+    if (hasSkeletons || currentCardCount === 0 || chunk.length <= 10) {
+      // First load or category reset — full render with smooth staggered animation
+      let html = chunk.map((dish, i) => {
+        return getDishCardHtml(dish, i, true);
+      }).join('');
+
+      if (filtered.length > itemsToShow) {
+        html += `
+          <div id="menu-load-more-sensor" style="height: 50px; display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 15px;">
+            <div class="load-more-spinner"></div>
+          </div>
+        `;
+      }
+
+      wrap.innerHTML = html;
+
+      // Trigger reveal animation for all cards
+      requestAnimationFrame(() => {
+        wrap.querySelectorAll('.dish-card').forEach(card => card.classList.add('visible'));
+      });
+
+      setupLoadMoreObserver(filtered.length);
+      return;
+    }
+
+    // --- INCREMENTAL RECONCILIATION ---
+    // If cards already exist, we keep them, update quantity changes in-place, and append new cards.
+    
+    // 1. Remove the old sensor from the bottom of the list before appending new elements
+    const oldSensor = document.getElementById('menu-load-more-sensor');
+    if (oldSensor) {
+      oldSensor.remove();
+    }
+
+    // 2. Loop through the items chunk to update quantities in-place or append new elements
+    chunk.forEach((dish, idx) => {
+      const existingCard = document.getElementById(`dish-${dish.id}`);
       const inCart = cart[dish.id];
       const qty    = inCart ? inCart.qty : 0;
 
-      const tagClass = dish.tag === 'Popular'     ? 'dish-tag--popular'
-                     : dish.tag === 'Veg'         ? 'dish-tag--veg'
-                     : dish.tag === 'Bestseller'  ? 'dish-tag--bestseller'
-                     : '';
+      if (existingCard) {
+        // Card already exists. Update its quantity control state in-place without flashing
+        const actionContainer = existingCard.querySelector('.dish-action-container');
+        if (actionContainer) {
+          const currentHtml = actionContainer.innerHTML;
+          const targetHtml = qty === 0
+            ? `<button class="dish-add-btn" onclick="addToCart('${dish.id}')" aria-label="Add ${dish.name}">+</button>`
+            : `<div class="dish-qty-ctrl">
+                 <button class="dish-qty-btn" onclick="changeQty('${dish.id}', -1)">−</button>
+                 <span class="dish-qty-num">${qty}</span>
+                 <button class="dish-qty-btn" onclick="changeQty('${dish.id}', 1)">+</button>
+               </div>`;
 
-      return `
-      <div class="dish-card" id="dish-${dish.id}" style="animation-delay:${i * 0.04}s">
-        <div class="dish-body">
-          <div class="dish-name">${dish.name}</div>
-          <div class="dish-desc">${dish.desc}</div>
-          <div class="dish-price-wrap">
-            <div style="display: flex; flex-direction: column;">
-              <span class="dish-price">${formatINR(dish.price)}</span>
-              <span class="dish-price-sub">incl. taxes</span>
-            </div>
-            <div class="dish-action-container">
-              ${qty === 0
-                ? `<button class="dish-add-btn" onclick="addToCart('${dish.id}')" aria-label="Add ${dish.name}">+</button>`
-                : `<div class="dish-qty-ctrl">
-                     <button class="dish-qty-btn" onclick="changeQty('${dish.id}', -1)">−</button>
-                     <span class="dish-qty-num">${qty}</span>
-                     <button class="dish-qty-btn" onclick="changeQty('${dish.id}', 1)">+</button>
-                   </div>`
-              }
-            </div>
-          </div>
-        </div>
-        <div class="dish-img-container">
-          <div class="dish-img-wrap">
-            <img class="dish-img" src="${dish.img}" alt="${dish.name}" loading="lazy"
-              onerror="this.onerror=null; this.src=getFoodFallbackImage('${escapeJsString(dish.name)}')">
-            ${dish.tag ? `<span class="dish-tag ${tagClass}">${dish.tag}</span>` : ''}
-          </div>
-        </div>
-      </div>`;
-    }).join('');
+          if (currentHtml.trim() !== targetHtml.trim()) {
+            actionContainer.innerHTML = targetHtml;
+          }
+        }
+        // Ensure card is visible and does not animate again
+        existingCard.classList.add('visible');
+      } else {
+        // Card is new! Construct its DOM element and append it seamlessly
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = getDishCardHtml(dish, idx, false); // false means no delay, smooth entry
+        const newCard = tempDiv.firstElementChild;
+        wrap.appendChild(newCard);
 
-    // If there are more items to load in the current category/filter, append the sensor element
-    if (filtered.length > itemsToShow) {
-      html += `
-        <div id="menu-load-more-sensor" style="height: 50px; display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 15px;">
-          <div class="load-more-spinner"></div>
-        </div>
-      `;
-    }
-
-    wrap.innerHTML = html;
-
-    // Trigger dish reveal animation
-    requestAnimationFrame(() => {
-      wrap.querySelectorAll('.dish-card').forEach(card => card.classList.add('visible'));
+        requestAnimationFrame(() => {
+          newCard.classList.add('visible');
+        });
+      }
     });
 
-    // Set up the scroll-spy IntersectionObserver for loading the next group of items
+    // 3. Re-append the load sensor to the new end of the container
+    if (filtered.length > itemsToShow) {
+      const sensorDiv = document.createElement('div');
+      sensorDiv.id = 'menu-load-more-sensor';
+      sensorDiv.style.cssText = 'height: 50px; display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 15px;';
+      sensorDiv.innerHTML = '<div class="load-more-spinner"></div>';
+      wrap.appendChild(sensorDiv);
+    }
+
+    // 4. Setup the scroll observer on the newly created sensor
     setupLoadMoreObserver(filtered.length);
+  }
+
+  // Helper to generate the exact HTML string for a single dish card
+  function getDishCardHtml(dish, index, useDelay = true) {
+    const inCart = cart[dish.id];
+    const qty    = inCart ? inCart.qty : 0;
+
+    const tagClass = dish.tag === 'Popular'     ? 'dish-tag--popular'
+                   : dish.tag === 'Veg'         ? 'dish-tag--veg'
+                   : dish.tag === 'Bestseller'  ? 'dish-tag--bestseller'
+                   : '';
+
+    const delayStyle = useDelay ? `style="animation-delay:${index * 0.04}s"` : '';
+
+    return `
+    <div class="dish-card" id="dish-${dish.id}" ${delayStyle}>
+      <div class="dish-body">
+        <div class="dish-name">${dish.name}</div>
+        <div class="dish-desc">${dish.desc}</div>
+        <div class="dish-price-wrap">
+          <div style="display: flex; flex-direction: column;">
+            <span class="dish-price">${formatINR(dish.price)}</span>
+            <span class="dish-price-sub">incl. taxes</span>
+          </div>
+          <div class="dish-action-container">
+            ${qty === 0
+              ? `<button class="dish-add-btn" onclick="addToCart('${dish.id}')" aria-label="Add ${dish.name}">+</button>`
+              : `<div class="dish-qty-ctrl">
+                   <button class="dish-qty-btn" onclick="changeQty('${dish.id}', -1)">−</button>
+                   <span class="dish-qty-num">${qty}</span>
+                   <button class="dish-qty-btn" onclick="changeQty('${dish.id}', 1)">+</button>
+                 </div>`
+            }
+          </div>
+        </div>
+      </div>
+      <div class="dish-img-container">
+        <div class="dish-img-wrap">
+          <img class="dish-img" src="${dish.img}" alt="${dish.name}" loading="lazy"
+            onerror="this.onerror=null; this.src=getFoodFallbackImage('${escapeJsString(dish.name)}')">
+          ${dish.tag ? `<span class="dish-tag ${tagClass}">${dish.tag}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
   }
 
   function setupLoadMoreObserver(totalCount) {
@@ -3618,7 +3697,7 @@
         }
       }
     }, {
-      rootMargin: '100px 0px 300px 0px', // trigger before reaching bottom to ensure seamless scrolling
+      rootMargin: '100px 0px 300px 0px',
     });
 
     dishesObserver.observe(sensor);
