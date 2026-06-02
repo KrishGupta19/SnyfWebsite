@@ -14,6 +14,7 @@ export function KitchenBackend() {
   const [orders,    setOrders]      = useState<Order[]>([]);
   const [menuItems, setMenuItems]   = useState<MenuItem[]>([]);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [paymentConfirmOrder, setPaymentConfirmOrder] = useState<Order | null>(null);
   const [searchItemQuery, setSearchItemQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [loading,   setLoading]     = useState(true);
@@ -860,7 +861,7 @@ export function KitchenBackend() {
                       </button>
 
                       <button
-                        onClick={() => updateOrderStatus(order.id, 'ready')}
+                        onClick={() => setPaymentConfirmOrder(order)}
                         disabled={order.status !== 'delivered'}
                         className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 border ${
                           order.status === 'delivered'
@@ -1086,6 +1087,72 @@ export function KitchenBackend() {
                 className="flex-1 py-2.5 bg-primary hover:bg-primary/95 text-primary-foreground font-semibold rounded-xl text-sm transition-colors"
               >
                 Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Confirmation Modal */}
+      {paymentConfirmOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-background border border-border rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
+            {/* Header */}
+            <div className="p-6 border-b border-border flex items-center justify-between bg-accent/20">
+              <div>
+                <h3 className="font-bold text-lg">Confirm Payment</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Please verify the details below</p>
+              </div>
+              <button
+                onClick={() => setPaymentConfirmOrder(null)}
+                className="p-1 rounded-lg hover:bg-accent transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-foreground font-medium">
+                Are you sure you have received payment for this order?
+              </p>
+              
+              <div className="bg-accent/30 rounded-xl p-4 border border-border space-y-2.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Order ID:</span>
+                  <span className="font-mono font-bold">#{paymentConfirmOrder.id.slice(-6).toUpperCase()}</span>
+                </div>
+                {paymentConfirmOrder.table_num && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Table:</span>
+                    <span className="font-bold text-primary">Table {paymentConfirmOrder.table_num}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t border-border/50 pt-2.5 text-base font-extrabold">
+                  <span>Total Amount:</span>
+                  <span className="text-green-600 dark:text-green-400">₹{(paymentConfirmOrder.total || 0).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer / Buttons */}
+            <div className="p-6 border-t border-border flex gap-3 bg-accent/10">
+              <button
+                type="button"
+                onClick={() => setPaymentConfirmOrder(null)}
+                className="flex-1 py-2.5 border border-border hover:bg-accent text-accent-foreground font-semibold rounded-xl text-sm transition-colors cursor-pointer"
+              >
+                No, Go Back
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  updateOrderStatus(paymentConfirmOrder.id, 'ready');
+                  setPaymentConfirmOrder(null);
+                }}
+                className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl text-sm transition-colors shadow-lg shadow-green-600/20 cursor-pointer"
+              >
+                Yes, Received
               </button>
             </div>
           </div>
