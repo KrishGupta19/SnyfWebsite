@@ -3929,6 +3929,14 @@
   // ORDER CONFIRMATION + TRACKING
   // ══════════════════════════════════════════
   async function confirmOrder() {
+    // Pre-unlock AudioContext immediately during the user click gesture
+    // (must happen before any await, or Chrome blocks it silently)
+    let _bellCtx = null;
+    try {
+      _bellCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (_bellCtx.state === 'suspended') _bellCtx.resume();
+    } catch(e) {}
+
     if (!window._currentUser) {
       showSignInPrompt();
       return;
@@ -4097,7 +4105,7 @@
     }
 
     // Play order confirmation bell (3 rings)
-    playOrderBell();
+    playOrderBell(_bellCtx);
 
     // Clear cart + show tracking screen (existing logic unchanged)
     cart = {};
@@ -4128,9 +4136,9 @@
   }
 
   // -- Order Placed Bell - plays a rich chime 3 times ----------------------------
-  function playOrderBell() {
+  function playOrderBell(existingCtx) {
     try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const audioCtx = existingCtx || new (window.AudioContext || window.webkitAudioContext)();
 
       function ringBell(startTime) {
         const harmonics = [
