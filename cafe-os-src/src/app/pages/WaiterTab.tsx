@@ -22,7 +22,7 @@ export function WaiterTab() {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
     if (audioContextRef.current.state === 'suspended') {
-      audioContextRef.current.resume().catch(() => {});
+      audioContextRef.current.resume().catch(() => { });
     }
     return audioContextRef.current;
   }
@@ -35,12 +35,12 @@ export function WaiterTab() {
 
       function ringSingleBell(startTime: number) {
         const harmonics = [
-          { freq: 1800, peakGain: 0.5,  decay: 0.6 },
-          { freq: 2400, peakGain: 0.3,  decay: 0.45 },
-          { freq: 3000, peakGain: 0.15, decay: 0.3 },
+          { freq: 1800, peakGain: 1.0, decay: 0.6 },
+          { freq: 2400, peakGain: 0.6, decay: 0.45 },
+          { freq: 3000, peakGain: 3.0, decay: 0.3 },
         ];
         harmonics.forEach(({ freq, peakGain, decay }) => {
-          const osc  = audioCtx.createOscillator();
+          const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
           osc.type = 'sine';
           osc.frequency.setValueAtTime(freq, startTime);
@@ -65,27 +65,27 @@ export function WaiterTab() {
   // 2. Play urgent alarm beep siren for customer help calls
   function playHelpCallAlarm(count = 1) {
     try {
-      const ctx  = getAudioContext();
+      const ctx = getAudioContext();
       const playBeep = (time: number, freq: number, dur: number) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.connect(gain);
         gain.connect(ctx.destination);
-        
+
         const pitchMultiplier = 1 + Math.min(count - 1, 4) * 0.1;
         osc.frequency.setValueAtTime(freq * pitchMultiplier, time);
-        
+
         const volume = Math.min(0.4 + (count - 1) * 0.2, 1.0);
         gain.gain.setValueAtTime(volume, time);
         gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
-        
+
         osc.start(time);
         osc.stop(time + dur);
       };
 
       const now = ctx.currentTime;
       const speed = count >= 3 ? 0.7 : count === 2 ? 0.85 : 1.0;
-      
+
       playBeep(now, 987.77, 0.15 * speed);
       playBeep(now + 0.18 * speed, 1318.51, 0.25 * speed);
       playBeep(now + 0.4 * speed, 987.77, 0.15 * speed);
@@ -143,7 +143,7 @@ export function WaiterTab() {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
       if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
-        audioContextRef.current.resume().catch(() => {});
+        audioContextRef.current.resume().catch(() => { });
       }
     };
     window.addEventListener('click', handleUserGesture);
@@ -208,7 +208,7 @@ export function WaiterTab() {
           if (isDeliverable || hasHelp) {
             setOrders(prev => {
               const existing = prev.find(o => o.id === updated.id);
-              
+
               if (hasHelp) {
                 const prevCount = existing ? getHelpCallCount(existing.special_instructions) : 0;
                 const currentCount = getHelpCallCount(updated.special_instructions);
@@ -245,9 +245,9 @@ export function WaiterTab() {
     try {
       const { error } = await db
         .from('orders')
-        .update({ 
-          waiter_delivered: true, 
-          updated_at: new Date().toISOString() 
+        .update({
+          waiter_delivered: true,
+          updated_at: new Date().toISOString()
         })
         .eq('id', orderId);
       if (error) throw error;
@@ -295,19 +295,17 @@ export function WaiterTab() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${
-            connected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-          }`}>
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${connected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+            }`}>
             {connected ? <><Wifi className="w-4 h-4" /> Live</> : <><WifiOff className="w-4 h-4" /> Connecting...</>}
           </div>
 
           <button
             onClick={() => isWaiterMode ? setShowUnlockModal(true) : lockWaiterMode()}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all border shadow-sm cursor-pointer ${
-              isWaiterMode 
-                ? 'bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20' 
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all border shadow-sm cursor-pointer ${isWaiterMode
+                ? 'bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20'
                 : 'bg-primary text-primary-foreground border-transparent hover:opacity-90'
-            }`}
+              }`}
           >
             {isWaiterMode ? <><ShieldAlert className="w-5 h-5" /> Locked</> : <><Lock className="w-5 h-5" /> Waiter Mode</>}
           </button>
@@ -324,7 +322,7 @@ export function WaiterTab() {
                 Active Table Assistance Calls ({helpOrders.length})
               </h2>
             </div>
-            <button 
+            <button
               onClick={async () => {
                 for (const order of helpOrders) {
                   await dismissHelpCall(order);
@@ -335,7 +333,7 @@ export function WaiterTab() {
               Dismiss All Calls
             </button>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {helpOrders.map(order => {
               const count = getHelpCallCount(order.special_instructions);
@@ -356,24 +354,24 @@ export function WaiterTab() {
               const isVirtualHelp = !order.items || order.items.length === 0;
 
               return (
-                <div 
+                <div
                   key={`top-help-${order.id}`}
                   className={`${cardClass} flex items-center justify-between gap-4 px-4 py-3 rounded-xl border font-bold text-sm shadow transition-all duration-300 hover:scale-[1.02]`}
                   style={cardStyle}
                 >
-                   <div className="flex items-center gap-2">
-                     <Bell className={bellClass} />
-                     <span>
-                       Table {order.table_num || 'N/A'} {count > 1 ? `(Called ×${count})` : ''}
-                       {isVirtualHelp ? ' 💬' : ' 🍔'}
-                     </span>
-                   </div>
-                   <button
-                     onClick={() => dismissHelpCall(order)}
-                     className="px-2.5 py-1.5 bg-black/80 text-white hover:bg-neutral-900 text-xs font-semibold rounded-lg transition-all shadow-sm border border-neutral-700/50 cursor-pointer"
-                   >
-                     Dismiss
-                   </button>
+                  <div className="flex items-center gap-2">
+                    <Bell className={bellClass} />
+                    <span>
+                      Table {order.table_num || 'N/A'} {count > 1 ? `(Called ×${count})` : ''}
+                      {isVirtualHelp ? ' 💬' : ' 🍔'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => dismissHelpCall(order)}
+                    className="px-2.5 py-1.5 bg-black/80 text-white hover:bg-neutral-900 text-xs font-semibold rounded-lg transition-all shadow-sm border border-neutral-700/50 cursor-pointer"
+                  >
+                    Dismiss
+                  </button>
                 </div>
               );
             })}
@@ -385,9 +383,8 @@ export function WaiterTab() {
       <div className="flex gap-4 border-b border-border pb-px">
         <button
           onClick={() => setActiveTab('deliver')}
-          className={`pb-4 px-2 font-bold text-sm border-b-2 transition-all relative cursor-pointer ${
-            activeTab === 'deliver' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+          className={`pb-4 px-2 font-bold text-sm border-b-2 transition-all relative cursor-pointer ${activeTab === 'deliver' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
         >
           To Deliver
           {deliverOrders.length > 0 && (
@@ -398,9 +395,8 @@ export function WaiterTab() {
         </button>
         <button
           onClick={() => setActiveTab('payment')}
-          className={`pb-4 px-2 font-bold text-sm border-b-2 transition-all relative cursor-pointer ${
-            activeTab === 'payment' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+          className={`pb-4 px-2 font-bold text-sm border-b-2 transition-all relative cursor-pointer ${activeTab === 'payment' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
         >
           Awaiting Payment
           {paymentOrders.length > 0 && (
@@ -420,7 +416,7 @@ export function WaiterTab() {
           <Utensils className="w-16 h-16 text-muted-foreground opacity-20 mb-6" />
           <h2 className="text-2xl font-bold text-muted-foreground">All caught up!</h2>
           <p className="text-muted-foreground mt-2 max-w-sm">
-            {activeTab === 'deliver' 
+            {activeTab === 'deliver'
               ? 'Waiting for the kitchen to advance new orders for delivery.'
               : 'No orders awaiting payment confirmation right now.'}
           </p>
@@ -443,7 +439,7 @@ export function WaiterTab() {
                 <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
                   <Clock className="w-4 h-4" />
                   <span>
-                    {activeTab === 'deliver' 
+                    {activeTab === 'deliver'
                       ? `Ready for ${Math.max(0, Math.floor((Date.now() - new Date(order.updated_at).getTime()) / 60000))}m`
                       : `Delivered ${Math.max(0, Math.floor((Date.now() - new Date(order.updated_at).getTime()) / 60000))}m ago`
                     }
@@ -542,7 +538,7 @@ export function WaiterTab() {
               <p className="text-sm text-foreground font-medium">
                 Are you sure you have received payment for this order?
               </p>
-              
+
               <div className="bg-accent/30 rounded-xl p-4 border border-border space-y-2.5 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Order ID:</span>
