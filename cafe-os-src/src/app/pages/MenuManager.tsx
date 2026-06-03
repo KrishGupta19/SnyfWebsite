@@ -235,11 +235,11 @@ export function MenuManager() {
                   <span className="text-xs text-muted-foreground ml-1">(optional · IST)</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Leave blank to show all day. If set, this item will only appear on the menu during the specified hours.
+                  Leave blank to show all day. If set, this item will NOT be available on the menu during the specified hours.
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium mb-1.5 text-muted-foreground">Available From</label>
+                    <label className="block text-xs font-medium mb-1.5 text-muted-foreground">Unavailable From</label>
                     <input
                       type="time"
                       value={form.available_from}
@@ -248,7 +248,7 @@ export function MenuManager() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1.5 text-muted-foreground">Available Until</label>
+                    <label className="block text-xs font-medium mb-1.5 text-muted-foreground">Unavailable Until</label>
                     <input
                       type="time"
                       value={form.available_until}
@@ -259,8 +259,8 @@ export function MenuManager() {
                 </div>
                 {(form.available_from || form.available_until) && (
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-primary font-medium">
-                      🕐 Visible {form.available_from ? formatTime(form.available_from) : '?'} – {form.available_until ? formatTime(form.available_until) : '?'} IST
+                    <p className="text-xs text-destructive font-medium">
+                      🚫 Unavailable {form.available_from ? formatTime(form.available_from) : '?'} – {form.available_until ? formatTime(form.available_until) : '?'} IST
                     </p>
                     <button
                       type="button"
@@ -358,9 +358,9 @@ export function MenuManager() {
                           )}
                           {/* Time availability badge in admin */}
                           {item.available_from && item.available_until && (
-                            <span className="text-xs px-2 py-0.5 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 rounded-full mt-1 ml-1 inline-flex items-center gap-1">
+                            <span className="text-xs px-2 py-0.5 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-full mt-1 ml-1 inline-flex items-center gap-1">
                               <Clock className="w-2.5 h-2.5" />
-                              {formatTime(item.available_from)}–{formatTime(item.available_until)}
+                              🚫 Not available: {formatTime(item.available_from)}–{formatTime(item.available_until)}
                             </span>
                           )}
                         </div>

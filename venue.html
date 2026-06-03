@@ -3410,9 +3410,9 @@
     var fromMins  = parseInt(parts1[0], 10) * 60 + parseInt(parts1[1], 10);
     var untilMins = parseInt(parts2[0], 10) * 60 + parseInt(parts2[1], 10);
     if (fromMins <= untilMins) {
-      return nowMins >= fromMins && nowMins < untilMins;
+      return !(nowMins >= fromMins && nowMins < untilMins);
     } else {
-      return nowMins >= fromMins || nowMins < untilMins;
+      return !(nowMins >= fromMins || nowMins < untilMins);
     }
   }
 
@@ -3595,7 +3595,7 @@
           <img class="dish-img" src="${dish.img}" alt="${dish.name}" loading="lazy" ${imgStyle}
             onerror="this.onerror=null; this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; this.style.background='var(--white)';">
           ${dish.tag ? `<span class="dish-tag ${tagClass}">${dish.tag}</span>` : ''}
-          ${(dish.available_from && dish.available_until) ? `<span class="dish-time-badge">⏰ ${formatTimeIST(dish.available_from)}–${formatTimeIST(dish.available_until)}</span>` : ''}
+          ${(dish.available_from && dish.available_until) ? `<span class="dish-time-badge">🚫 Unavailable: ${formatTimeIST(dish.available_from)}–${formatTimeIST(dish.available_until)}</span>` : ''}
         </div>
       </div>
     </div>`;
