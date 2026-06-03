@@ -4419,16 +4419,48 @@
           }
         )
         .subscribe();
+
+      // ── Polling fallback (every 6s) in case real-time filter is blocked ──
+      // Supabase row-level filter on realtime needs REPLICA IDENTITY FULL;
+      // polling ensures status always updates even if the websocket event is missed.
+      if (window._trackPollInterval) clearInterval(window._trackPollInterval);
+      window._trackPollInterval = setInterval(async function() {
+        if (!window._lastOrderId) { clearInterval(window._trackPollInterval); return; }
+        try {
+          const { data } = await db
+            .from('orders')
+            .select('status, items, subtotal, gst, service_charge, total, table_num, special_instructions')
+            .eq('id', window._lastOrderId)
+            .single();
+          if (data) {
+            syncStatus(data.status);
+            renderOrderDetailsUI(data);
+            syncHelpButtonState(data.special_instructions);
+            // Stop polling once fully delivered/paid
+            if (data.status === 'ready' || data.status === 'delivered') {
+              clearInterval(window._trackPollInterval);
+            }
+          }
+        } catch(e) { /* silent */ }
+      }, 6000);
     }
 
     function syncStatus(dbStatus) {
       let targetState = 0;
       
-      if (dbStatus === 'delivered') {
-        targetState = 2;
-      } else if (dbStatus === 'ready') {
+      if (dbStatus === 'ready') {
+        // Payment received — final state
         targetState = 3;
+      } else if (dbStatus === 'delivered') {
+        // Delivered to table
+        targetState = 2;
+      } else if (dbStatus === 'serving' || dbStatus === 'gathering') {
+        // On the way / gathering cutlery — show as "Delivered" stage
+        targetState = 2;
+      } else if (dbStatus === 'preparing') {
+        targetState = 1;
       } else {
+        // 'received' — or time-based fallback
         const elapsedMins = (Date.now() - orderCreatedAt.getTime()) / 60000;
         targetState = (elapsedMins >= 3) ? 1 : 0;
       }
