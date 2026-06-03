@@ -11,6 +11,7 @@ export interface OrderItem {
   name:  string;
   price: number;
   qty:   number;        // NOTE: qty not quantity — matches Supabase orders.items jsonb
+  addon?: boolean;
 }
 
 export interface Order {

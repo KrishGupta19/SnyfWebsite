@@ -203,14 +203,25 @@ export function WaiterTab() {
                 <div>
                   <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">Items to Deliver</h4>
                   <div className="space-y-2">
-                    {order.items.map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-center bg-accent/30 p-3 rounded-xl">
-                        <span className="font-bold flex-1">{item.name}</span>
-                        <span className="bg-primary text-primary-foreground w-8 h-8 flex items-center justify-center rounded-lg font-black text-sm">
-                          {item.qty}
-                        </span>
-                      </div>
-                    ))}
+                    {(() => {
+                      const hasAddons = order.items.some(item => item.addon);
+                      const itemsToRender = hasAddons ? order.items.filter(item => item.addon) : order.items;
+                      return itemsToRender.map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center bg-accent/30 p-3 rounded-xl">
+                          <span className="font-bold flex-1">
+                            {item.name}
+                            {item.addon && (
+                              <span className="ml-2 px-2 py-0.5 bg-yellow-500 text-white text-[9px] font-black uppercase rounded tracking-wider">
+                                Add-on
+                              </span>
+                            )}
+                          </span>
+                          <span className="bg-primary text-primary-foreground w-8 h-8 flex items-center justify-center rounded-lg font-black text-sm">
+                            {item.qty}
+                          </span>
+                        </div>
+                      ));
+                    })()}
                   </div>
                 </div>
 

@@ -4108,8 +4108,8 @@
       dbError('confirmOrder', err);
     }
 
-    // Play order confirmation bell (3 rings)
-    playOrderBell(_bellCtx);
+    // Play order confirmation bell (3 rings) - disabled on user side
+    // playOrderBell(_bellCtx);
 
     // Clear cart + show tracking screen (existing logic unchanged)
     cart = {};
