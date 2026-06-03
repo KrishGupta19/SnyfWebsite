@@ -88,3 +88,9 @@ create policy "svc_otp_codes"
 alter table menu_items
   add column if not exists available_from text default null,
   add column if not exists available_until text default null;
+
+-- Add CGST, SGST, and Service Tax percentage columns to venues table
+alter table venues
+  add column if not exists cgst_pct numeric default 0,
+  add column if not exists sgst_pct numeric default 0,
+  add column if not exists service_tax_pct numeric default 0;

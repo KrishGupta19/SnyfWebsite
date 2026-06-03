@@ -44,6 +44,9 @@ export interface Venue {
   hours:       string;
   location:    string;
   status:      string;
+  cgst_pct?:   number;
+  sgst_pct?:   number;
+  service_tax_pct?: number;
 }
 
 export interface MenuItem {

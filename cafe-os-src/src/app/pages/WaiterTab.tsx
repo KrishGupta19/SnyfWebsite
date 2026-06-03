@@ -534,23 +534,63 @@ export function WaiterTab() {
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
               <p className="text-sm text-foreground font-medium">
                 Are you sure you have received payment for this order?
               </p>
 
-              <div className="bg-accent/30 rounded-xl p-4 border border-border space-y-2.5 text-sm">
-                <div className="flex justify-between">
+              {/* Item cost breakdown */}
+              <div className="border border-border/50 rounded-xl p-4 space-y-2 max-h-40 overflow-y-auto bg-accent/10">
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Items Summary</div>
+                {(paymentConfirmOrder.items || []).map((item: any, idx: number) => (
+                  <div key={idx} className="flex justify-between text-xs">
+                    <span>
+                      <span className="font-medium text-foreground">{item.name}</span>
+                      <span className="text-muted-foreground ml-1.5 font-semibold">x{item.qty}</span>
+                    </span>
+                    <span className="font-mono font-semibold">₹{(item.price * item.qty).toLocaleString('en-IN')}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-accent/30 rounded-xl p-4 border border-border space-y-2 text-sm">
+                <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground">Order ID:</span>
                   <span className="font-mono font-bold">#{paymentConfirmOrder.id.slice(-6).toUpperCase()}</span>
                 </div>
                 {paymentConfirmOrder.table_num && (
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-xs">
                     <span className="text-muted-foreground">Table:</span>
                     <span className="font-bold text-primary">Table {paymentConfirmOrder.table_num}</span>
                   </div>
                 )}
-                <div className="flex justify-between border-t border-border/50 pt-2.5 text-base font-extrabold">
+
+                <div className="border-t border-border/40 my-2"></div>
+
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Subtotal:</span>
+                  <span>₹{(paymentConfirmOrder.subtotal || (paymentConfirmOrder.total - (paymentConfirmOrder.gst || 0) - (paymentConfirmOrder.service_charge || 0))).toLocaleString('en-IN')}</span>
+                </div>
+                {(paymentConfirmOrder.gst || 0) > 0 && (
+                  <>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>CGST:</span>
+                      <span>₹{(paymentConfirmOrder.gst / 2).toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>SGST:</span>
+                      <span>₹{(paymentConfirmOrder.gst / 2).toLocaleString('en-IN')}</span>
+                    </div>
+                  </>
+                )}
+                {(paymentConfirmOrder.service_charge || 0) > 0 && (
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Service Charge:</span>
+                    <span>₹{paymentConfirmOrder.service_charge.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between border-t border-border/50 pt-2 text-base font-extrabold">
                   <span>Total Amount:</span>
                   <span className="text-green-600 dark:text-green-400">₹{(paymentConfirmOrder.total || 0).toLocaleString('en-IN')}</span>
                 </div>

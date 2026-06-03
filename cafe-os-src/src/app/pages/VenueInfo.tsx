@@ -9,7 +9,7 @@ import { ImageUploader } from '../components/ImageUploader';
 
 export function VenueInfo() {
   const navigate = useNavigate();
-  const { venue, slug, username, credentialId, updateUsername } = useVenue();
+  const { venue, slug, username, credentialId, updateUsername, updateVenue } = useVenue();
   const [saving,   setSaving]    = useState(false);
   const [saved,    setSaved]     = useState(false);
   const [photos,   setPhotos]    = useState<VenuePhoto[]>([]);
@@ -35,18 +35,22 @@ export function VenueInfo() {
   const [form, setForm] = useState({
     name: '', description: '', tagline: '',
     zone: '', category: '', hours: '', location: '',
+    cgst_pct: 0, sgst_pct: 0, service_tax_pct: 0,
   });
 
   useEffect(() => {
     if (venue) {
       setForm({
-        name:        venue.name        || '',
-        description: venue.description || '',
-        tagline:     venue.tagline     || '',
-        zone:        venue.zone        || '',
-        category:    venue.category    || '',
-        hours:       venue.hours       || '',
-        location:    venue.location    || '',
+        name:            venue.name            || '',
+        description:     venue.description     || '',
+        tagline:         venue.tagline         || '',
+        zone:            venue.zone            || '',
+        category:        venue.category        || '',
+        hours:           venue.hours           || '',
+        location:        venue.location        || '',
+        cgst_pct:        venue.cgst_pct        || 0,
+        sgst_pct:        venue.sgst_pct        || 0,
+        service_tax_pct: venue.service_tax_pct || 0,
       });
       fetchPhotos();
     }
@@ -71,16 +75,41 @@ export function VenueInfo() {
   async function saveVenueInfo() {
     if (!venue?.id) return;
     setSaving(true);
+    
+    const cgst = parseFloat(form.cgst_pct.toString()) || 0;
+    const sgst = parseFloat(form.sgst_pct.toString()) || 0;
+    const service_tax = parseFloat(form.service_tax_pct.toString()) || 0;
+
     await db.from('venues').update({
-      name:        form.name,
-      description: form.description,
-      tagline:     form.tagline,
-      zone:        form.zone,
-      category:    form.category,
-      hours:       form.hours,
-      location:    form.location,
-      updated_at:  new Date().toISOString(),
+      name:            form.name,
+      description:     form.description,
+      tagline:         form.tagline,
+      zone:            form.zone,
+      category:        form.category,
+      hours:           form.hours,
+      location:        form.location,
+      cgst_pct:        cgst,
+      sgst_pct:        sgst,
+      service_tax_pct: service_tax,
+      updated_at:      new Date().toISOString(),
     }).eq('id', venue.id);
+
+    if (updateVenue) {
+      updateVenue({
+        ...venue,
+        name:            form.name,
+        description:     form.description,
+        tagline:         form.tagline,
+        zone:            form.zone,
+        category:        form.category,
+        hours:           form.hours,
+        location:        form.location,
+        cgst_pct:        cgst,
+        sgst_pct:        sgst,
+        service_tax_pct: service_tax,
+      });
+    }
+
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
@@ -340,6 +369,48 @@ export function VenueInfo() {
             className="w-full px-4 py-3 bg-input-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
             placeholder="Ground floor, DLF Cyber Hub, Gurugram"
           />
+        </div>
+
+        <div className="border-t border-border pt-6 mt-6">
+          <h4 className="text-base font-semibold mb-4">Taxes & Service Charges (%)</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">CGST (%)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.cgst_pct}
+                onChange={e => setForm({...form, cgst_pct: parseFloat(e.target.value) || 0})}
+                className="w-full px-4 py-3 bg-input-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="0.0"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">SGST (%)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.sgst_pct}
+                onChange={e => setForm({...form, sgst_pct: parseFloat(e.target.value) || 0})}
+                className="w-full px-4 py-3 bg-input-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="0.0"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Service Tax / Charge (%)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.service_tax_pct}
+                onChange={e => setForm({...form, service_tax_pct: parseFloat(e.target.value) || 0})}
+                className="w-full px-4 py-3 bg-input-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="0.0"
+              />
+            </div>
+          </div>
         </div>
 
         <button

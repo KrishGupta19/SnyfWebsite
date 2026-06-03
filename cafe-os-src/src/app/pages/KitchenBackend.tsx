@@ -507,9 +507,16 @@ export function KitchenBackend() {
 
   function recalculateOrderTotals(items: any[]) {
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
-    const gst = 0;
-    const service_charge = 0;
-    const total = subtotal;
+    const cgstPct = venue?.cgst_pct || 0;
+    const sgstPct = venue?.sgst_pct || 0;
+    const serviceTaxPct = venue?.service_tax_pct || 0;
+
+    const cgst = (subtotal * cgstPct) / 100;
+    const sgst = (subtotal * sgstPct) / 100;
+    const gst = cgst + sgst;
+    const service_charge = (subtotal * serviceTaxPct) / 100;
+    const total = subtotal + gst + service_charge;
+    
     return { subtotal, gst, service_charge, total };
   }
 
