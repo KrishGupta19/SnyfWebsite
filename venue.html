@@ -4043,6 +4043,9 @@
       dbError('confirmOrder', err);
     }
 
+    // Play order confirmation bell (3 rings)
+    playOrderBell();
+
     // Clear cart + show tracking screen (existing logic unchanged)
     cart = {};
     localStorage.removeItem(`snyf_cart_${VENUE_SLUG}`);
@@ -4060,7 +4063,7 @@
       const gain = audioCtx.createGain();
       osc.type = type;
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
@@ -4071,7 +4074,43 @@
     }
   }
 
-  // ── Café Play Zone Game logic ──────────────────────────────────
+  // -- Order Placed Bell - plays a rich chime 3 times ----------------------------
+  function playOrderBell() {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      function ringBell(startTime) {
+        const harmonics = [
+          { freq: 880,  peakGain: 0.8,  decay: 1.2 },
+          { freq: 1320, peakGain: 0.5,  decay: 0.9 },
+          { freq: 1760, peakGain: 0.35, decay: 0.7 },
+          { freq: 2200, peakGain: 0.2,  decay: 0.5 },
+        ];
+        harmonics.forEach(({ freq, peakGain, decay }) => {
+          const osc  = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, startTime);
+          gain.gain.setValueAtTime(0.001, startTime);
+          gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + decay);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(startTime);
+          osc.stop(startTime + decay);
+        });
+      }
+
+      const gap = 0.65; // seconds between each bell ring
+      ringBell(audioCtx.currentTime);
+      ringBell(audioCtx.currentTime + gap);
+      ringBell(audioCtx.currentTime + gap * 2);
+    } catch (e) {
+      // AudioContext blocked or not supported
+    }
+  }
+
+  // -- Cafe Play Zone Game logic ──────────────────────────────────
   function initCafeGame() {
     const grid    = document.getElementById('memory-grid');
     const overlay = document.getElementById('game-overlay');
