@@ -3723,9 +3723,9 @@
     document.getElementById('cart-confirm-bar').style.display = '';
 
     const subtotal = cartTotal();
-    const gst      = subtotal * 0.05;
-    const sc       = subtotal * 0.05;
-    const total    = subtotal + gst + sc;
+    const gst      = 0;
+    const sc       = 0;
+    const total    = subtotal;
 
     body.innerHTML = `
       <!-- Cart items -->
@@ -3760,18 +3760,6 @@
       <!-- Order summary -->
       <div class="cart-summary">
         <div class="cart-section-title" style="margin-top:0">Order Summary</div>
-        <div class="cart-summary-row">
-          <span>Subtotal</span>
-          <span>${formatINR(subtotal)}</span>
-        </div>
-        <div class="cart-summary-row">
-          <span>GST (5%)</span>
-          <span>${formatINR(Math.round(gst))}</span>
-        </div>
-        <div class="cart-summary-row">
-          <span>Service Charge (5%)</span>
-          <span>${formatINR(Math.round(sc))}</span>
-        </div>
         <div class="cart-summary-divider"></div>
         <div class="cart-summary-total">
           <span>Estimated Total</span>
@@ -3968,9 +3956,9 @@
     }));
 
     const subtotal = cartTotal();
-    const gst      = Math.round(subtotal * 0.05);
-    const sc       = Math.round(subtotal * 0.05);
-    const total    = subtotal + gst + sc;
+    const gst      = 0;
+    const sc       = 0;
+    const total    = subtotal;
     const instrEl  = document.getElementById('cart-custom-input');
 
     // Combine chips and custom text instruction
@@ -4017,9 +4005,9 @@
 
               finalOrderItems = mergedItems;
               finalSubtotal = mergedItems.reduce((sum, item) => sum + (parseFloat(item.price) * item.qty), 0);
-              finalGst = Math.round(finalSubtotal * 0.05);
-              finalSc = Math.round(finalSubtotal * 0.05);
-              finalTotal = finalSubtotal + finalGst + finalSc;
+              finalGst = 0;
+              finalSc = 0;
+              finalTotal = finalSubtotal;
 
               let newInstructions = dbOrder.special_instructions || '';
               if (finalInstructions) {
