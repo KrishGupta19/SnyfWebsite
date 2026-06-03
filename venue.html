@@ -2557,7 +2557,7 @@
           .eq('venue_id', venue.id)
           .order('sort_order'),
         db.from('menu_items')
-          .select('id, name, description, price, category, photo_url, tag, available, sort_order, available_from, available_until')
+          .select('*')
           .eq('venue_id', venue.id)
           .eq('available', true)
           .order('sort_order'),
