@@ -360,6 +360,29 @@ export function KitchenBackend() {
     }
   }
 
+  async function advanceToDeliver(orderId: string) {
+    // Optimistic update
+    setOrders(prev => prev.map(o => o.id === orderId ? { 
+      ...o, 
+      is_advanced_to_deliver: true,
+      updated_at: new Date().toISOString()
+    } : o));
+    
+    try {
+      const { error } = await db
+        .from('orders')
+        .update({ 
+          is_advanced_to_deliver: true,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', orderId);
+      if (error) throw error;
+    } catch (err) {
+      console.error('[Kitchen] advanceToDeliver:', err);
+      fetchOrders();
+    }
+  }
+
   // ── Edit Modal Actions ─────────────────────────────────────────
   function openEditModal(order: Order) {
     setEditingOrder(JSON.parse(JSON.stringify(order)));
@@ -901,29 +924,29 @@ export function KitchenBackend() {
                     <h4 className="text-sm font-medium text-muted-foreground">Order Controls</h4>
                     <div className="flex gap-4">
                       <button
-                        onClick={() => updateOrderStatus(order.id, 'delivered')}
-                        disabled={order.status !== 'received'}
+                        onClick={() => advanceToDeliver(order.id)}
+                        disabled={order.is_advanced_to_deliver}
                         className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 border ${
-                          order.status === 'received'
-                            ? 'bg-blue-600 hover:bg-blue-700 text-white border-transparent'
+                          !order.is_advanced_to_deliver
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white border-transparent shadow-lg shadow-blue-600/20'
                             : 'bg-accent/30 text-muted-foreground border-border cursor-not-allowed'
                         }`}
                       >
                         <CheckCircle className="w-5 h-5" />
-                        {order.status === 'received' ? 'Advance to Delivered' : 'Delivered ✓'}
+                        {order.is_advanced_to_deliver ? 'Advanced to Waiter ✓' : 'Advance to Deliver'}
                       </button>
 
                       <button
                         onClick={() => setPaymentConfirmOrder(order)}
-                        disabled={order.status !== 'delivered'}
+                        disabled={!order.waiter_delivered || order.status === 'ready'}
                         className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 border ${
-                          order.status === 'delivered'
+                          order.waiter_delivered && order.status !== 'ready'
                             ? 'bg-green-600 hover:bg-green-700 text-white border-transparent shadow-lg shadow-green-600/20'
                             : 'bg-accent/30 text-muted-foreground border-border cursor-not-allowed'
                         }`}
                       >
                         <CheckCircle className="w-5 h-5" />
-                        Payment Received
+                        {order.status === 'ready' ? 'Payment Received ✓' : 'Payment Received'}
                       </button>
                     </div>
                   </div>
