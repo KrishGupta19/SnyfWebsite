@@ -9,6 +9,7 @@ import { Revenue }          from './pages/Revenue';
 import { CustomerInsights } from './pages/CustomerInsights';
 import { GrowthPlans }      from './pages/GrowthPlans';
 import { KitchenBackend }   from './pages/KitchenBackend';
+import { WaiterTab }        from './pages/WaiterTab';
 import { MenuManager }      from './pages/MenuManager';
 import { VenueInfo }        from './pages/VenueInfo';
 import { QRCodes }          from './pages/QRCodes';
@@ -28,7 +29,7 @@ export default function App() {
 }
 
 function AppContent() {
-  const { isLockedToKitchen, setShowUnlockModal, setOnUnlockSuccess } = useLock();
+  const { isLockedToKitchen, isWaiterMode, setShowUnlockModal, setOnUnlockSuccess } = useLock();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -37,8 +38,12 @@ function AppContent() {
       navigate('/kitchen', { replace: true });
       setShowUnlockModal(true);
       setOnUnlockSuccess(null);
+    } else if (isWaiterMode && location.pathname !== '/waiter') {
+      navigate('/waiter', { replace: true });
+      setShowUnlockModal(true);
+      setOnUnlockSuccess(null);
     }
-  }, [location.pathname, isLockedToKitchen, navigate, setShowUnlockModal, setOnUnlockSuccess]);
+  }, [location.pathname, isLockedToKitchen, isWaiterMode, navigate, setShowUnlockModal, setOnUnlockSuccess]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -49,6 +54,7 @@ function AppContent() {
           <Routes>
             <Route path="/"          element={<Dashboard />}        />
             <Route path="/kitchen"   element={<KitchenBackend />}   />
+            <Route path="/waiter"    element={<WaiterTab />}        />
             <Route path="/menu"      element={<MenuManager />}      />
             <Route path="/venue"     element={<VenueInfo />}        />
             <Route path="/revenue"   element={<Revenue />}          />

@@ -26,6 +26,8 @@ export interface Order {
   status:               OrderStatus;
   session_id:           string | null;
   table_verified?:      boolean;
+  is_advanced_to_deliver?: boolean;
+  waiter_delivered?:      boolean;
   created_at:           string;
   updated_at:           string;
 }

@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, TrendingUp, Users, Megaphone,
   Target, QrCode, Gift, UtensilsCrossed, Store,
-  ChevronLeft, ChevronRight, LogOut,
+  ChevronLeft, ChevronRight, LogOut, HandPlatter
 } from 'lucide-react';
 import { useState } from 'react';
 import { useVenue } from '../../context/VenueContext';
@@ -11,6 +11,7 @@ import { useLock } from '../../context/LockContext';
 const navItems = [
   { path: '/',          icon: LayoutDashboard, label: 'Overview'          },
   { path: '/kitchen',   icon: UtensilsCrossed, label: 'Kitchen Backend'   },
+  { path: '/waiter',    icon: HandPlatter,     label: 'Waiter'            },
   { path: '/menu',      icon: Store,           label: 'Menu Manager'      },
   { path: '/venue',     icon: Store,           label: 'Venue Info'        },
   { path: '/revenue',   icon: TrendingUp,      label: 'Revenue Analytics' },
@@ -24,8 +25,10 @@ const navItems = [
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { venue, logout }         = useVenue();
-  const { isLockedToKitchen, setShowUnlockModal, setOnUnlockSuccess } = useLock();
+  const { isLockedToKitchen, isWaiterMode, setShowUnlockModal, setOnUnlockSuccess } = useLock();
   const navigate = useNavigate();
+
+  if (isWaiterMode) return null;
 
   return (
     <aside className={`${collapsed ? 'w-20' : 'w-64'} h-screen bg-card border-r border-border transition-all duration-300 flex flex-col select-none`}>
