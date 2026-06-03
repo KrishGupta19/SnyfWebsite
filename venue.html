@@ -4436,8 +4436,8 @@
             syncStatus(data.status);
             renderOrderDetailsUI(data);
             syncHelpButtonState(data.special_instructions);
-            // Stop polling once fully delivered/paid
-            if (data.status === 'ready' || data.status === 'delivered') {
+            // Stop polling only when fully paid (ready = final state)
+            if (data.status === 'ready') {
               clearInterval(window._trackPollInterval);
             }
           }

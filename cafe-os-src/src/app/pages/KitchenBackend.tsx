@@ -229,38 +229,37 @@ export function KitchenBackend() {
 
   function playAlert() {
     try {
-      const ctx  = getAudioContext();
-      const now  = ctx.currentTime;
-      const duration = 2.5; // Bell sound duration of 2.5 seconds
+      const ctx = getAudioContext();
 
-      // Frequencies corresponding to standard bell overtones (harmonics + minor/major triad resonance)
-      const frequencies = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98]; // C5, E5, G5, C6, E6, G6 (rich C Major chime)
+      // Rich multi-harmonic bell ring
+      function ringBell(startTime: number) {
+        const harmonics = [
+          { freq: 880,  peakGain: 0.9,  decay: 1.4 },
+          { freq: 1320, peakGain: 0.6,  decay: 1.0 },
+          { freq: 1760, peakGain: 0.45, decay: 0.8 },
+          { freq: 2200, peakGain: 0.25, decay: 0.6 },
+        ];
+        harmonics.forEach(({ freq, peakGain, decay }) => {
+          const osc  = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, startTime);
+          gain.gain.setValueAtTime(0.001, startTime);
+          gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + decay);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(startTime);
+          osc.stop(startTime + decay);
+        });
+      }
 
-      frequencies.forEach((freq, index) => {
-        const osc  = ctx.createOscillator();
-        const gain = ctx.createGain();
+      // Play 3 rings with 0.65s gap — loud & unmissable for kitchen staff
+      const gap = 0.65;
+      ringBell(ctx.currentTime);
+      ringBell(ctx.currentTime + gap);
+      ringBell(ctx.currentTime + gap * 2);
 
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, now);
-        
-        // Add frequency detuning for a rich, warm, metallic chorus/vibrato
-        osc.detune.setValueAtTime(index * 6, now);
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-
-        // Bell envelope: instant attack (20ms) and exponential decay
-        const initialGain = index === 0 ? 0.25 : 0.15 / (index + 1);
-        gain.gain.setValueAtTime(0.001, now);
-        gain.gain.linearRampToValueAtTime(initialGain, now + 0.02);
-
-        // Higher frequencies decay faster to replicate authentic bell acoustics
-        const decayTime = duration * Math.pow(0.8, index);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + Math.max(0.6, decayTime));
-
-        osc.start(now);
-        osc.stop(now + duration);
-      });
     } catch { /* silent if audio unavailable */ }
   }
 
