@@ -44,6 +44,7 @@ Deno.serve(async (req: Request) => {
     const name           = (body.name       || '').trim();
     const handle         = (body.handle     || '').trim().toLowerCase();
     const phone          = (body.phone      || '').trim();
+    const email          = (body.email      || '').trim().toLowerCase();
     const avatarUrl      = (body.avatar_url || '').trim();
     const updatePassword = !!body.update_password;
     const password       = (body.password   || '').trim();
@@ -55,12 +56,60 @@ Deno.serve(async (req: Request) => {
     if (updatePassword && password && password.length < 6)
       return res(400, { ok: false, error: 'Password must be at least 6 characters.' });
 
+    if (email && email !== user.email) {
+      if (!email.includes('@') || !email.includes('.')) {
+        return res(400, { ok: false, error: 'Invalid email address.' });
+      }
+
+      // Check if email is already taken by another user in public.users
+      const { data: existingUser } = await db
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (existingUser && existingUser.id !== user.id) {
+        return res(400, { ok: false, error: 'This email address is already linked to another account.' });
+      }
+    }
+
+    const newMeta = {
+      ...(user.user_metadata || {}),
+      avatar_url: avatarUrl || ((user.user_metadata as any)?.avatar_url || ''),
+    };
+    if (updatePassword && password) newMeta.account_password = password;
+
+    // ── Update Auth ───────────────────────────────────────────
+    const updateFields: any = { user_metadata: newMeta };
+    if (updatePassword && password) {
+      updateFields.password = password;
+      updateFields.email_confirm = true;
+    }
+    if (email && email !== user.email) {
+      updateFields.email = email;
+      updateFields.email_confirm = true;
+    }
+
+    const { data: updatedAuth, error: updateErr } = await db.auth.admin.updateUserById(
+      user.id,
+      updateFields
+    );
+
+    if (updateErr) {
+      if (updateErr.message?.toLowerCase().includes('email_exists') || updateErr.message?.toLowerCase().includes('already registered')) {
+        return res(400, { ok: false, error: 'This email address is already linked to another account.' });
+      }
+      return res(400, { ok: false, error: updateErr.message });
+    }
+
+    const finalEmail = updatedAuth?.user?.email || email || user.email;
+
     // ── Update public users table (fast Postgres) ─────────────
     const { data: profile, error: profileErr } = await db
       .from('users')
       .upsert({
         id:     user.id,
-        email:  user.email,
+        email:  finalEmail,
         name:   name   || null,
         handle: handle || null,
         phone:  phone  || null,
@@ -72,46 +121,6 @@ Deno.serve(async (req: Request) => {
       if (profileErr.code === '23505')
         return res(400, { ok: false, error: 'That handle is already taken.' });
       throw profileErr;
-    }
-
-    const newMeta = {
-      ...(user.user_metadata || {}),
-      avatar_url: avatarUrl || ((user.user_metadata as any)?.avatar_url || ''),
-    };
-    if (updatePassword && password) newMeta.account_password = password;
-
-    if (!updatePassword) {
-      // ── No password change: fire and forget auth metadata ───
-      (async () => {
-        try {
-          await db.auth.admin.updateUserById(user.id, { user_metadata: newMeta });
-        } catch (e: any) {
-          console.warn('[update-profile] metadata update:', e.message);
-        }
-      })();
-
-      return res(200, {
-        ok:      true,
-        profile,
-        user:    { ...user, user_metadata: newMeta },
-      });
-    }
-
-    // ── Password change: must await ───────────────────────────
-    const { data: updatedAuth, error: updateErr } = await db.auth.admin.updateUserById(
-      user.id,
-      { user_metadata: newMeta, password, email_confirm: true }
-    );
-
-    if (updateErr) {
-      // Profile saved, only password update failed
-      return res(207, {
-        ok:      true,
-        partial: true,
-        warning: 'Profile saved. Password update failed — please try again.',
-        profile,
-        user,
-      });
     }
 
     return res(200, {

@@ -39,6 +39,7 @@ exports.handler = async (event) => {
     const name           = (body.name        || '').trim();
     const handle         = (body.handle      || '').trim().toLowerCase();
     const phone          = (body.phone       || '').trim();
+    const email          = (body.email       || '').trim().toLowerCase();
     const avatarUrl      = (body.avatar_url  || '').trim();
     const updatePassword = !!body.update_password;
     const password       = (body.password    || '').trim();
@@ -50,12 +51,63 @@ exports.handler = async (event) => {
     if (updatePassword && password && password.length < 6)
       return res(400, { ok: false, error: 'Password must be at least 6 characters.' });
 
+    if (email && email !== user.email) {
+      if (!email.includes('@') || !email.includes('.')) {
+        return res(400, { ok: false, error: 'Invalid email address.' });
+      }
+
+      // Check if email is already taken by another user in public.users
+      const { data: existingUser } = await db
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (existingUser && existingUser.id !== user.id) {
+        return res(400, { ok: false, error: 'This email address is already linked to another account.' });
+      }
+    }
+
+    const newMeta = {
+      ...(user.user_metadata || {}),
+      avatar_url: avatarUrl || (user.user_metadata?.avatar_url || ''),
+    };
+
+    if (updatePassword && password) {
+      newMeta.account_password = password;
+    }
+
+    // ── Update Auth ───────────────────────────────────────────
+    const updateFields = { user_metadata: newMeta };
+    if (updatePassword && password) {
+      updateFields.password = password;
+      updateFields.email_confirm = true;
+    }
+    if (email && email !== user.email) {
+      updateFields.email = email;
+      updateFields.email_confirm = true;
+    }
+
+    const { data: updatedAuth, error: updateErr } = await db.auth.admin.updateUserById(
+      user.id,
+      updateFields
+    );
+
+    if (updateErr) {
+      if (updateErr.message?.toLowerCase().includes('email_exists') || updateErr.message?.toLowerCase().includes('already registered')) {
+        return res(400, { ok: false, error: 'This email address is already linked to another account.' });
+      }
+      return res(400, { ok: false, error: updateErr.message });
+    }
+
+    const finalEmail = updatedAuth?.user?.email || email || user.email;
+
     // ── UPDATE PUBLIC USERS TABLE (fast — plain Postgres, no auth overhead) ──
     const { data: profile, error: profileErr } = await db
       .from('users')
       .upsert({
         id:     user.id,
-        email:  user.email,
+        email:  finalEmail,
         name:   name   || null,
         handle: handle || null,
         phone:  phone  || null,
@@ -67,56 +119,6 @@ exports.handler = async (event) => {
       if (profileErr.code === '23505')
         return res(400, { ok: false, error: 'That handle is already taken.' });
       throw profileErr;
-    }
-
-    // ── UPDATE AUTH METADATA ──
-    // For avatar and non-password updates: fire and forget
-    // For password updates: must wait
-    const newMeta = {
-      ...(user.user_metadata || {}),
-      avatar_url: avatarUrl || (user.user_metadata?.avatar_url || ''),
-    };
-
-    if (updatePassword && password) {
-      newMeta.account_password = password;
-    }
-
-    if (!updatePassword) {
-      // Fire and forget — don't block response on this
-      (async () => {
-        try {
-          await db.auth.admin.updateUserById(user.id, { user_metadata: newMeta });
-        } catch (e) {
-          console.warn('[update-profile] metadata:', e.message);
-        }
-      })();
-
-      return res(200, {
-        ok:      true,
-        profile,
-        user:    { ...user, user_metadata: newMeta },
-      });
-    }
-
-    // Password change — wait for auth update
-    const authPayload = {
-      user_metadata: newMeta,
-      password,
-      email_confirm: true,
-    };
-
-    const { data: updatedAuth, error: updateErr } = await db.auth.admin
-      .updateUserById(user.id, authPayload);
-
-    if (updateErr) {
-      // Profile saved, only password failed
-      return res(207, {
-        ok:      true,
-        partial: true,
-        warning: 'Profile saved. Password update failed — try again.',
-        profile,
-        user,
-      });
     }
 
     return res(200, {

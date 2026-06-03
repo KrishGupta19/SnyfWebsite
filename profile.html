@@ -550,62 +550,23 @@
       .pf-auth-card { padding: 24px 20px; }
     }
 
-    /* ── OTP input boxes ── */
-    .pf-otp-wrap {
-      display: flex;
-      gap: 6px;
-      justify-content: center;
-      margin-bottom: 20px;
+    /* ── Phone prefix input ── */
+    .pf-phone-prefix-wrap {
+      position: relative;
     }
-
-    .pf-otp-box {
-      width: 42px;
-      height: 50px;
-      text-align: center;
-      font-size: 1.4rem;
+    .pf-phone-prefix-wrap .pf-phone-cc {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-60%);
+      font-size: 14px;
+      color: var(--muted, #6E6A64);
       font-weight: 700;
+      pointer-events: none;
       font-family: var(--mono, monospace);
-      color: var(--ink, #1E1E1B);
-      background: rgba(246,245,242,0.9);
-      border: 2px solid var(--border, #D8D5CF);
-      border-radius: 10px;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
-      caret-color: transparent;
     }
-
-    .pf-otp-box:focus {
-      border-color: var(--cyan, #6FB7D6);
-      box-shadow: 0 0 0 3px rgba(111,183,214,0.15);
-      transform: translateY(-2px);
-    }
-
-    .pf-otp-box.filled {
-      border-color: var(--mint, #7BC6A4);
-      background: rgba(123,198,164,0.06);
-    }
-
-    .pf-otp-box.error {
-      border-color: var(--orange, #D97A4A);
-      animation: pf-shake 0.35s ease;
-    }
-
-    @keyframes pf-shake {
-      0%, 100% { transform: translateX(0); }
-      20%       { transform: translateX(-6px); }
-      40%       { transform: translateX(6px); }
-      60%       { transform: translateX(-4px); }
-      80%       { transform: translateX(4px); }
-    }
-
-    @media (max-width: 480px) {
-      .pf-otp-box { width: 34px; height: 42px; font-size: 1.2rem; border-radius: 8px; }
-      .pf-otp-wrap { gap: 5px; }
-    }
-
-    @media (max-width: 380px) {
-      .pf-otp-box { width: 28px; height: 36px; font-size: 1.1rem; border-radius: 6px; }
-      .pf-otp-wrap { gap: 4px; }
+    .pf-phone-prefix-wrap .pf-auth-input {
+      padding-left: 52px;
     }
 
     /* ── Inline edit inputs ── */
@@ -973,7 +934,7 @@
         margin-bottom: 24px;
         border: 1px solid var(--border, #D8D5CF);
       ">
-        <button id="pf-tab-otp" onclick="switchAuthTab('otp')" style="
+        <button id="pf-tab-email" onclick="switchAuthTab('email')" style="
           flex: 1;
           border: none;
           background: white;
@@ -986,8 +947,8 @@
           box-shadow: 0 2px 6px rgba(0,0,0,0.06);
           transition: all 0.2s ease;
           font-family: inherit;
-        ">OTP Sign In</button>
-        <button id="pf-tab-password" onclick="switchAuthTab('password')" style="
+        ">Email Sign In</button>
+        <button id="pf-tab-phone" onclick="switchAuthTab('phone')" style="
           flex: 1;
           border: none;
           background: transparent;
@@ -999,37 +960,17 @@
           color: var(--muted, #6E6A64);
           transition: all 0.2s ease;
           font-family: inherit;
-        ">Password Sign In</button>
+        ">Phone Sign In</button>
       </div>
 
-      <!-- Step 1 — Enter email -->
-      <div id="pf-step-email">
-        <label class="pf-auth-label">Your Email</label>
-        <input
-          type="email"
-          class="pf-auth-input"
-          id="pf-email-input"
-          placeholder="you@example.com"
-          autocomplete="email"
-        >
-        <div class="pf-auth-error" id="pf-email-error"></div>
-        <button class="pf-auth-btn" id="pf-send-otp-btn" onclick="sendOTP()">
-          Send OTP →
-        </button>
-        <div class="pf-guest-link">
-          Just browsing?
-          <a href="discover.html">Explore venues</a>
-        </div>
-      </div>
-
-      <!-- Password-based Login Section -->
-      <div id="pf-step-password-login" style="display:none;">
+      <!-- Email Login Section -->
+      <div id="pf-step-email-login">
         <div class="pf-modal-field" style="margin-bottom:16px; text-align: left;">
           <label class="pf-auth-label">Your Email</label>
           <input
             type="email"
             class="pf-auth-input"
-            id="pf-password-email-input"
+            id="pf-email-input"
             placeholder="you@example.com"
             autocomplete="email"
           >
@@ -1044,9 +985,9 @@
             autocomplete="current-password"
           >
         </div>
-        <div class="pf-auth-error" id="pf-password-error" style="margin-bottom: 16px;"></div>
-        <button class="pf-auth-btn" id="pf-signin-password-btn" onclick="signInWithPassword()">
-          Sign In with Password →
+        <div class="pf-auth-error" id="pf-email-error" style="margin-bottom: 16px;"></div>
+        <button class="pf-auth-btn" id="pf-signin-email-btn" onclick="signInWithEmail()">
+          Sign In with Email →
         </button>
         <div class="pf-guest-link">
           Just browsing?
@@ -1054,75 +995,43 @@
         </div>
       </div>
 
-      <!-- Step 2 — Enter OTP code -->
-      <div id="pf-step-otp" style="display:none;">
-
-        <div style="
-          font-size:13px;
-          color:var(--muted,#6E6A64);
-          margin-bottom:20px;
-          line-height:1.6;
-          padding:12px 14px;
-          background:rgba(111,183,214,0.07);
-          border:1px solid rgba(111,183,214,0.2);
-          border-radius:10px;
-        ">
-          ✓ OTP sent to <strong id="pf-email-display"></strong><br>
-          Check your inbox and enter the 4-digit code below.
+      <!-- Phone Login Section -->
+      <div id="pf-step-phone-login" style="display:none;">
+        <div class="pf-modal-field" style="margin-bottom:16px; text-align: left;">
+          <label class="pf-auth-label">Your Phone Number</label>
+          <div class="pf-phone-prefix-wrap">
+            <span class="pf-phone-cc">+91</span>
+            <input
+              type="tel"
+              class="pf-auth-input"
+              id="pf-phone-input"
+              placeholder="9876543210"
+              autocomplete="tel"
+              maxlength="10"
+            >
+          </div>
         </div>
-
-        <label class="pf-auth-label">4-Digit OTP Code</label>
-
-        <!-- OTP input boxes -->
-        <div class="pf-otp-wrap" id="pf-otp-wrap" style="max-width: 240px; margin: 0 auto 20px;">
-          <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-0" autocomplete="one-time-code">
-          <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-1" autocomplete="one-time-code">
-          <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-2" autocomplete="one-time-code">
-          <input class="pf-otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="otp-3" autocomplete="one-time-code">
+        <div class="pf-modal-field" style="margin-bottom:16px; text-align: left;">
+          <label class="pf-auth-label">Password</label>
+          <input
+            type="password"
+            class="pf-auth-input"
+            id="pf-phone-password-input"
+            placeholder="Min 6 characters"
+            autocomplete="current-password"
+          >
         </div>
-
-        <div class="pf-auth-error" id="pf-otp-error"></div>
-
-        <button class="pf-auth-btn" id="pf-verify-btn" onclick="verifyOTP()">
-          Verify & Sign In →
+        <div class="pf-auth-error" id="pf-phone-error" style="margin-bottom: 16px;"></div>
+        <button class="pf-auth-btn" id="pf-signin-phone-btn" onclick="signInWithPhone()">
+          Sign In / Create Account →
         </button>
-
-        <!-- Resend + back -->
-        <div style="display:flex;justify-content:space-between;margin-top:14px;">
-          <button
-            onclick="resendOTP()"
-            id="pf-resend-btn"
-            style="
-              background:none;border:none;cursor:pointer;
-              font-size:13px;color:var(--muted,#6E6A64);
-              text-decoration:underline;
-            "
-          >
-            Resend OTP
-          </button>
-          <button
-            onclick="backToEmail()"
-            style="
-              background:none;border:none;cursor:pointer;
-              font-size:13px;color:var(--muted,#6E6A64);
-            "
-          >
-            ← Different email
-          </button>
+        <div style="font-size:11px;color:var(--muted,#6E6A64);text-align:center;margin-top:8px;line-height:1.5;">
+          New here? Just enter your phone & a password to create an account instantly.
         </div>
-
-        <!-- Countdown for resend -->
-        <div id="pf-resend-countdown" style="
-          text-align:center;
-          font-family:monospace;
-          font-size:11px;
-          color:var(--muted,#6E6A64);
-          margin-top:8px;
-          display:none;
-        ">
-          Resend available in <span id="pf-countdown-num">30</span>s
+        <div class="pf-guest-link">
+          Just browsing?
+          <a href="discover.html">Explore venues</a>
         </div>
-
       </div>
 
     </div>
@@ -1295,6 +1204,11 @@
           <input type="text" class="pf-modal-input" id="pf-modal-phone" placeholder="9876543210" maxlength="15">
         </div>
 
+        <div class="pf-modal-field">
+          <label class="pf-modal-label">Email Address</label>
+          <input type="email" class="pf-modal-input" id="pf-modal-email" placeholder="you@example.com">
+        </div>
+
         <!-- Divider -->
         <hr style="border: none; border-top: 1px solid var(--border, #D8D5CF); margin: 24px 0 16px;">
 
@@ -1360,52 +1274,63 @@ let firstPasswordPromptShown = false;
 
 // ── PASSWORD AUTH & POPUP HELPERS ──────────────────────────────
 function switchAuthTab(tab) {
-  const tabOtp = document.getElementById('pf-tab-otp');
-  const tabPassword = document.getElementById('pf-tab-password');
-  const stepEmail = document.getElementById('pf-step-email');
-  const stepOtp = document.getElementById('pf-step-otp');
-  const stepPasswordLogin = document.getElementById('pf-step-password-login');
+  const tabEmail = document.getElementById('pf-tab-email');
+  const tabPhone = document.getElementById('pf-tab-phone');
+  const stepEmail = document.getElementById('pf-step-email-login');
+  const stepPhone = document.getElementById('pf-step-phone-login');
 
-  if (tab === 'otp') {
-    tabOtp.style.background = 'white';
-    tabOtp.style.color = 'var(--ink, #1E1E1B)';
-    tabOtp.style.fontWeight = '700';
-    tabOtp.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06)';
+  if (tab === 'email') {
+    if (tabEmail) {
+      tabEmail.style.background = 'white';
+      tabEmail.style.color = 'var(--ink, #1E1E1B)';
+      tabEmail.style.fontWeight = '700';
+      tabEmail.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06)';
+    }
+    if (tabPhone) {
+      tabPhone.style.background = 'transparent';
+      tabPhone.style.color = 'var(--muted, #6E6A64)';
+      tabPhone.style.fontWeight = '600';
+      tabPhone.style.boxShadow = 'none';
+    }
+    if (stepEmail) stepEmail.style.display = 'block';
+    if (stepPhone) stepPhone.style.display = 'none';
 
-    tabPassword.style.background = 'transparent';
-    tabPassword.style.color = 'var(--muted, #6E6A64)';
-    tabPassword.style.fontWeight = '600';
-    tabPassword.style.boxShadow = 'none';
-
-    stepEmail.style.display = 'block';
-    stepOtp.style.display = 'none';
-    stepPasswordLogin.style.display = 'none';
+    // Clear error
+    const emailErr = document.getElementById('pf-email-error');
+    if (emailErr) emailErr.classList.remove('show');
+    const emailInput = document.getElementById('pf-email-input');
+    if (emailInput) emailInput.focus();
   } else {
-    tabOtp.style.background = 'transparent';
-    tabOtp.style.color = 'var(--muted, #6E6A64)';
-    tabOtp.style.fontWeight = '600';
-    tabOtp.style.boxShadow = 'none';
+    if (tabEmail) {
+      tabEmail.style.background = 'transparent';
+      tabEmail.style.color = 'var(--muted, #6E6A64)';
+      tabEmail.style.fontWeight = '600';
+      tabEmail.style.boxShadow = 'none';
+    }
+    if (tabPhone) {
+      tabPhone.style.background = 'white';
+      tabPhone.style.color = 'var(--ink, #1E1E1B)';
+      tabPhone.style.fontWeight = '700';
+      tabPhone.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06)';
+    }
+    if (stepEmail) stepEmail.style.display = 'none';
+    if (stepPhone) stepPhone.style.display = 'block';
 
-    tabPassword.style.background = 'white';
-    tabPassword.style.color = 'var(--ink, #1E1E1B)';
-    tabPassword.style.fontWeight = '700';
-    tabPassword.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06)';
-
-    stepEmail.style.display = 'none';
-    stepOtp.style.display = 'none';
-    stepPasswordLogin.style.display = 'block';
-    
-    // Reset error container
-    document.getElementById('pf-password-error').classList.remove('show');
-    document.getElementById('pf-password-email-input').focus();
+    // Clear error
+    const phoneErr = document.getElementById('pf-phone-error');
+    if (phoneErr) phoneErr.classList.remove('show');
+    const phoneInput = document.getElementById('pf-phone-input');
+    if (phoneInput) phoneInput.focus();
   }
 }
 
-async function signInWithPassword() {
-  const emailInput = document.getElementById('pf-password-email-input');
+async function signInWithEmail() {
+  const emailInput = document.getElementById('pf-email-input');
   const passwordInput = document.getElementById('pf-password-input');
-  const errEl = document.getElementById('pf-password-error');
-  const btn = document.getElementById('pf-signin-password-btn');
+  const errEl = document.getElementById('pf-email-error');
+  const btn = document.getElementById('pf-signin-email-btn');
+
+  if (!emailInput || !passwordInput || !errEl || !btn) return;
 
   const email = emailInput.value.trim();
   const password = passwordInput.value;
@@ -1445,7 +1370,94 @@ async function signInWithPassword() {
     passwordInput.focus();
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Sign In with Password →';
+    btn.textContent = 'Sign In with Email →';
+  }
+}
+
+async function signInWithPhone() {
+  const phoneInput = document.getElementById('pf-phone-input');
+  const passwordInput = document.getElementById('pf-phone-password-input');
+  const errEl = document.getElementById('pf-phone-error');
+  const btn = document.getElementById('pf-signin-phone-btn');
+
+  if (!phoneInput || !passwordInput || !errEl || !btn) return;
+
+  let phoneVal = phoneInput.value.trim().replace(/\D/g, '');
+  const password = passwordInput.value;
+
+  errEl.classList.remove('show');
+
+  if (phoneVal.length !== 10) {
+    errEl.textContent = 'Please enter a valid 10-digit phone number';
+    errEl.classList.add('show');
+    return;
+  }
+
+  if (!password || password.length < 6) {
+    errEl.textContent = 'Password must be at least 6 characters';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Verifying...';
+
+  const normalizedPhone = `+91${phoneVal}`;
+  let emailToUse = `${normalizedPhone}@snyf-phone.com`;
+
+  try {
+    // 1. Check if user already exists with this phone in public.users table
+    const { data: userProfile, error: profileErr } = await db
+      .from('users')
+      .select('email')
+      .eq('phone', normalizedPhone)
+      .maybeSingle();
+
+    if (userProfile?.email) {
+      emailToUse = userProfile.email;
+    }
+
+    // 2. Try to Sign In
+    const { data: signInData, error: signInErr } = await db.auth.signInWithPassword({
+      email: emailToUse,
+      password: password,
+    });
+
+    if (signInErr) {
+      // 3. If invalid credentials and profile exists, it's just wrong password
+      if (userProfile?.email || signInErr.message?.toLowerCase().includes('confirm')) {
+        throw signInErr;
+      }
+      
+      // 4. Try automatic registration (Sign Up) for new users
+      btn.textContent = 'Creating account...';
+      const { data: signUpData, error: signUpErr } = await db.auth.signUp({
+        email: emailToUse,
+        password: password,
+        options: {
+          data: {
+            phone: normalizedPhone,
+            account_password: password,
+          }
+        }
+      });
+
+      if (signUpErr) throw signUpErr;
+
+      if (signUpData?.user) {
+        await loadSignedInUserProfile(signUpData.user);
+      }
+    } else if (signInData?.user) {
+      await loadSignedInUserProfile(signInData.user);
+    }
+  } catch (err) {
+    errEl.textContent = err.message || 'Failed to sign in. Please check your credentials.';
+    errEl.classList.add('show');
+    passwordInput.value = '';
+    passwordInput.focus();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sign In / Create Account →';
   }
 }
 
@@ -1457,8 +1469,7 @@ function goToSetPassword() {
   closeFirstPasswordModal();
   openProfileModal();
   setTimeout(() => {
-    document.getElementById('pf-modal-new-password')?.focus();
-    document.getElementById('pf-modal-update-new-password')?.focus();
+    document.getElementById('pf-modal-password')?.focus();
   }, 300);
 }
 
@@ -1534,250 +1545,10 @@ async function initAuth() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initAuth();
-  initOTPBoxes();
 });
 
-// ── OTP BOX KEYBOARD LOGIC ────────────────────────────────────
-function initOTPBoxes() {
-  const boxes = document.querySelectorAll('.pf-otp-box');
+// OTP functions removed
 
-  boxes.forEach((box, i) => {
-    // On input — move to next box
-    box.addEventListener('input', e => {
-      const val = e.target.value.replace(/[^0-9]/g, '');
-      e.target.value = val;
-
-      if (val) {
-        e.target.classList.add('filled');
-        e.target.classList.remove('error');
-        // Move to next
-        if (i < boxes.length - 1) {
-          boxes[i + 1].focus();
-        } else {
-          // Last box filled — auto verify
-          box.blur();
-          verifyOTP();
-        }
-      } else {
-        e.target.classList.remove('filled');
-      }
-    });
-
-    // On keydown — handle backspace
-    box.addEventListener('keydown', e => {
-      if (e.key === 'Backspace') {
-        if (!e.target.value && i > 0) {
-          boxes[i - 1].value = '';
-          boxes[i - 1].classList.remove('filled');
-          boxes[i - 1].focus();
-        }
-      }
-    });
-
-    // On paste — fill all boxes from pasted content
-    box.addEventListener('paste', e => {
-      e.preventDefault();
-      const pasted = (e.clipboardData || window.clipboardData)
-        .getData('text')
-        .replace(/[^0-9]/g, '')
-        .slice(0, 4);
-
-      pasted.split('').forEach((char, idx) => {
-        if (boxes[idx]) {
-          boxes[idx].value = char;
-          boxes[idx].classList.add('filled');
-        }
-      });
-
-      // Focus last filled box
-      const lastIdx = Math.min(pasted.length, boxes.length - 1);
-      boxes[lastIdx].focus();
-
-      // Auto verify if all 4 filled
-      if (pasted.length === 4) {
-        setTimeout(() => verifyOTP(), 200);
-      }
-    });
-
-    // Only allow numbers
-    box.addEventListener('keypress', e => {
-      if (!/[0-9]/.test(e.key)) e.preventDefault();
-    });
-  });
-}
-
-function getOTPValue() {
-  return Array.from(document.querySelectorAll('.pf-otp-box'))
-    .map(b => b.value)
-    .join('');
-}
-
-// Resend + back logic helpers
-function clearOTPBoxes() {
-  document.querySelectorAll('.pf-otp-box').forEach(b => {
-    b.value = '';
-    b.classList.remove('filled', 'error');
-  });
-}
-
-function shakeOTPBoxes() {
-  document.querySelectorAll('.pf-otp-box').forEach(b => {
-    b.classList.add('error');
-    setTimeout(() => b.classList.remove('error'), 400);
-  });
-}
-
-// ── SEND OTP ──────────────────────────────────────────────────
-async function sendOTP() {
-  const email  = document.getElementById('pf-email-input').value.trim();
-  const errEl  = document.getElementById('pf-email-error');
-  const btn    = document.getElementById('pf-send-otp-btn');
-
-  errEl.classList.remove('show');
-
-  if (!email || !email.includes('@') || !email.includes('.')) {
-    errEl.textContent = 'Please enter a valid email address';
-    errEl.classList.add('show');
-    return;
-  }
-
-  btn.disabled    = true;
-  btn.textContent = 'Sending...';
-
-  try {
-    const res = await snyfSignInOTP(email);
-
-    if (res.ok) {
-      currentEmail = email;
-      clearOTPBoxes(); // Clean slate for new OTP digits
-      document.getElementById('pf-email-display').textContent = email;
-      document.getElementById('pf-step-email').style.display  = 'none';
-      document.getElementById('pf-step-otp').style.display    = 'block';
-
-      // Focus first OTP box
-      setTimeout(() => {
-        document.getElementById('otp-0')?.focus();
-      }, 100);
-
-      // Start resend countdown
-      startResendCountdown();
-
-    } else {
-      errEl.textContent = res.error || 'Could not send OTP. Try again.';
-      errEl.classList.add('show');
-      btn.disabled    = false;
-      btn.textContent = 'Send OTP →';
-    }
-  } catch (err) {
-    console.error('sendOTP error:', err);
-    errEl.textContent = err.message || 'Could not send OTP. Try again.';
-    errEl.classList.add('show');
-    btn.disabled    = false;
-    btn.textContent = 'Send OTP →';
-  }
-}
-
-
-// ── VERIFY OTP ────────────────────────────────────────────────
-async function verifyOTP() {
-  const token  = getOTPValue();
-  const errEl  = document.getElementById('pf-otp-error');
-  const btn    = document.getElementById('pf-verify-btn');
-
-  errEl.classList.remove('show');
-
-  if (token.length !== 4) {
-    errEl.textContent = 'Enter all 4 digits';
-    errEl.classList.add('show');
-    shakeOTPBoxes();
-    return;
-  }
-
-  btn.disabled    = true;
-  btn.textContent = 'Verifying...';
-
-  try {
-    const { user, error } = await snyfVerifyOTP(currentEmail, token);
-
-    if (user) {
-      if (resendTimer) clearInterval(resendTimer);
-      await loadSignedInUserProfile(user);
-    } else {
-      errEl.textContent = error?.message || 'Invalid or expired OTP. Try again.';
-      errEl.classList.add('show');
-      shakeOTPBoxes();
-      clearOTPBoxes();
-      document.getElementById('otp-0')?.focus();
-      btn.disabled    = false;
-      btn.textContent = 'Verify & Sign In →';
-    }
-  } catch (err) {
-    console.error('verifyOTP error:', err);
-    errEl.textContent = err.message || 'Verification failed. Try again.';
-    errEl.classList.add('show');
-    shakeOTPBoxes();
-    clearOTPBoxes();
-    document.getElementById('otp-0')?.focus();
-    btn.disabled    = false;
-    btn.textContent = 'Verify & Sign In →';
-  }
-}
-
-// ── RESEND OTP ────────────────────────────────────────────────
-async function resendOTP() {
-  const btn = document.getElementById('pf-resend-btn');
-  btn.disabled    = true;
-  btn.textContent = 'Sending...';
-
-  clearOTPBoxes();
-
-  const res = await snyfSignInOTP(currentEmail);
-
-  if (res.ok) {
-    startResendCountdown();
-  } else {
-    btn.disabled    = false;
-    btn.textContent = 'Resend OTP';
-    alert(res.error || 'Failed to resend OTP. Please try again.');
-  }
-}
-
-function startResendCountdown() {
-  const btn       = document.getElementById('pf-resend-btn');
-  const countdown = document.getElementById('pf-resend-countdown');
-  const numEl     = document.getElementById('pf-countdown-num');
-
-  btn.style.display      = 'none';
-  countdown.style.display = 'block';
-
-  let secs = 30;
-  numEl.textContent = secs;
-
-  if (resendTimer) clearInterval(resendTimer);
-
-  resendTimer = setInterval(() => {
-    secs--;
-    numEl.textContent = secs;
-    if (secs <= 0) {
-      clearInterval(resendTimer);
-      countdown.style.display = 'none';
-      btn.style.display       = 'inline';
-      btn.disabled            = false;
-      btn.textContent         = 'Resend OTP';
-    }
-  }, 1000);
-}
-
-// ── BACK TO EMAIL ─────────────────────────────────────────────
-function backToEmail() {
-  if (resendTimer) clearInterval(resendTimer);
-  clearOTPBoxes();
-  document.getElementById('pf-step-otp').style.display   = 'none';
-  document.getElementById('pf-step-email').style.display = 'block';
-  document.getElementById('pf-send-otp-btn').disabled    = false;
-  document.getElementById('pf-send-otp-btn').textContent = 'Send OTP →';
-  document.getElementById('pf-email-input').focus();
-}
 
 // ── SIGN OUT ──────────────────────────────────────────────────
 async function handleSignOut() {
@@ -1817,32 +1588,24 @@ function showAuthScreen() {
   document.getElementById('pf-profile-screen').style.display = 'none';
   document.getElementById('pf-auth-screen').style.display    = 'flex';
 
-  // Clear previous OTP boxes completely
-  clearOTPBoxes();
+  // Clear inputs
+  const emailInp = document.getElementById('pf-email-input');
+  if (emailInp) emailInp.value = '';
+  const passInp = document.getElementById('pf-password-input');
+  if (passInp) passInp.value = '';
+  const phoneInp = document.getElementById('pf-phone-input');
+  if (phoneInp) phoneInp.value = '';
+  const phonePassInp = document.getElementById('pf-phone-password-input');
+  if (phonePassInp) phonePassInp.value = '';
 
-  // Reset Send OTP button to default state
-  const otpBtn = document.getElementById('pf-send-otp-btn');
-  if (otpBtn) {
-    otpBtn.disabled = false;
-    otpBtn.textContent = 'Send OTP →';
-  }
+  // Clear error labels
+  const emailErr = document.getElementById('pf-email-error');
+  if (emailErr) emailErr.classList.remove('show');
+  const phoneErr = document.getElementById('pf-phone-error');
+  if (phoneErr) phoneErr.classList.remove('show');
 
-  // Reset Verify OTP button to default state
-  const verifyBtn = document.getElementById('pf-verify-btn');
-  if (verifyBtn) {
-    verifyBtn.disabled = false;
-    verifyBtn.textContent = 'Verify & Sign In →';
-  }
-
-  // Clear email and OTP errors if any
-  const errEl = document.getElementById('pf-email-error');
-  if (errEl) errEl.classList.remove('show');
-  
-  const otpErrEl = document.getElementById('pf-otp-error');
-  if (otpErrEl) otpErrEl.classList.remove('show');
-
-  // Reset to OTP tab
-  switchAuthTab('otp');
+  // Reset tab to email
+  switchAuthTab('email');
 }
 
 function showProfileScreen() {
@@ -1859,7 +1622,8 @@ async function loadProfile(user) {
   const fallbackName = user.email?.split('@')[0] || 'Snyf User';
   const initial = fallbackName[0]?.toUpperCase() || 'S';
   renderName(fallbackName);
-  document.getElementById('pf-user-email').textContent = user.email || '—';
+  const isSystemEmail = user.email?.endsWith('@snyf-phone.com');
+  document.getElementById('pf-user-email').textContent = isSystemEmail ? '' : (user.email || '—');
   
   const avatarUrl = user.user_metadata?.avatar_url || '';
   const avatarEl  = document.getElementById('pf-avatar');
@@ -1903,6 +1667,7 @@ async function loadProfile(user) {
         const { error: upsertErr } = await db.from('users').upsert({
           id:           user.id,
           email:        user.email,
+          phone:        user.user_metadata?.phone || null,
           trust_level:  'scout',
           report_count: 0,
           verified:     false,
@@ -1954,6 +1719,9 @@ async function loadProfile(user) {
     const phoneEl = document.getElementById('pf-user-phone');
     if (profile?.phone) {
       phoneEl.textContent = profile.phone;
+      phoneEl.style.display = 'block';
+    } else if (isSystemEmail) {
+      phoneEl.textContent = user.email.split('@')[0];
       phoneEl.style.display = 'block';
     } else {
       phoneEl.style.display = 'none';
@@ -2071,33 +1839,86 @@ async function updateProfileOnServer(payload) {
   const token = session?.access_token;
   if (!token) throw new Error('No active session');
 
-  const baseUrl = SNYF_URL;
-  const res  = await fetch(`${baseUrl}/functions/v1/update-profile`, {
-    method: 'POST',
-    headers: {
-      'Content-Type':  'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
+  try {
+    const baseUrl = SNYF_URL;
+    const res  = await fetch(`${baseUrl}/functions/v1/update-profile`, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
 
-  const data = await res.json().catch(() => ({}));
+    const data = await res.json().catch(() => ({}));
 
-  // 207 = partial success (profile saved, password update had issue)
-  if (res.status === 207 && data.ok) {
-    if (data.warning) {
-      console.warn('[Profile] Partial save:', data.warning);
-      // Show non-blocking warning after modal closes
-      setTimeout(() => showToast?.(data.warning, 'warning'), 1000);
+    // 207 = partial success (profile saved, password update had issue)
+    if (res.status === 207 && data.ok) {
+      if (data.warning) {
+        console.warn('[Profile] Partial save:', data.warning);
+        // Show non-blocking warning after modal closes
+        setTimeout(() => showToast?.(data.warning, 'warning'), 1000);
+      }
+      return data;
     }
+
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || 'Could not save profile');
+    }
+
     return data;
-  }
+  } catch (edgeErr) {
+    console.warn('[Profile] Edge function failed, using client-side fallback:', edgeErr);
 
-  if (!res.ok || !data.ok) {
-    throw new Error(data.error || 'Could not save profile');
-  }
+    // ── Client-side Fallback ────────────────────────────────
+    // 1. Update Auth metadata/email/password
+    const authUpdate = {
+      data: {
+        ...(currentUser?.user_metadata || {}),
+        avatar_url: payload.avatar_url || currentUser?.user_metadata?.avatar_url || ''
+      }
+    };
+    if (payload.update_password && payload.password) {
+      authUpdate.password = payload.password;
+    }
+    if (payload.email && payload.email !== currentUser?.email) {
+      authUpdate.email = payload.email;
+    }
 
-  return data;
+    const { data: authData, error: authErr } = await db.auth.updateUser(authUpdate);
+    if (authErr) {
+      if (authErr.message?.toLowerCase().includes('email_exists') || authErr.message?.toLowerCase().includes('already registered')) {
+        throw new Error('This email address is already linked to another account.');
+      }
+      throw authErr;
+    }
+
+    // 2. Update public users table
+    const { data: profile, error: profileErr } = await db
+      .from('users')
+      .upsert({
+        id: currentUser.id,
+        email: payload.email || currentUser.email,
+        name: payload.name || null,
+        handle: payload.handle || null,
+        phone: payload.phone || null,
+      }, { onConflict: 'id' })
+      .select('*')
+      .single();
+
+    if (profileErr) {
+      if (profileErr.code === '23505') {
+        throw new Error('That handle is already taken.');
+      }
+      throw profileErr;
+    }
+
+    return {
+      ok: true,
+      profile,
+      user: authData?.user || currentUser
+    };
+  }
 }
 
 async function loadOrders(userId) {
@@ -2707,6 +2528,14 @@ function openProfileModal() {
   document.getElementById('pf-modal-handle').value = currentProfile?.handle || '';
   document.getElementById('pf-modal-phone').value  = currentProfile?.phone || '';
   
+  // Populate email (masking system phone email)
+  const emailInp = document.getElementById('pf-modal-email');
+  if (emailInp) {
+    const isSystemEmail = currentUser.email?.endsWith('@snyf-phone.com');
+    emailInp.value = isSystemEmail ? '' : (currentUser.email || '');
+    emailInp.style.borderColor = '';
+  }
+  
   // Reset border colors and errors
   document.getElementById('pf-modal-handle').style.borderColor = '';
   document.getElementById('pf-modal-phone').style.borderColor = '';
@@ -2819,6 +2648,7 @@ async function saveProfileModal() {
   const name   = document.getElementById('pf-modal-name').value.trim();
   const handle = document.getElementById('pf-modal-handle').value.trim().toLowerCase();
   const phone  = document.getElementById('pf-modal-phone').value.trim();
+  const email  = document.getElementById('pf-modal-email').value.trim().toLowerCase();
   const saveBtn = document.getElementById('pf-modal-save-btn');
   
   // Simple validation
@@ -2827,6 +2657,15 @@ async function saveProfileModal() {
     handleInp.style.borderColor = 'var(--orange,#D97A4A)';
     handleInp.focus();
     return;
+  }
+
+  if (email) {
+    if (!email.includes('@') || !email.includes('.')) {
+      const emailInp = document.getElementById('pf-modal-email');
+      emailInp.style.borderColor = 'var(--orange,#D97A4A)';
+      emailInp.focus();
+      return;
+    }
   }
   
   saveBtn.disabled = true;
@@ -2862,6 +2701,7 @@ async function saveProfileModal() {
       name,
       handle,
       phone,
+      email,
       avatar_url: tempAvatarUrl,
       update_password: shouldUpdatePassword,
       password: newPass,
@@ -2885,6 +2725,10 @@ async function saveProfileModal() {
       handleInp.style.borderColor = 'var(--orange,#D97A4A)';
       handleInp.value = '';
       handleInp.placeholder = 'Handle already taken';
+    } else if (err.message && err.message.toLowerCase().includes('email')) {
+      const emailInp = document.getElementById('pf-modal-email');
+      emailInp.style.borderColor = 'var(--orange,#D97A4A)';
+      alert(err.message);
     } else {
       alert('Error saving profile changes: ' + err.message);
     }
