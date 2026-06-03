@@ -44,16 +44,18 @@ export interface Venue {
 }
 
 export interface MenuItem {
-  id:          string;
-  venue_id:    string;
-  name:        string;
-  description: string;
-  price:       number;
-  category:    string;
-  photo_url:   string;
-  tag:         string | null;
-  available:   boolean;
-  sort_order:  number;
+  id:              string;
+  venue_id:        string;
+  name:            string;
+  description:     string;
+  price:           number;
+  category:        string;
+  photo_url:       string;
+  tag:             string | null;
+  available:       boolean;
+  sort_order:      number;
+  available_from:  string | null;  // "HH:MM" in IST, null = all day
+  available_until: string | null;  // "HH:MM" in IST, null = all day
 }
 
 export interface VenuePhoto {

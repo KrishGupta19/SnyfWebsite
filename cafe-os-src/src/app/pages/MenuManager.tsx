@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight, Clock } from 'lucide-react';
 import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
 import { MenuItem } from '../../lib/types';
@@ -15,6 +15,7 @@ export function MenuManager() {
   const [form, setForm] = useState({
     name: '', description: '', price: '',
     category: '', photo_url: '', tag: '', available: true,
+    available_from: '', available_until: '',
   });
 
   useEffect(() => {
@@ -35,20 +36,22 @@ export function MenuManager() {
 
   function openAdd() {
     setEditing(null);
-    setForm({ name:'', description:'', price:'', category:'', photo_url:'', tag:'', available:true });
+    setForm({ name:'', description:'', price:'', category:'', photo_url:'', tag:'', available:true, available_from:'', available_until:'' });
     setShowForm(true);
   }
 
   function openEdit(item: MenuItem) {
     setEditing(item);
     setForm({
-      name:        item.name,
-      description: item.description || '',
-      price:       item.price.toString(),
-      category:    item.category    || '',
-      photo_url:   item.photo_url   || '',
-      tag:         item.tag         || '',
-      available:   item.available,
+      name:            item.name,
+      description:     item.description || '',
+      price:           item.price.toString(),
+      category:        item.category    || '',
+      photo_url:       item.photo_url   || '',
+      tag:             item.tag         || '',
+      available:       item.available,
+      available_from:  item.available_from  || '',
+      available_until: item.available_until || '',
     });
     setShowForm(true);
   }
@@ -56,15 +59,25 @@ export function MenuManager() {
   async function saveItem() {
     if (!venue?.id || !form.name || !form.price) return;
 
+    // Validate time window: both must be set or both empty
+    const hasFrom  = form.available_from.trim()  !== '';
+    const hasUntil = form.available_until.trim() !== '';
+    if (hasFrom !== hasUntil) {
+      alert('Please set both "Available From" and "Available Until", or leave both empty.');
+      return;
+    }
+
     const payload = {
-      venue_id:    venue.id,
-      name:        form.name,
-      description: form.description,
-      price:       parseFloat(form.price),
-      category:    form.category,
-      photo_url:   form.photo_url,
-      tag:         form.tag || null,
-      available:   form.available,
+      venue_id:        venue.id,
+      name:            form.name,
+      description:     form.description,
+      price:           parseFloat(form.price),
+      category:        form.category,
+      photo_url:       form.photo_url,
+      tag:             form.tag || null,
+      available:       form.available,
+      available_from:  hasFrom  ? form.available_from.trim()  : null,
+      available_until: hasUntil ? form.available_until.trim() : null,
     };
 
     if (editing) {
@@ -95,6 +108,15 @@ export function MenuManager() {
     setItems(prev =>
       prev.map(i => i.id === item.id ? { ...i, available: !i.available } : i)
     );
+  }
+
+  /** Format "HH:MM" → "8:00 AM" for display */
+  function formatTime(t: string | null) {
+    if (!t) return '';
+    const [h, m] = t.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hour  = h % 12 || 12;
+    return `${hour}:${m.toString().padStart(2, '0')} ${ampm}`;
   }
 
   const categories = [...new Set(items.map(i => i.category).filter(Boolean))];
@@ -205,6 +227,52 @@ export function MenuManager() {
                 </select>
               </div>
 
+              {/* ── Time Availability ──────────────────────────── */}
+              <div className="border border-border rounded-xl p-4 space-y-3 bg-accent/20">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Time Availability</span>
+                  <span className="text-xs text-muted-foreground ml-1">(optional · IST)</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Leave blank to show all day. If set, this item will only appear on the menu during the specified hours.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5 text-muted-foreground">Available From</label>
+                    <input
+                      type="time"
+                      value={form.available_from}
+                      onChange={e => setForm({...form, available_from: e.target.value})}
+                      className="w-full px-3 py-2.5 bg-input-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5 text-muted-foreground">Available Until</label>
+                    <input
+                      type="time"
+                      value={form.available_until}
+                      onChange={e => setForm({...form, available_until: e.target.value})}
+                      className="w-full px-3 py-2.5 bg-input-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                    />
+                  </div>
+                </div>
+                {(form.available_from || form.available_until) && (
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-primary font-medium">
+                      🕐 Visible {form.available_from ? formatTime(form.available_from) : '?'} – {form.available_until ? formatTime(form.available_until) : '?'} IST
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setForm({...form, available_from: '', available_until: ''})}
+                      className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center gap-3">
                 <button type="button" onClick={() => setForm({...form, available: !form.available})}>
                   {form.available
@@ -286,6 +354,13 @@ export function MenuManager() {
                           {item.tag && (
                             <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full mt-1 inline-block">
                               {item.tag}
+                            </span>
+                          )}
+                          {/* Time availability badge in admin */}
+                          {item.available_from && item.available_until && (
+                            <span className="text-xs px-2 py-0.5 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 rounded-full mt-1 ml-1 inline-flex items-center gap-1">
+                              <Clock className="w-2.5 h-2.5" />
+                              {formatTime(item.available_from)}–{formatTime(item.available_until)}
                             </span>
                           )}
                         </div>

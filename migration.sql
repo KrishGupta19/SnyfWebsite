@@ -81,3 +81,10 @@ alter table otp_codes enable row level security;
 -- Service role only — never exposed to browser
 create policy "svc_otp_codes"
   on otp_codes for all using (true);
+
+-- ── Time-based item availability ──────────────────────────────────────────────
+-- Stored as "HH:MM" strings in IST (e.g. "08:00", "14:00").
+-- NULL means available all day (no time restriction).
+alter table menu_items
+  add column if not exists available_from text default null,
+  add column if not exists available_until text default null;

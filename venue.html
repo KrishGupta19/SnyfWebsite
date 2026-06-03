@@ -693,6 +693,23 @@
       border-color: rgba(212,168,83,0.3);
     }
 
+    .dish-time-badge {
+      display: inline-block;
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(234, 88, 12, 0.9);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 6px;
+      letter-spacing: 0.01em;
+      backdrop-filter: blur(4px);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
     /* Inline action button next to price */
     .dish-action-container {
       position: relative;
@@ -2540,7 +2557,7 @@
           .eq('venue_id', venue.id)
           .order('sort_order'),
         db.from('menu_items')
-          .select('id, name, description, price, category, photo_url, tag, available, sort_order')
+          .select('id, name, description, price, category, photo_url, tag, available, sort_order, available_from, available_until')
           .eq('venue_id', venue.id)
           .eq('available', true)
           .order('sort_order'),
@@ -2573,13 +2590,15 @@
           finalImg = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         }
         return {
-          id:       item.id,
-          name:     item.name,
-          desc:     item.description || item.desc || '',
-          price:    parseFloat(item.price),
-          category: item.category,
-          tag:      item.tag || null,
-          img:      finalImg,
+          id:              item.id,
+          name:            item.name,
+          desc:            item.description || item.desc || '',
+          price:           parseFloat(item.price),
+          category:        item.category,
+          tag:             item.tag || null,
+          img:             finalImg,
+          available_from:  item.available_from  || null,
+          available_until: item.available_until || null,
         };
       });
 
@@ -3377,6 +3396,36 @@
   // ══════════════════════════════════════════
   // RENDER — Dishes (Chunked / Lazy loaded with In-place Reconciliation)
   // ══════════════════════════════════════════
+  // -- IST time availability check -------------------------------------------
+  function isItemAvailableNow(dish) {
+    if (!dish.available_from || !dish.available_until) return true;
+    var now = new Date();
+    var istOffset = 5.5 * 60;
+    var utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+    var istDate = new Date(utcMs + istOffset * 60000);
+    var nowMins = istDate.getHours() * 60 + istDate.getMinutes();
+    var parts1 = dish.available_from.split(':');
+    var parts2 = dish.available_until.split(':');
+    var fromMins  = parseInt(parts1[0], 10) * 60 + parseInt(parts1[1], 10);
+    var untilMins = parseInt(parts2[0], 10) * 60 + parseInt(parts2[1], 10);
+    if (fromMins <= untilMins) {
+      return nowMins >= fromMins && nowMins < untilMins;
+    } else {
+      return nowMins >= fromMins || nowMins < untilMins;
+    }
+  }
+
+  // -- Format "HH:MM" => "8:00 AM" -------------------------------------------
+  function formatTimeIST(t) {
+    if (!t) return '';
+    var parts = t.split(':');
+    var h = parseInt(parts[0], 10);
+    var m = parseInt(parts[1], 10);
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    var hour = h % 12 || 12;
+    return hour + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
+  }
+
   function renderDishes() {
     const wrap = document.getElementById('menu-dishes');
 
@@ -3391,6 +3440,9 @@
     let filtered = activeCategory === 'Recommended'
       ? VENUE_DATA.menu
       : VENUE_DATA.menu.filter(d => d.category === activeCategory);
+
+    // Filter out items outside their IST time window
+    filtered = filtered.filter(function(d) { return isItemAvailableNow(d); });
 
     if (searchQuery && searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase().trim();
@@ -3542,6 +3594,7 @@
           <img class="dish-img" src="${dish.img}" alt="${dish.name}" loading="lazy" ${imgStyle}
             onerror="this.onerror=null; this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; this.style.background='var(--white)';">
           ${dish.tag ? `<span class="dish-tag ${tagClass}">${dish.tag}</span>` : ''}
+          ${(dish.available_from && dish.available_until) ? `<span class="dish-time-badge">⏰ ${formatTimeIST(dish.available_from)}–${formatTimeIST(dish.available_until)}</span>` : ''}
         </div>
       </div>
     </div>`;
