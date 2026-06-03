@@ -457,18 +457,23 @@ export function WaiterTab() {
                       const itemsToRender = (hasAddons && !showCompleteList)
                         ? order.items.filter(item => item.addon)
                         : order.items;
-                      return itemsToRender.map((item, idx) => (
-                        <div key={idx} className="flex justify-between items-center bg-accent/30 p-3 rounded-xl">
-                          <span className="font-bold flex-1">
-                            {item.name}
-                            {item.addon && (
-                              <span className="ml-2 px-2 py-0.5 bg-yellow-500 text-white text-[9px] font-black uppercase rounded tracking-wider">
-                                Add-on
+                       return itemsToRender.map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center bg-accent/30 p-3 rounded-xl text-sm">
+                          <div className="flex-1">
+                            <div className="font-bold flex items-center gap-1.5 flex-wrap">
+                              <span>{item.name}</span>
+                              <span className="text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded-full">
+                                x{item.qty}
                               </span>
-                            )}
-                          </span>
-                          <span className="bg-primary text-primary-foreground w-8 h-8 flex items-center justify-center rounded-lg font-black text-sm">
-                            {item.qty}
+                              {item.addon && (
+                                <span className="px-2 py-0.5 bg-yellow-500 text-white text-[9px] font-black uppercase rounded tracking-wider">
+                                  Add-on
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <span className="font-mono font-bold text-foreground">
+                            ₹{(item.price * item.qty).toLocaleString('en-IN')}
                           </span>
                         </div>
                       ));
@@ -484,9 +489,34 @@ export function WaiterTab() {
                 )}
 
                 {activeTab === 'payment' && (
-                  <div className="flex justify-between items-center bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/60 p-4 rounded-xl text-green-800 dark:text-green-400 font-extrabold">
-                    <span>Total Bill:</span>
-                    <span className="text-xl">₹{(order.total || 0).toLocaleString('en-IN')}</span>
+                  <div className="bg-green-50/50 dark:bg-green-950/10 border border-green-200/60 dark:border-green-900/40 p-4 rounded-xl text-foreground font-semibold space-y-2 text-sm">
+                    <div className="flex justify-between text-xs text-muted-foreground font-medium">
+                      <span>Subtotal:</span>
+                      <span>₹{(order.subtotal || (order.total - (order.gst || 0) - (order.service_charge || 0))).toLocaleString('en-IN')}</span>
+                    </div>
+                    {(order.gst || 0) > 0 && (
+                      <>
+                        <div className="flex justify-between text-xs text-muted-foreground font-medium">
+                          <span>CGST:</span>
+                          <span>₹{(order.gst / 2).toLocaleString('en-IN')}</span>
+                        </div>
+                        <div className="flex justify-between text-xs text-muted-foreground font-medium">
+                          <span>SGST:</span>
+                          <span>₹{(order.gst / 2).toLocaleString('en-IN')}</span>
+                        </div>
+                      </>
+                    )}
+                    {(order.service_charge || 0) > 0 && (
+                      <div className="flex justify-between text-xs text-muted-foreground font-medium">
+                        <span>Service Charge:</span>
+                        <span>₹{order.service_charge.toLocaleString('en-IN')}</span>
+                      </div>
+                    )}
+                    <div className="border-t border-green-200/60 dark:border-green-900/40 my-2 pt-2"></div>
+                    <div className="flex justify-between items-center text-green-800 dark:text-green-400 font-extrabold text-base">
+                      <span>Total Bill:</span>
+                      <span className="text-xl">₹{(order.total || 0).toLocaleString('en-IN')}</span>
+                    </div>
                   </div>
                 )}
               </div>
