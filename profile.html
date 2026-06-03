@@ -925,9 +925,9 @@
       <div class="pf-auth-logo">Snyf</div>
       <div class="pf-auth-sub">Sign in to your profile</div>
 
-      <!-- Tab Toggle -->
+      <!-- Tab Toggle (Hidden: Phone Sign In only) -->
       <div class="pf-auth-tabs" style="
-        display: flex;
+        display: none !important;
         background: rgba(30,30,27,0.04);
         padding: 4px;
         border-radius: 10px;
@@ -935,6 +935,19 @@
         border: 1px solid var(--border, #D8D5CF);
       ">
         <button id="pf-tab-email" onclick="switchAuthTab('email')" style="
+          flex: 1;
+          border: none;
+          background: transparent;
+          font-weight: 600;
+          font-size: 13px;
+          padding: 8px 12px;
+          border-radius: 8px;
+          cursor: pointer;
+          color: var(--muted, #6E6A64);
+          transition: all 0.2s ease;
+          font-family: inherit;
+        ">Email Sign In</button>
+        <button id="pf-tab-phone" onclick="switchAuthTab('phone')" style="
           flex: 1;
           border: none;
           background: white;
@@ -947,24 +960,11 @@
           box-shadow: 0 2px 6px rgba(0,0,0,0.06);
           transition: all 0.2s ease;
           font-family: inherit;
-        ">Email Sign In</button>
-        <button id="pf-tab-phone" onclick="switchAuthTab('phone')" style="
-          flex: 1;
-          border: none;
-          background: transparent;
-          font-weight: 600;
-          font-size: 13px;
-          padding: 8px 12px;
-          border-radius: 8px;
-          cursor: pointer;
-          color: var(--muted, #6E6A64);
-          transition: all 0.2s ease;
-          font-family: inherit;
         ">Phone Sign In</button>
       </div>
 
-      <!-- Email Login Section -->
-      <div id="pf-step-email-login">
+      <!-- Email Login Section (Hidden) -->
+      <div id="pf-step-email-login" style="display:none;">
         <div class="pf-modal-field" style="margin-bottom:16px; text-align: left;">
           <label class="pf-auth-label">Your Email</label>
           <input
@@ -995,8 +995,8 @@
         </div>
       </div>
 
-      <!-- Phone Login Section -->
-      <div id="pf-step-phone-login" style="display:none;">
+      <!-- Phone Login Section (Shown by default) -->
+      <div id="pf-step-phone-login" style="display:block;">
         <div class="pf-modal-field" style="margin-bottom:16px; text-align: left;">
           <label class="pf-auth-label">Your Phone Number</label>
           <div class="pf-phone-prefix-wrap">
@@ -1062,7 +1062,7 @@
               opacity:0.55;
             ">click to edit</div>
           </div>
-          <div class="pf-user-email" id="pf-user-email">—</div>
+          <div class="pf-user-email" id="pf-user-email" style="display:none !important;">—</div>
           <div class="pf-user-phone" id="pf-user-phone" style="display:none;font-size:11px;font-family:var(--mono,monospace);color:var(--muted,#6E6A64);margin-top:2px;">—</div>
           <div class="pf-user-since" id="pf-user-since">—</div>
           <div id="pf-handle-wrap" style="margin-top:8px;">
@@ -1204,7 +1204,7 @@
           <input type="text" class="pf-modal-input" id="pf-modal-phone" placeholder="9876543210" maxlength="15">
         </div>
 
-        <div class="pf-modal-field">
+        <div class="pf-modal-field" style="display:none !important;">
           <label class="pf-modal-label">Email Address</label>
           <input type="email" class="pf-modal-input" id="pf-modal-email" placeholder="you@example.com">
         </div>
@@ -1604,8 +1604,8 @@ function showAuthScreen() {
   const phoneErr = document.getElementById('pf-phone-error');
   if (phoneErr) phoneErr.classList.remove('show');
 
-  // Reset tab to email
-  switchAuthTab('email');
+  // Reset tab to phone
+  switchAuthTab('phone');
 }
 
 function showProfileScreen() {
