@@ -36,16 +36,18 @@ export function VenueProvider({ children }: { children: ReactNode }) {
   const slug = getSlugFromUrl();
 
   useEffect(() => {
-    const sessionKey = `snyf_admin_${slug}`;
-    const stored     = sessionStorage.getItem(sessionKey);
+    const sessionKey = `snyf_admin_session_${slug}`;
+    const stored     = localStorage.getItem(sessionKey);
     if (stored) {
-      try { setVenue(JSON.parse(stored)); } catch {}
+      try {
+        const data = JSON.parse(stored);
+        if (data && data.venue) {
+          setVenue(data.venue);
+          setUsername(data.username || '');
+          setCredentialId(data.credentialId || '');
+        }
+      } catch {}
     }
-    // Restore credential info
-    const storedUsername = sessionStorage.getItem(`snyf_admin_username_${slug}`);
-    const storedCredId   = sessionStorage.getItem(`snyf_admin_cred_id_${slug}`);
-    if (storedUsername) setUsername(storedUsername);
-    if (storedCredId)   setCredentialId(storedCredId);
     setIsLoaded(true);
   }, [slug]);
 
@@ -73,7 +75,6 @@ export function VenueProvider({ children }: { children: ReactNode }) {
       if (venueData.slug !== slug)   return false;
 
       setVenue(venueData as Venue);
-      sessionStorage.setItem(`snyf_admin_${slug}`, JSON.stringify(venueData));
       
       // Fetch and store credential info for password changes
       const { data: credData } = await db
@@ -82,12 +83,20 @@ export function VenueProvider({ children }: { children: ReactNode }) {
         .eq('venue_id', cred.venue_id)
         .single();
 
+      const credUsername = credData ? credData.username : username;
+      const credId = credData ? credData.id : '';
+
       if (credData) {
         setUsername(credData.username);
         setCredentialId(credData.id);
-        sessionStorage.setItem(`snyf_admin_username_${slug}`, credData.username);
-        sessionStorage.setItem(`snyf_admin_cred_id_${slug}`, credData.id);
       }
+
+      const sessionData = {
+        venue: venueData,
+        username: credUsername,
+        credentialId: credId
+      };
+      localStorage.setItem(`snyf_admin_session_${slug}`, JSON.stringify(sessionData));
       return true;
 
     } catch { return false; }
@@ -97,15 +106,21 @@ export function VenueProvider({ children }: { children: ReactNode }) {
     setVenue(null);
     setUsername('');
     setCredentialId('');
-    sessionStorage.removeItem(`snyf_admin_${slug}`);
-    sessionStorage.removeItem(`snyf_admin_username_${slug}`);
-    sessionStorage.removeItem(`snyf_admin_cred_id_${slug}`);
+    localStorage.removeItem(`snyf_admin_session_${slug}`);
     window.location.reload();
   };
 
   const updateUsername = (newUsername: string) => {
     setUsername(newUsername);
-    sessionStorage.setItem(`snyf_admin_username_${slug}`, newUsername);
+    const sessionKey = `snyf_admin_session_${slug}`;
+    const stored = localStorage.getItem(sessionKey);
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        data.username = newUsername;
+        localStorage.setItem(sessionKey, JSON.stringify(data));
+      } catch {}
+    }
   };
 
   return (
