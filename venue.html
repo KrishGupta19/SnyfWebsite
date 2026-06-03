@@ -4030,15 +4030,18 @@
               await db
                 .from('orders')
                 .update({
-                  items:                finalOrderItems,
-                  subtotal:             finalSubtotal,
-                  gst:                  finalGst,
-                  service_charge:       finalSc,
-                  total:                finalTotal,
-                  special_instructions: newInstructions || null,
-                  status:               'received', // notify kitchen by setting back to received
-                  table_num:            getSavedTableNumber() || null,
-                  table_verified:       isTableVerified(),
+                  items:                  finalOrderItems,
+                  subtotal:               finalSubtotal,
+                  gst:                    finalGst,
+                  service_charge:         finalSc,
+                  total:                  finalTotal,
+                  special_instructions:   newInstructions || null,
+                  status:                 'received', // notify kitchen by setting back to received
+                  table_num:              getSavedTableNumber() || null,
+                  table_verified:         isTableVerified(),
+                  // Reset waiter flags so kitchen can re-advance the order to waiter for new ADD-ON items
+                  is_advanced_to_deliver: false,
+                  waiter_delivered:       false,
                 })
                 .eq('id', existingActiveOrder.id);
 
