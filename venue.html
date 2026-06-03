@@ -2380,8 +2380,8 @@
               </div>
             </div>
           </div>
-          <div class="track-heading">Order is on its way</div>
-          <div class="track-subhead">Sit back and relax</div>
+          <div class="track-heading" id="track-heading">Order is on its way</div>
+          <div class="track-subhead" id="track-subhead">Sit back and relax</div>
         </div>
 
         <!-- Progress -->
@@ -3150,6 +3150,7 @@
   const ORDER_STATES = [
     { label: 'Order Received',   icon: '✓' },
     { label: 'Preparing',        icon: '🍳' },
+    { label: 'Order Picked',     icon: '🚶' },
     { label: 'Delivered',        icon: '🍽' },
     { label: 'Payment Received', icon: '💳' },
   ];
@@ -4333,7 +4334,7 @@
       for (let i = 0; i < ORDER_STATES.length; i++) {
         const el = document.getElementById(`track-state-${i}`);
         if (!el) continue;
-        if (i < targetState || (targetState === 3 && i === 3)) {
+        if (i < targetState || (targetState === 4 && i === 4)) {
           el.className = 'track-state state-done';
         } else if (i === targetState) {
           el.className = 'track-state state-active';
@@ -4344,7 +4345,29 @@
       const pct = (targetState / (ORDER_STATES.length - 1)) * 100;
       progressEl.style.width = pct + '%';
 
-      if (targetState >= 1) {
+      // Update heading and subhead text dynamically
+      const headingEl = document.getElementById('track-heading');
+      const subheadEl = document.getElementById('track-subhead');
+      if (headingEl && subheadEl) {
+        if (targetState === 0) {
+          headingEl.textContent = "Order Received";
+          subheadEl.textContent = "We are processing your order";
+        } else if (targetState === 1) {
+          headingEl.textContent = "Preparing your order";
+          subheadEl.textContent = "Our chefs are cooking delicious food";
+        } else if (targetState === 2) {
+          headingEl.textContent = "Order Picked";
+          subheadEl.textContent = "Waiter is bringing it to your table";
+        } else if (targetState === 3) {
+          headingEl.textContent = "Delivered!";
+          subheadEl.textContent = "Enjoy your food!";
+        } else if (targetState === 4) {
+          headingEl.textContent = "Thank you!";
+          subheadEl.textContent = "Visit us again soon";
+        }
+      }
+
+      if (targetState >= 3) {
         setTimeout(() => {
           const sliders = reviewEl.querySelectorAll('.track-slider-row');
           const title = reviewEl.querySelector('.track-review-title');
@@ -4374,13 +4397,13 @@
     
     if (window._lastOrderId) {
       db.from('orders')
-        .select('created_at, status, items, subtotal, gst, service_charge, total, table_num, special_instructions')
+        .select('created_at, status, items, subtotal, gst, service_charge, total, table_num, special_instructions, is_advanced_to_deliver, waiter_delivered')
         .eq('id', window._lastOrderId)
         .single()
         .then(({ data }) => {
           if (data) {
             orderCreatedAt = new Date(data.created_at);
-            syncStatus(data.status);
+            syncStatus(data.status, data.is_advanced_to_deliver, data.waiter_delivered);
             originalOrderItems = data.items;
             originalTotal = data.total;
             renderOrderDetailsUI(data);
@@ -4416,7 +4439,7 @@
           },
           (payload) => {
             const updated = payload.new;
-            syncStatus(updated.status);
+            syncStatus(updated.status, updated.is_advanced_to_deliver, updated.waiter_delivered);
             renderOrderDetailsUI(updated);
             syncHelpButtonState(updated.special_instructions);
           }
@@ -4432,11 +4455,11 @@
         try {
           const { data } = await db
             .from('orders')
-            .select('status, items, subtotal, gst, service_charge, total, table_num, special_instructions')
+            .select('status, items, subtotal, gst, service_charge, total, table_num, special_instructions, is_advanced_to_deliver, waiter_delivered')
             .eq('id', window._lastOrderId)
             .single();
           if (data) {
-            syncStatus(data.status);
+            syncStatus(data.status, data.is_advanced_to_deliver, data.waiter_delivered);
             renderOrderDetailsUI(data);
             syncHelpButtonState(data.special_instructions);
             // Stop polling only when fully paid (ready = final state)
@@ -4448,17 +4471,17 @@
       }, 6000);
     }
 
-    function syncStatus(dbStatus) {
+    function syncStatus(dbStatus, isAdvanced, isDelivered) {
       let targetState = 0;
       
       if (dbStatus === 'ready') {
         // Payment received — final state
+        targetState = 4;
+      } else if (isDelivered) {
+        // Waiter has marked it as delivered
         targetState = 3;
-      } else if (dbStatus === 'delivered') {
-        // Delivered to table
-        targetState = 2;
-      } else if (dbStatus === 'serving' || dbStatus === 'gathering') {
-        // On the way / gathering cutlery — show as "Delivered" stage
+      } else if (isAdvanced) {
+        // Advanced to waiter / order picked
         targetState = 2;
       } else if (dbStatus === 'preparing') {
         targetState = 1;
