@@ -6,7 +6,15 @@
       "mcp__playwright__browser_click",
       "mcp__claude_ai_Netlify__netlify-project-services-reader",
       "mcp__playwright__browser_navigate",
-      "WebFetch(domain:claude.ai)"
+      "WebFetch(domain:claude.ai)",
+      "Bash(grep -o \".\\\\{0,100\\\\}GST.\\\\{0,100\\\\}\" \"E:/Snyf/cafe-os/assets/index-dZ2KVokB.js\")",
+      "Bash(grep -o \".\\\\{0,100\\\\}GST.\\\\{0,100\\\\}\" \"E:/Snyf/cafe-os/assets/index-BSrLLN0g.js\")",
+      "Bash(grep -o \".\\\\{0,100\\\\}Service Charge.\\\\{0,100\\\\}\" \"E:/Snyf/cafe-os/assets/index-BSrLLN0g.js\")",
+      "Bash(grep -o \".\\\\{0,150\\\\}GST.\\\\{0,150\\\\}\" \"E:/Snyf/cafe-os/assets/index-BlBKc6h7.js\")",
+      "Bash(grep -o \".\\\\{0,100\\\\}gst\\\\|GST\\\\|service_charge\\\\|Service Charge.\\\\{0,100\\\\}\" \"E:/Snyf/cafe-os/assets/index-BlBKc6h7.js\")",
+      "Bash(grep -o \".\\\\{0,200\\\\}5%.\\\\{0,200\\\\}\" \"E:/Snyf/cafe-os/assets/index-BlBKc6h7.js\")",
+      "Bash(grep -o \".\\\\{0,200\\\\}5%.\\\\{0,200\\\\}\" \"E:/Snyf/cafe-os/assets/index-BSrLLN0g.js\")",
+      "Bash(grep -o \".\\\\{0,200\\\\}5%.\\\\{0,200\\\\}\" \"E:/Snyf/cafe-os/assets/index-dZ2KVokB.js\")"
     ]
   }
 }

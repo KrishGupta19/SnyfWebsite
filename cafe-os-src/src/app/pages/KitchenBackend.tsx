@@ -507,9 +507,9 @@ export function KitchenBackend() {
 
   function recalculateOrderTotals(items: any[]) {
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
-    const gst = Math.round(subtotal * 0.18); // 18% GST
+    const gst = 0;
     const service_charge = 0;
-    const total = subtotal + gst;
+    const total = subtotal;
     return { subtotal, gst, service_charge, total };
   }
 
@@ -1118,15 +1118,7 @@ export function KitchenBackend() {
 
               {/* Recalculated Cost Summary */}
               <div className="border-t border-border pt-4 space-y-2 text-sm bg-accent/10 -mx-6 px-6 py-4">
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Subtotal:</span>
-                  <span>₹{recalculateOrderTotals(editingOrder.items).subtotal.toLocaleString('en-IN')}</span>
-                </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>GST (18%):</span>
-                  <span>₹{recalculateOrderTotals(editingOrder.items).gst.toLocaleString('en-IN')}</span>
-                </div>
-                <div className="flex justify-between font-bold text-base border-t border-border/50 pt-2 text-foreground">
+                <div className="flex justify-between font-bold text-base text-foreground">
                   <span>New Total:</span>
                   <span>₹{recalculateOrderTotals(editingOrder.items).total.toLocaleString('en-IN')}</span>
                 </div>
