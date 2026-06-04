@@ -3,7 +3,7 @@ import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
 import { useLock } from '../../context/LockContext';
 import { Order } from '../../lib/types';
-import { CheckCircle, Clock, Utensils, HandPlatter, Wifi, WifiOff, Lock, ShieldAlert, X, Bell, RefreshCw } from 'lucide-react';
+import { CheckCircle, Clock, Utensils, HandPlatter, Wifi, WifiOff, Lock, ShieldAlert, X, Bell, RefreshCw, Edit, Minus, Plus, Trash2, Search, ChefHat } from 'lucide-react';
 import { getVolume } from '../../lib/audioVolume';
 
 export function WaiterTab() {
@@ -19,6 +19,8 @@ export function WaiterTab() {
   const [replacingOrder, setReplacingOrder] = useState<Order | null>(null);
   const [replacingItemIndex, setReplacingItemIndex] = useState<number | null>(null);
   const [searchItemQuery, setSearchItemQuery] = useState('');
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [searchFocused, setSearchFocused] = useState(false);
 
   const channelRef = useRef<ReturnType<typeof db.channel> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -166,7 +168,12 @@ export function WaiterTab() {
       window.removeEventListener('keydown', handleUserGesture);
     };
   }, []);
-
+  useEffect(() => {
+    if (!editingOrder) {
+      setSearchItemQuery('');
+      setSearchFocused(false);
+    }
+  }, [editingOrder]);
   useEffect(() => {
     if (!venue?.id) return;
     fetchOrders();
@@ -257,6 +264,102 @@ export function WaiterTab() {
     } catch (err) {
       console.error('[Waiter] replaceOrderItem error:', err);
       fetchOrders(); // Revert
+    }
+  }
+
+  // ── Edit Modal Actions ─────────────────────────────────────────
+  function openEditModal(order: Order) {
+    setEditingOrder(JSON.parse(JSON.stringify(order)));
+  }
+
+  function updateItemQty(itemId: string, delta: number) {
+    if (!editingOrder) return;
+    const updatedItems = editingOrder.items.map(item => {
+      if (item.id === itemId) {
+        const newQty = Math.max(1, item.qty + delta);
+        return { ...item, qty: newQty };
+      }
+      return item;
+    });
+    setEditingOrder({ ...editingOrder, items: updatedItems });
+  }
+
+  function removeItemFromOrder(itemId: string) {
+    if (!editingOrder) return;
+    const updatedItems = editingOrder.items.filter(item => item.id !== itemId);
+    setEditingOrder({ ...editingOrder, items: updatedItems });
+  }
+
+  function addItemToOrder(menuItem: any) {
+    if (!editingOrder) return;
+    const exists = editingOrder.items.some(item => item.id === menuItem.id);
+    if (exists) {
+      updateItemQty(menuItem.id, 1);
+      return;
+    }
+    const newItem = {
+      id: menuItem.id,
+      name: menuItem.name,
+      price: Number(menuItem.price),
+      qty: 1,
+      ready: false
+    };
+    setEditingOrder({
+      ...editingOrder,
+      items: [...editingOrder.items, newItem]
+    });
+  }
+
+  function recalculateOrderTotals(items: any[]) {
+    const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const cgstPct = venue?.cgst_pct || 0;
+    const sgstPct = venue?.sgst_pct || 0;
+    const serviceTaxPct = venue?.service_tax_pct || 0;
+
+    const cgst = (subtotal * cgstPct) / 100;
+    const sgst = (subtotal * sgstPct) / 100;
+    const gst = cgst + sgst;
+    const service_charge = (subtotal * serviceTaxPct) / 100;
+    const total = subtotal + gst + service_charge;
+    
+    return { subtotal, gst, service_charge, total };
+  }
+
+  async function saveEditedOrder() {
+    if (!editingOrder) return;
+    const { subtotal, gst, service_charge, total } = recalculateOrderTotals(editingOrder.items);
+    
+    // Optimistic update
+    setOrders(prev => prev.map(o => o.id === editingOrder.id ? {
+      ...o,
+      items: editingOrder.items,
+      special_instructions: editingOrder.special_instructions,
+      subtotal,
+      gst,
+      service_charge,
+      total,
+      updated_at: new Date().toISOString()
+    } : o));
+
+    const orderToSave = editingOrder;
+    setEditingOrder(null);
+
+    try {
+      const { error } = await db
+        .from('orders')
+        .update({
+          items: orderToSave.items,
+          special_instructions: orderToSave.special_instructions,
+          subtotal,
+          gst,
+          service_charge,
+          total,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderToSave.id);
+      if (error) throw error;
+    } catch (err) {
+      console.error('[Waiter] saveEditedOrder:', err);
     }
   }
 
@@ -730,7 +833,16 @@ export function WaiterTab() {
                 )}
               </div>
 
-              <div className="p-6 bg-accent/10 border-t border-border">
+              <div className="p-6 bg-accent/10 border-t border-border flex flex-col gap-3">
+                {activeTab === 'deliver' && (
+                  <button
+                    onClick={() => openEditModal(order)}
+                    className="w-full py-2.5 bg-accent hover:bg-accent/70 text-accent-foreground rounded-xl font-bold flex items-center justify-center gap-2 transition-all border border-border shadow-sm active:scale-95 cursor-pointer"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Edit Order
+                  </button>
+                )}
                 {activeTab === 'deliver' ? (
                   <button
                     onClick={() => markAsDelivered(order.id)}
@@ -986,6 +1098,184 @@ export function WaiterTab() {
                   })()}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Edit Order Modal */}
+      {editingOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-background border border-border rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-border flex items-center justify-between bg-accent/20">
+              <div>
+                <h3 className="font-bold text-lg">Edit Order #{editingOrder.id.slice(-6).toUpperCase()}</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Modify items, quantities, and instructions</p>
+              </div>
+              <button
+                onClick={() => setEditingOrder(null)}
+                className="p-1 rounded-lg hover:bg-accent transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              {/* Order Items */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm flex items-center gap-2">
+                  <ChefHat className="w-4 h-4 text-primary" />
+                  Order Items
+                </h4>
+                <div className="space-y-2">
+                  {editingOrder.items.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic py-2">No items in this order.</p>
+                  ) : (
+                    editingOrder.items.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-accent/30 rounded-xl border border-border/50">
+                        <div className="min-w-0 flex-1 pr-2">
+                          <p className="font-medium text-sm truncate">{item.name}</p>
+                          <p className="text-xs text-muted-foreground">₹{item.price} each</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {/* Qty controls */}
+                          <div className="flex items-center border border-border rounded-lg overflow-hidden bg-background">
+                            <button
+                              type="button"
+                              onClick={() => updateItemQty(item.id, -1)}
+                              className="p-1.5 hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="w-8 text-center text-sm font-semibold">{item.qty}</span>
+                            <button
+                              type="button"
+                              onClick={() => updateItemQty(item.id, 1)}
+                              className="p-1.5 hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          
+                          {/* Remove */}
+                          <button
+                            type="button"
+                            onClick={() => removeItemFromOrder(item.id)}
+                            className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Add New Item */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm">Add Item to Order</h4>
+                <div className="relative">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search and select menu items..."
+                      value={searchItemQuery}
+                      onChange={(e) => setSearchItemQuery(e.target.value)}
+                      onFocus={() => setSearchFocused(true)}
+                      onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+                      className="w-full bg-background border border-border rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    {searchItemQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchItemQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Suggestions list */}
+                  {(searchFocused || searchItemQuery.trim() !== '') && (
+                    <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-xl shadow-lg max-h-60 overflow-y-auto py-1">
+                      {menuItems
+                        .filter(mi => !editingOrder.items.some(oi => oi.id === mi.id))
+                        .filter(mi => mi.name.toLowerCase().includes(searchItemQuery.toLowerCase()))
+                        .length === 0 ? (
+                        <p className="text-xs text-muted-foreground italic px-4 py-3 text-center">
+                          {menuItems.filter(mi => !editingOrder.items.some(oi => oi.id === mi.id)).length === 0 
+                            ? 'All menu items already added' 
+                            : 'No matching items found'}
+                        </p>
+                      ) : (
+                        menuItems
+                          .filter(mi => !editingOrder.items.some(oi => oi.id === mi.id))
+                          .filter(mi => mi.name.toLowerCase().includes(searchItemQuery.toLowerCase()))
+                          .map(mi => (
+                            <button
+                              key={mi.id}
+                              type="button"
+                              onClick={() => {
+                                addItemToOrder(mi);
+                                setSearchItemQuery('');
+                              }}
+                              className="w-full text-left px-4 py-2 flex justify-between items-center hover:bg-accent transition-colors border-b border-border/30 last:border-b-0"
+                            >
+                              <div className="min-w-0 pr-2">
+                                <p className="font-medium text-foreground text-sm truncate">{mi.name}</p>
+                                {mi.category && (
+                                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{mi.category}</p>
+                                )}
+                              </div>
+                              <div className="text-primary font-semibold text-xs shrink-0">₹{mi.price}</div>
+                            </button>
+                          ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Special Instructions */}
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">Special Instructions</h4>
+                <textarea
+                  className="w-full bg-background border border-border rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary min-h-[80px]"
+                  placeholder="No onion, extra spicy, etc..."
+                  value={editingOrder.special_instructions || ''}
+                  onChange={(e) => setEditingOrder({ ...editingOrder, special_instructions: e.target.value || null })}
+                />
+              </div>
+
+              {/* Recalculated Cost Summary */}
+              <div className="border-t border-border pt-4 space-y-2 text-sm bg-accent/10 -mx-6 px-6 py-4">
+                <div className="flex justify-between font-bold text-base text-foreground">
+                  <span>New Total:</span>
+                  <span>₹{recalculateOrderTotals(editingOrder.items).total.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-border flex gap-3 bg-accent/10">
+              <button
+                type="button"
+                onClick={() => setEditingOrder(null)}
+                className="flex-1 py-2.5 border border-border hover:bg-accent text-accent-foreground font-semibold rounded-xl text-sm transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveEditedOrder}
+                className="flex-1 py-2.5 bg-primary hover:bg-primary/95 text-primary-foreground font-semibold rounded-xl text-sm transition-colors"
+              >
+                Save Changes
+              </button>
             </div>
           </div>
         </div>
