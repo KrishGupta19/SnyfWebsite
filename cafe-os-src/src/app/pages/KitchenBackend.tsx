@@ -356,18 +356,19 @@ export function KitchenBackend() {
     }
   }
 
-  async function toggleItemReady(orderId: string, itemId: string) {
+  async function toggleItemReady(orderId: string, itemIndex: number) {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
-    const updatedItems = (order.items || []).map(item => {
-      if (item.id === itemId) {
+    const updatedItems = (order.items || []).map((item, idx) => {
+      if (idx === itemIndex) {
         return { ...item, ready: !item.ready };
       }
       return item;
     });
 
-    const isToggledOn = updatedItems.find(item => item.id === itemId)?.ready;
+    const isToggledOn = updatedItems[itemIndex]?.ready;
+    const itemId = updatedItems[itemIndex]?.id;
 
     // Optimistic update
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, items: updatedItems } : o));
@@ -393,8 +394,9 @@ export function KitchenBackend() {
                 type:    'broadcast',
                 event:   'item_ready',
                 payload: {
-                  order_id: orderId,
-                  item_id:  itemId
+                  order_id:   orderId,
+                  item_id:    itemId,
+                  item_index: itemIndex
                 }
               });
               setTimeout(() => db.removeChannel(waiterBroadcastChan), 3000);
@@ -926,7 +928,7 @@ export function KitchenBackend() {
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <button
-                                onClick={() => toggleItemReady(order.id, item.id)}
+                                onClick={() => toggleItemReady(order.id, idx)}
                                 className={`w-6 h-6 rounded-lg border flex items-center justify-center transition-all shrink-0 cursor-pointer ${
                                   item.ready
                                     ? 'bg-green-500 border-green-500 text-white'

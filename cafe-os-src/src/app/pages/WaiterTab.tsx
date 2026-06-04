@@ -3,7 +3,7 @@ import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
 import { useLock } from '../../context/LockContext';
 import { Order } from '../../lib/types';
-import { CheckCircle, Clock, Utensils, HandPlatter, Wifi, WifiOff, Lock, ShieldAlert, X, Bell } from 'lucide-react';
+import { CheckCircle, Clock, Utensils, HandPlatter, Wifi, WifiOff, Lock, ShieldAlert, X, Bell, RefreshCw } from 'lucide-react';
 import { getVolume } from '../../lib/audioVolume';
 
 export function WaiterTab() {
@@ -14,6 +14,11 @@ export function WaiterTab() {
   const [connected, setConnected] = useState(false);
   const [activeTab, setActiveTab] = useState<'deliver' | 'payment'>('deliver');
   const [paymentConfirmOrder, setPaymentConfirmOrder] = useState<Order | null>(null);
+
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [replacingOrder, setReplacingOrder] = useState<Order | null>(null);
+  const [replacingItemIndex, setReplacingItemIndex] = useState<number | null>(null);
+  const [searchItemQuery, setSearchItemQuery] = useState('');
 
   const channelRef = useRef<ReturnType<typeof db.channel> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -165,11 +170,95 @@ export function WaiterTab() {
   useEffect(() => {
     if (!venue?.id) return;
     fetchOrders();
+    fetchMenuItems();
     subscribeToOrders();
     return () => {
       if (channelRef.current) db.removeChannel(channelRef.current);
     };
   }, [venue?.id]);
+
+  async function fetchMenuItems() {
+    if (!venue?.id) return;
+    try {
+      const { data, error } = await db
+        .from('menu_items')
+        .select('*')
+        .eq('venue_id', venue.id)
+        .eq('available', true)
+        .order('name');
+      if (error) throw error;
+      setMenuItems(data || []);
+    } catch (err) {
+      console.error('[Waiter] fetchMenuItems:', err);
+    }
+  }
+
+  async function replaceOrderItem(orderId: string, itemIndex: number, newMenuItem: any) {
+    if (!venue) return;
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+
+    const oldItem = order.items?.[itemIndex];
+    if (!oldItem) return;
+
+    // Create the replaced item object
+    const replacedItem = {
+      id:    newMenuItem.id,
+      name:  `${newMenuItem.name} (Replaced)`,
+      price: Number(newMenuItem.price),
+      qty:   Number(oldItem.qty),
+      ready: false
+    };
+
+    const updatedItems = (order.items || []).map((item, idx) => {
+      if (idx === itemIndex) {
+        return replacedItem;
+      }
+      return item;
+    });
+
+    // Recalculate totals
+    const subtotal = updatedItems.reduce((sum, item) => sum + (Number(item.price) * Number(item.qty)), 0);
+    const cgstPct = venue.cgst_pct || 0;
+    const sgstPct = venue.sgst_pct || 0;
+    const serviceTaxPct = venue.service_tax_pct || 0;
+
+    const cgst = (subtotal * cgstPct) / 100;
+    const sgst = (subtotal * sgstPct) / 100;
+    const gst = cgst + sgst;
+    const sc = (subtotal * serviceTaxPct) / 100;
+    const total = subtotal + gst + sc;
+
+    // Optimistically update local state
+    setOrders(prev => prev.map(o => o.id === orderId ? {
+      ...o,
+      items: updatedItems,
+      subtotal,
+      gst,
+      service_charge: sc,
+      total,
+      updated_at: new Date().toISOString()
+    } : o));
+
+    try {
+      const { error } = await db
+        .from('orders')
+        .update({
+          items:          updatedItems,
+          subtotal,
+          gst,
+          service_charge: sc,
+          total,
+          updated_at:     new Date().toISOString()
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+    } catch (err) {
+      console.error('[Waiter] replaceOrderItem error:', err);
+      fetchOrders(); // Revert
+    }
+  }
 
   async function fetchOrders() {
     if (!venue?.id) return;
@@ -229,11 +318,13 @@ export function WaiterTab() {
                 }
               }
 
-              // Ring bell if any item was marked ready
+              // Ring bell if any item was marked ready (compared by index to handle duplicate items/addons)
               const becameReady = (prevItems: any[] | undefined, nextItems: any[] | undefined) => {
                 if (!nextItems) return false;
-                const prevReadyMap = new Map((prevItems || []).map(item => [item.id, !!item.ready]));
-                return nextItems.some(item => item.ready && !prevReadyMap.get(item.id));
+                return nextItems.some((item, idx) => {
+                  const prevItem = prevItems?.[idx];
+                  return item.ready && (!prevItem || !prevItem.ready);
+                });
               };
 
               if (becameReady(existing?.items, updated.items)) {
@@ -307,8 +398,9 @@ export function WaiterTab() {
           const data = payload.payload || {};
           const orderId = data.order_id;
           const itemId = data.item_id;
+          const itemIndex = data.item_index;
           if (orderId && itemId) {
-            const fingerprint = `item-ready-${orderId}-${itemId}`;
+            const fingerprint = `item-ready-${orderId}-${itemId}-${itemIndex !== undefined ? itemIndex : ''}`;
             if (!recentAlerts.current.has(fingerprint)) {
               recentAlerts.current.add(fingerprint);
               setTimeout(() => {
@@ -572,6 +664,21 @@ export function WaiterTab() {
                                   Add-on
                                 </span>
                               )}
+                              {activeTab === 'deliver' && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setReplacingOrder(order);
+                                    setReplacingItemIndex(idx);
+                                    setSearchItemQuery('');
+                                  }}
+                                  title="Replace Item"
+                                  className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-lg text-muted-foreground hover:text-primary transition-all shrink-0 cursor-pointer flex items-center justify-center border border-border/30 bg-background/50 hover:scale-[1.05]"
+                                >
+                                  <RefreshCw className="w-3 h-3" />
+                                </button>
+                              )}
                             </div>
                           </div>
                           <span className="font-mono font-bold text-foreground shrink-0">
@@ -748,6 +855,137 @@ export function WaiterTab() {
               >
                 Yes, Received
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Item Replacement Modal */}
+      {replacingOrder && replacingItemIndex !== null && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-background border border-border w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-[scaleUp_0.2s_ease-out] flex flex-col">
+            {/* Header */}
+            <div className="p-6 border-b border-border flex justify-between items-center bg-accent/20">
+              <div>
+                <h3 className="font-bold text-lg flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-primary" />
+                  Replace Ordered Item
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Order #{replacingOrder.id.slice(-6).toUpperCase()} at Table {replacingOrder.table_num || '??'}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setReplacingOrder(null);
+                  setReplacingItemIndex(null);
+                  setSearchItemQuery('');
+                }}
+                className="p-1.5 rounded-lg hover:bg-accent transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-5">
+              {/* Target item selection */}
+              <div>
+                <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest block mb-2">
+                  1. SELECT ITEM TO REPLACE
+                </span>
+                <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto">
+                  {(replacingOrder.items || []).map((item: any, idx: number) => (
+                    <button
+                      key={idx}
+                      onClick={() => setReplacingItemIndex(idx)}
+                      className={`flex justify-between items-center p-3 rounded-xl border text-sm transition-all cursor-pointer text-left ${
+                        idx === replacingItemIndex
+                          ? 'border-primary bg-primary/5 font-bold shadow-sm ring-1 ring-primary'
+                          : 'border-border/50 bg-accent/15 hover:bg-accent/30 text-muted-foreground'
+                      }`}
+                    >
+                      <span>
+                        {item.name} <span className="text-xs opacity-75">(Qty: {item.qty})</span>
+                      </span>
+                      <span className="font-mono font-bold">
+                        ₹{(item.price * item.qty).toLocaleString('en-IN')}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Menu items search & selector */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest block">
+                    2. SEARCH & SELECT REPLACEMENT DISH
+                  </span>
+                  <span className="text-xs font-bold text-primary">
+                    {menuItems.length} Available Dishes
+                  </span>
+                </div>
+
+                {/* Search input */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchItemQuery}
+                    onChange={(e) => setSearchItemQuery(e.target.value)}
+                    placeholder="Search menu (e.g. Pizza, Brownie)..."
+                    className="w-full pl-4 pr-10 py-3 bg-accent/20 border border-border rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-muted-foreground/50 font-medium"
+                  />
+                  {searchItemQuery && (
+                    <button
+                      onClick={() => setSearchItemQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs font-bold"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* List of items */}
+                <div className="border border-border/40 rounded-2xl bg-accent/5 p-2 space-y-1.5 max-h-[30vh] overflow-y-auto">
+                  {(() => {
+                    const filtered = menuItems.filter(item =>
+                      item.name.toLowerCase().includes(searchItemQuery.toLowerCase())
+                    );
+                    if (filtered.length === 0) {
+                      return (
+                        <div className="py-8 text-center text-xs text-muted-foreground font-medium">
+                          No menu items match your search.
+                        </div>
+                      );
+                    }
+                    return filtered.map((menuItem) => (
+                      <button
+                        key={menuItem.id}
+                        onClick={async () => {
+                          await replaceOrderItem(replacingOrder.id, replacingItemIndex, menuItem);
+                          setReplacingOrder(null);
+                          setReplacingItemIndex(null);
+                          setSearchItemQuery('');
+                        }}
+                        className="w-full flex justify-between items-center p-3 rounded-xl hover:bg-primary/5 hover:border-primary/30 border border-transparent text-sm transition-all cursor-pointer text-left group"
+                      >
+                        <div className="min-w-0 pr-2">
+                          <span className="font-semibold block group-hover:text-primary transition-colors truncate">
+                            {menuItem.name}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground capitalize font-bold">
+                            {menuItem.category || 'dish'}
+                          </span>
+                        </div>
+                        <span className="font-mono font-bold text-foreground shrink-0">
+                          ₹{Number(menuItem.price).toLocaleString('en-IN')}
+                        </span>
+                      </button>
+                    ));
+                  })()}
+                </div>
+              </div>
             </div>
           </div>
         </div>
