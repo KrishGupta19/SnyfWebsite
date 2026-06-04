@@ -58,14 +58,6 @@ exports.handler = async (event) => {
 
       if (!createErr && newUser?.user) {
         userId = newUser.user.id;
-      } else {
-        // User might exist in auth but not in users table yet
-        const { data: list } = await db.auth.admin.listUsers({ perPage: 1000 });
-        const found = list?.users?.find(u => u.email?.toLowerCase() === emailToUse);
-        if (!found) {
-          return cors(400, { ok: false, error: createErr?.message || 'Failed to authenticate user.' });
-        }
-        userId = found.id;
       }
     }
 
@@ -76,6 +68,16 @@ exports.handler = async (event) => {
     });
 
     if (linkErr) throw new Error('generateLink: ' + linkErr.message);
+
+    // If userId wasn't set because the user already existed in Auth (making createUser fail),
+    // extract it directly from the generateLink user property
+    if (!userId && linkData?.user) {
+      userId = linkData.user.id;
+    }
+
+    if (!userId) {
+      throw new Error('Failed to retrieve or create user credentials.');
+    }
 
     // Exchange hashed token for session using anon client
     const anon = createClient(

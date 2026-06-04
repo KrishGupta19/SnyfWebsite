@@ -67,19 +67,6 @@ Deno.serve(async (req: Request) => {
 
       if (!createErr && newUser?.user) {
         userId = newUser.user.id;
-      } else {
-        // User might exist in auth but not in users table yet
-        const { data: listData, error: listErr } = await db.auth.admin.listUsers({
-          perPage: 1000,
-        });
-        if (listErr) throw new Error('listUsers failed: ' + listErr.message);
-        const found = listData?.users?.find(
-          (u: any) => u.email?.toLowerCase() === emailToUse
-        );
-        if (!found) {
-          return res(400, { ok: false, error: createErr?.message || 'Failed to authenticate user.' });
-        }
-        userId = found.id;
       }
     }
 
@@ -90,6 +77,16 @@ Deno.serve(async (req: Request) => {
     });
 
     if (linkErr) throw new Error('generateLink failed: ' + linkErr.message);
+
+    // If userId wasn't set because the user already existed in Auth (making createUser fail),
+    // extract it directly from the generateLink user property
+    if (!userId && linkData?.user) {
+      userId = linkData.user.id;
+    }
+
+    if (!userId) {
+      throw new Error('Failed to retrieve or create user credentials.');
+    }
 
     const { data: sessionData, error: sessionErr } = await anon.auth.verifyOtp({
       token_hash: linkData.properties.hashed_token,
