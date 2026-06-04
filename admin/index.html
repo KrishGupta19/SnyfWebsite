@@ -827,6 +827,43 @@
                 <!-- Dynamically populated stats: Total Revenue, Orders, Visits, Active, Menu Items -->
               </div>
 
+              <!-- On-Demand Query Tools -->
+              <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px;border-top:1px solid rgba(255,255,255,0.05);padding-top:16px;">
+                <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center;">
+                  <span>On-Demand Query Tools</span>
+                  <span id="query-active-venue-badge" class="badge badge--manual" style="font-size:8px;">Active: All Venues</span>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                  <button class="btn btn--ghost btn--sm" style="border-color:rgba(0, 242, 254, 0.3);color:var(--cyan);" onclick="runOnDemandQuery('scans_today')">🔍 Scans Today</button>
+                  <button class="btn btn--ghost btn--sm" style="border-color:rgba(0, 242, 254, 0.3);color:var(--cyan);" onclick="runOnDemandQuery('users_registered_today')">👥 Users Registered Today</button>
+                  <button class="btn btn--ghost btn--sm" style="border-color:rgba(0, 242, 254, 0.3);color:var(--cyan);" onclick="runOnDemandQuery('orders_today')">📦 Orders Today</button>
+                  <button class="btn btn--ghost btn--sm" style="border-color:rgba(0, 242, 254, 0.3);color:var(--cyan);" onclick="runOnDemandQuery('revenue_today')">💰 Revenue Today</button>
+                  <button class="btn btn--ghost btn--sm" style="border-color:rgba(255,255,255,0.1);" onclick="runOnDemandQuery('all_time_scans')">📱 Total Scans (All-Time)</button>
+                  <button class="btn btn--ghost btn--sm" style="border-color:rgba(255,255,255,0.1);" onclick="runOnDemandQuery('all_time_orders')">🛍 Total Orders (All-Time)</button>
+                  <button class="btn btn--ghost btn--sm" style="border-color:rgba(255,255,255,0.1);" onclick="runOnDemandQuery('all_time_users')">👤 Registered Users (All-Time)</button>
+                </div>
+              </div>
+
+              <!-- Query Results Section -->
+              <div id="query-results-panel" style="display:none;margin-top:10px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.05);border-radius:var(--r-md);padding:14px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:10px;">
+                  <div>
+                    <span id="query-results-title" style="font-family:var(--mono);font-size:10px;letter-spacing:0.1em;color:var(--cyan);text-transform:uppercase;font-weight:700;">Query Results</span>
+                    <span id="query-results-count" style="font-size:10px;color:var(--muted);margin-left:8px;font-family:var(--mono);"></span>
+                  </div>
+                  <div style="display:flex;gap:8px;">
+                    <button class="btn btn--cyan btn--xs" id="query-export-btn" onclick="exportQueryResults()">↓ Export CSV</button>
+                    <button class="btn btn--ghost btn--xs" onclick="closeQueryResults()">✕ Close</button>
+                  </div>
+                </div>
+                <div class="tbl-wrap" style="max-height:300px;overflow-y:auto;border:1px solid rgba(255,255,255,0.03);border-radius:var(--r-sm);">
+                  <table class="tbl" style="margin:0;">
+                    <thead id="query-results-thead"></thead>
+                    <tbody id="query-results-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+
               <!-- Peak Hours & Insights split row -->
               <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:20px;margin-top:10px;">
                 <!-- Peak Hours Slots -->
@@ -1002,6 +1039,11 @@ let WAITLIST_DATA = [];
 let ACTIVITY_DATA = [];
 let ORDERS_DATA = [];
 let VISITS_DATA = [];
+let USERS_DATA = [];
+let currentActiveQueryType = null;
+let currentQueryData = [];
+let currentQueryHeaders = [];
+let currentQueryName = '';
 // Ticker events removed
 let SCORE_HISTORY = [];
 
@@ -1308,6 +1350,11 @@ async function initAdminApp() {
       const { data: vsts, error: vstsErr } = await db.from('visits').select('*');
       if (!vstsErr && vsts) { VISITS_DATA = vsts; }
     } catch (e) { console.warn('visits fetch failed:', e); }
+
+    try {
+      const { data: usrs, error: usrsErr } = await db.from('users').select('*');
+      if (!usrsErr && usrs) { USERS_DATA = usrs; }
+    } catch (e) { console.warn('users fetch failed:', e); }
 
     // 5. Generate Activity Feed
     generateActivityFeedFromData();
@@ -1873,6 +1920,16 @@ function setAnalyticsReportsVenueFilter(venueName, btnEl) {
   const pills = document.querySelectorAll('#analytics-venue-tabs .filter-pill');
   pills.forEach(p => p.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');
+
+  const badge = document.getElementById('query-active-venue-badge');
+  if (badge) {
+    badge.textContent = `Active: ${venueName === 'all' ? 'All Venues' : venueName}`;
+  }
+
+  if (currentActiveQueryType && document.getElementById('query-results-panel').style.display !== 'none') {
+    runOnDemandQuery(currentActiveQueryType);
+  }
+
   renderAnalyticsReports();
 }
 
@@ -2060,6 +2117,237 @@ function exportAnalyticsVisitsCSV() {
   link.click();
   document.body.removeChild(link);
   showToast(`✓ Exported ${filteredVisits.length} visits as CSV`, 'success');
+}
+
+// ON-DEMAND QUERY TOOLS FOR ANALYTICS
+function isTodayIST(dateString) {
+  if (!dateString) return false;
+  const d = new Date(dateString);
+  const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+  const istDate = new Date(utc + (3600000 * 5.5));
+  
+  const now = new Date();
+  const nowUtc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const todayIST = new Date(nowUtc + (3600000 * 5.5));
+  
+  return istDate.getUTCFullYear() === todayIST.getUTCFullYear() &&
+         istDate.getUTCMonth() === todayIST.getUTCMonth() &&
+         istDate.getUTCDate() === todayIST.getUTCDate();
+}
+
+function formatToIST(dateString) {
+  if (!dateString) return '—';
+  const d = new Date(dateString);
+  const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+  const istDate = new Date(utc + (3600000 * 5.5));
+  const pad = (n) => String(n).padStart(2, '0');
+  const hours = istDate.getUTCHours();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const hour12 = hours % 12 || 12;
+  return `${pad(istDate.getUTCDate())}/${pad(istDate.getUTCMonth()+1)}/${istDate.getUTCFullYear()} ${pad(hour12)}:${pad(istDate.getUTCMinutes())} ${ampm}`;
+}
+
+function runOnDemandQuery(queryType) {
+  currentActiveQueryType = queryType;
+  const selectedVenue = currentAnalyticsReportsVenueFilter === 'all' ? null : VENUES_DATA.find(v => v.name === currentAnalyticsReportsVenueFilter);
+  const venueSuffix = selectedVenue ? ` for ${selectedVenue.name}` : ' (All Venues)';
+
+  let title = '';
+  let headers = [];
+  let rows = [];
+  let rawData = [];
+
+  switch (queryType) {
+    case 'scans_today':
+      title = `Scans Today${venueSuffix}`;
+      headers = ['Visit ID', 'Venue', 'Table Number', 'Device', 'Source', 'Scan Time (IST)'];
+      rawData = VISITS_DATA.filter(v => v.table_num !== null && isTodayIST(v.created_at));
+      if (selectedVenue) {
+        rawData = rawData.filter(v => v.venue_id === selectedVenue.id);
+      }
+      rows = rawData.map(v => {
+        const venue = VENUES_DATA.find(x => x.id === v.venue_id);
+        return [
+          v.id,
+          venue ? venue.name : 'Unknown Venue',
+          `Table ${v.table_num}`,
+          v.device || 'unknown',
+          v.source || 'direct',
+          formatToIST(v.created_at)
+        ];
+      });
+      break;
+
+    case 'users_registered_today':
+      title = `Users Registered Today${venueSuffix}`;
+      headers = ['User ID', 'Email/Phone', 'Role/Trust', 'Joined Time (IST)'];
+      rawData = USERS_DATA.filter(u => isTodayIST(u.created_at));
+      rows = rawData.map(u => [
+        u.id,
+        u.email || u.phone || 'Anonymous',
+        u.trust_level || 'User',
+        formatToIST(u.created_at)
+      ]);
+      break;
+
+    case 'orders_today':
+      title = `Orders Today${venueSuffix}`;
+      headers = ['Order ID', 'Venue', 'Table Number', 'Total (INR)', 'Status', 'Order Time (IST)'];
+      rawData = ORDERS_DATA.filter(o => isTodayIST(o.created_at));
+      if (selectedVenue) {
+        rawData = rawData.filter(o => o.venue_id === selectedVenue.id);
+      }
+      rows = rawData.map(o => {
+        const venue = VENUES_DATA.find(x => x.id === o.venue_id);
+        return [
+          o.id,
+          venue ? venue.name : 'Unknown Venue',
+          o.table_num ? `Table ${o.table_num}` : 'Self-Service',
+          `₹${o.total || 0}`,
+          o.status,
+          formatToIST(o.created_at)
+        ];
+      });
+      break;
+
+    case 'revenue_today':
+      title = `Today's Revenue Transactions${venueSuffix}`;
+      headers = ['Order ID', 'Venue', 'Table Number', 'Total (INR)', 'Status', 'Time (IST)'];
+      rawData = ORDERS_DATA.filter(o => isTodayIST(o.created_at) && o.status !== 'cancelled');
+      if (selectedVenue) {
+        rawData = rawData.filter(o => o.venue_id === selectedVenue.id);
+      }
+      rows = rawData.map(o => {
+        const venue = VENUES_DATA.find(x => x.id === o.venue_id);
+        return [
+          o.id,
+          venue ? venue.name : 'Unknown Venue',
+          o.table_num ? `Table ${o.table_num}` : 'Self-Service',
+          `₹${o.total || 0}`,
+          o.status,
+          formatToIST(o.created_at)
+        ];
+      });
+      break;
+
+    case 'all_time_scans':
+      title = `All-Time Scans${venueSuffix}`;
+      headers = ['Visit ID', 'Venue', 'Table Number', 'Device', 'Source', 'Scan Time (IST)'];
+      rawData = VISITS_DATA.filter(v => v.table_num !== null);
+      if (selectedVenue) {
+        rawData = rawData.filter(v => v.venue_id === selectedVenue.id);
+      }
+      rows = rawData.map(v => {
+        const venue = VENUES_DATA.find(x => x.id === v.venue_id);
+        return [
+          v.id,
+          venue ? venue.name : 'Unknown Venue',
+          `Table ${v.table_num}`,
+          v.device || 'unknown',
+          v.source || 'direct',
+          formatToIST(v.created_at)
+        ];
+      });
+      break;
+
+    case 'all_time_orders':
+      title = `All-Time Orders${venueSuffix}`;
+      headers = ['Order ID', 'Venue', 'Table Number', 'Total (INR)', 'Status', 'Order Time (IST)'];
+      rawData = ORDERS_DATA;
+      if (selectedVenue) {
+        rawData = rawData.filter(o => o.venue_id === selectedVenue.id);
+      }
+      rows = rawData.map(o => {
+        const venue = VENUES_DATA.find(x => x.id === o.venue_id);
+        return [
+          o.id,
+          venue ? venue.name : 'Unknown Venue',
+          o.table_num ? `Table ${o.table_num}` : 'Self-Service',
+          `₹${o.total || 0}`,
+          o.status,
+          formatToIST(o.created_at)
+        ];
+      });
+      break;
+
+    case 'all_time_users':
+      title = `All-Time Registered Users${venueSuffix}`;
+      headers = ['User ID', 'Email/Phone', 'Role/Trust', 'Joined Time (IST)'];
+      rawData = USERS_DATA;
+      rows = rawData.map(u => [
+        u.id,
+        u.email || u.phone || 'Anonymous',
+        u.trust_level || 'User',
+        formatToIST(u.created_at)
+      ]);
+      break;
+  }
+
+  // Store for export
+  currentQueryHeaders = headers;
+  currentQueryData = rows;
+  currentQueryName = title.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+
+  // Update UI
+  document.getElementById('query-results-title').textContent = title;
+  document.getElementById('query-results-count').textContent = `(${rows.length} record${rows.length !== 1 ? 's' : ''} found)`;
+
+  const thead = document.getElementById('query-results-thead');
+  thead.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+
+  const tbody = document.getElementById('query-results-tbody');
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${headers.length}" style="text-align:center;padding:24px;color:var(--muted);">No records found matching query criteria.</td></tr>`;
+  } else {
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        ${r.map((val, idx) => {
+          if (idx === 0) {
+            return `<td style="font-family:var(--mono);font-size:10px;color:var(--muted);">${val}</td>`;
+          } else if (headers[idx].includes('Time')) {
+            return `<td style="font-family:var(--mono);font-size:11px;color:var(--muted);">${val}</td>`;
+          } else if (headers[idx].includes('Total')) {
+            return `<td style="font-family:var(--mono);font-weight:700;color:var(--cyan);">${val}</td>`;
+          } else if (val === 'cancelled') {
+            return `<td><span class="badge badge--inactive">${val}</span></td>`;
+          } else if (val === 'completed' || val === 'delivered') {
+            return `<td><span class="badge badge--active">${val}</span></td>`;
+          } else {
+            return `<td>${val}</td>`;
+          }
+        }).join('')}
+      </tr>
+    `).join('');
+  }
+
+  document.getElementById('query-results-panel').style.display = 'block';
+  // Scroll to results panel
+  document.getElementById('query-results-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  showToast(`✓ Loaded ${rows.length} records`, 'success');
+}
+
+function closeQueryResults() {
+  document.getElementById('query-results-panel').style.display = 'none';
+  currentActiveQueryType = null;
+  currentQueryData = [];
+  currentQueryHeaders = [];
+}
+
+function exportQueryResults() {
+  if (currentQueryData.length === 0) {
+    showToast('⚠ No data to export', 'error');
+    return;
+  }
+  const csvContent = "data:text/csv;charset=utf-8," 
+    + [currentQueryHeaders.join(','), ...currentQueryData.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `snyf_query_${currentQueryName}_${new Date().toISOString().split('T')[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast(`✓ Exported ${currentQueryData.length} records as CSV`, 'success');
 }
 
 async function flagReport(id) {
