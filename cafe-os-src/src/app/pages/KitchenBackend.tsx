@@ -23,6 +23,7 @@ export function KitchenBackend() {
   const [activeFilter, setActiveFilter] = useState<'pending' | 'completed'>('pending');
   const channelRef                  = useRef<ReturnType<typeof db.channel> | null>(null);
   const audioContextRef             = useRef<AudioContext | null>(null);
+  const recentAlerts                = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!editingOrder) {
@@ -177,6 +178,12 @@ export function KitchenBackend() {
           setNewOrderId(newOrder.id);
           setTimeout(() => setNewOrderId(null), 4000);
           
+          const fingerprint = `${newOrder.table_num || 'N/A'}-${newOrder.total || 0}`;
+          if (recentAlerts.current.has(fingerprint)) {
+            // Already alerted instantly via broadcast
+            return;
+          }
+
           const count = getHelpCallCount(newOrder.special_instructions);
           if (count > 0) {
             playHelpCallAlarm(count);
@@ -211,7 +218,10 @@ export function KitchenBackend() {
               const prevQty = (existing.items || []).reduce((sum: number, item: any) => sum + (item.qty || 0), 0);
               const newQty = (updated.items || []).reduce((sum: number, item: any) => sum + (item.qty || 0), 0);
               if (newQty > prevQty) {
-                playAlert();
+                const fingerprint = `${updated.table_num || 'N/A'}-${updated.total || 0}`;
+                if (!recentAlerts.current.has(fingerprint)) {
+                  playAlert();
+                }
                 setUpdatedOrderId(updated.id);
                 setTimeout(() => setUpdatedOrderId(null), 4000);
               }
@@ -219,6 +229,25 @@ export function KitchenBackend() {
 
             return prev.map(o => o.id === updated.id ? updated : o);
           });
+        }
+      )
+      .on(
+        'broadcast',
+        { event: 'new_order' },
+        (payload) => {
+          const data = payload.payload || {};
+          const fingerprint = `${data.table_num || 'N/A'}-${data.total || 0}`;
+          
+          if (!recentAlerts.current.has(fingerprint)) {
+            recentAlerts.current.add(fingerprint);
+            // Expire after 15 seconds to prevent memory build-up and allow future identical orders
+            setTimeout(() => {
+              recentAlerts.current.delete(fingerprint);
+            }, 15000);
+            
+            // Play alert instantly on broadcast
+            playAlert();
+          }
         }
       )
       .subscribe(status => setConnected(status === 'SUBSCRIBED'));

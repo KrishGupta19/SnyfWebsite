@@ -3944,6 +3944,32 @@
     }
   };
 
+  function broadcastInstantOrderAlert(isAddon, orderTotal) {
+    if (!VENUE_DATA?.id) return;
+    try {
+      const kitchenChan = db.channel(`kitchen-${VENUE_DATA.id}`);
+      kitchenChan.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          kitchenChan.send({
+            type: 'broadcast',
+            event: 'new_order',
+            payload: {
+              table_num: getSavedTableNumber() || null,
+              total: orderTotal,
+              is_addon: isAddon
+            }
+          });
+          // Clean up the channel after a short delay
+          setTimeout(() => {
+            db.removeChannel(kitchenChan);
+          }, 3000);
+        }
+      });
+    } catch (e) {
+      console.warn('Failed to send instant order broadcast alert:', e);
+    }
+  }
+
   // ══════════════════════════════════════════
   // ORDER CONFIRMATION + TRACKING
   // ══════════════════════════════════════════
@@ -4054,6 +4080,9 @@
                   : `Addon: ${finalInstructions}`;
               }
 
+              // Broadcast addon order alert instantly
+              broadcastInstantOrderAlert(true, finalTotal);
+
               await db
                 .from('orders')
                 .update({
@@ -4093,6 +4122,10 @@
 
         if (!isAddon) {
           sessionStorage.removeItem('snyf_rated_this_visit');
+
+          // Broadcast new order alert instantly
+          broadcastInstantOrderAlert(false, total);
+
           const { data: insertedOrder } = await db
             .from('orders')
             .insert({
