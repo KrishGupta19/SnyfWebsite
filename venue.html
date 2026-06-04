@@ -4092,7 +4092,8 @@
     // ── GPS location gate ──────────────────────────────────────────────────────
     // If venue has lat/lng set, ensure user is within GPS_RADIUS_M metres.
     // Venues without coordinates skip this check automatically.
-    if (VENUE_DATA?.lat && VENUE_DATA?.lng) {
+    // If the table is verified via QR code scan, bypass this location check.
+    if (VENUE_DATA?.lat && VENUE_DATA?.lng && !isTableVerified()) {
       showToast('📍 Verifying location…', 8000);
       const locResult = await checkLocationEligibility();
       if (!locResult.allowed) {

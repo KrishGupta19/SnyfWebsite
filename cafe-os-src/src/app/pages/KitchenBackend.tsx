@@ -338,44 +338,7 @@ export function KitchenBackend() {
     } catch { /* silent if audio unavailable */ }
   }
 
-  async function dismissHelpCall(order: Order) {
-    if (!order.special_instructions) return;
-    
-    let updatedInstr = order.special_instructions
-      .replace(/\s*\|\s*\[HELP REQUESTED(?: x\d+)?\]/gi, '')
-      .replace(/\[HELP REQUESTED(?: x\d+)?\]\s*\|\s*/gi, '')
-      .replace(/\[HELP REQUESTED(?: x\d+)?\]/gi, '')
-      .trim();
-    
-    if (updatedInstr.endsWith('|')) {
-      updatedInstr = updatedInstr.slice(0, -1).trim();
-    }
-    if (updatedInstr.startsWith('|')) {
-      updatedInstr = updatedInstr.slice(1).trim();
-    }
-    
-    try {
-      const { error } = await db
-        .from('orders')
-        .update({
-          special_instructions: updatedInstr || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', order.id);
-      
-      if (error) throw error;
-      
-      // Update local state so UI updates immediately
-      setOrders(prev => prev.map(o => o.id === order.id ? {
-        ...o,
-        special_instructions: updatedInstr || null,
-        updated_at: new Date().toISOString()
-      } : o));
-      
-    } catch (err) {
-      console.error('Failed to dismiss help call:', err);
-    }
-  }
+
 
   // ── Advance status ────────────────────────────────────────────
   async function updateOrderStatus(orderId: string, newStatus: OrderStatus) {
@@ -393,45 +356,57 @@ export function KitchenBackend() {
     }
   }
 
-  async function advanceToDeliver(orderId: string) {
+  async function toggleItemReady(orderId: string, itemId: string) {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+
+    const updatedItems = (order.items || []).map(item => {
+      if (item.id === itemId) {
+        return { ...item, ready: !item.ready };
+      }
+      return item;
+    });
+
+    const isToggledOn = updatedItems.find(item => item.id === itemId)?.ready;
+
     // Optimistic update
-    setOrders(prev => prev.map(o => o.id === orderId ? { 
-      ...o, 
-      is_advanced_to_deliver: true,
-      updated_at: new Date().toISOString()
-    } : o));
-    
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, items: updatedItems } : o));
+
     try {
       const { error } = await db
         .from('orders')
-        .update({ 
-          is_advanced_to_deliver: true,
-          updated_at: new Date().toISOString() 
+        .update({
+          items: updatedItems,
+          updated_at: new Date().toISOString()
         })
         .eq('id', orderId);
+
       if (error) throw error;
 
-      // Broadcast instant deliver bell alert to waiter channel
-      try {
-        const waiterBroadcastChan = db.channel(`waiter-${venue.id}`);
-        waiterBroadcastChan.subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            waiterBroadcastChan.send({
-              type:    'broadcast',
-              event:   'deliver_bell',
-              payload: {
-                order_id: orderId,
-              }
-            });
-            setTimeout(() => db.removeChannel(waiterBroadcastChan), 3000);
-          }
-        });
-      } catch (e) {
-        console.warn('Failed to send waiter deliver bell broadcast:', e);
+      // Broadcast 'item_ready' to waiter channel if marked ready
+      if (isToggledOn && venue?.id) {
+        try {
+          const waiterBroadcastChan = db.channel(`waiter-${venue.id}`);
+          waiterBroadcastChan.subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              waiterBroadcastChan.send({
+                type:    'broadcast',
+                event:   'item_ready',
+                payload: {
+                  order_id: orderId,
+                  item_id:  itemId
+                }
+              });
+              setTimeout(() => db.removeChannel(waiterBroadcastChan), 3000);
+            }
+          });
+        } catch (e) {
+          console.warn('Failed to send waiter item ready broadcast:', e);
+        }
       }
     } catch (err) {
-      console.error('[Kitchen] advanceToDeliver:', err);
-      fetchOrders();
+      console.error('[Kitchen] toggleItemReady:', err);
+      fetchOrders(); // revert
     }
   }
 
@@ -941,22 +916,47 @@ export function KitchenBackend() {
                         {(order.items || []).map((item, idx) => (
                           <div
                             key={idx}
-                            className={`flex items-center justify-between p-3 rounded-lg ${
-                              item.addon
-                                ? 'bg-amber-100 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-900/60 text-amber-950 dark:text-amber-300'
-                                : 'bg-accent/30'
+                            className={`flex items-center justify-between p-3 rounded-xl transition-all border ${
+                              item.ready
+                                ? 'bg-green-50/50 dark:bg-green-950/10 border-green-200/60 dark:border-green-900/40 text-green-700 dark:text-green-400'
+                                : item.addon
+                                ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200/60 dark:border-amber-900/40'
+                                : 'bg-accent/20 border-transparent'
                             }`}
                           >
-                            <span className="font-medium flex items-center gap-2">
-                              {item.name}
+                            <div className="flex items-center gap-3 min-w-0">
+                              <button
+                                onClick={() => toggleItemReady(order.id, item.id)}
+                                className={`w-6 h-6 rounded-lg border flex items-center justify-center transition-all shrink-0 cursor-pointer ${
+                                  item.ready
+                                    ? 'bg-green-500 border-green-500 text-white'
+                                    : 'border-muted-foreground/30 hover:border-muted-foreground/60 bg-background'
+                                }`}
+                              >
+                                {item.ready && (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                                  </svg>
+                                )}
+                              </button>
+                              
+                              <span className={`font-semibold truncate ${
+                                item.ready
+                                  ? 'line-through decoration-2 opacity-60'
+                                  : ''
+                              }`}>
+                                {item.name}
+                              </span>
                               {item.addon && (
-                                <span className="px-1.5 py-0.5 bg-amber-600 text-white rounded text-[10px] uppercase font-bold tracking-wider">
+                                <span className="px-1.5 py-0.5 bg-amber-600 text-white rounded text-[9px] uppercase font-bold tracking-wider shrink-0">
                                   Add-on
                                 </span>
                               )}
-                            </span>
-                            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                              item.addon
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-xs font-black ${
+                              item.ready
+                                ? 'bg-green-600/10 text-green-700 dark:bg-green-900/30'
+                                : item.addon
                                 ? 'bg-amber-600 text-white'
                                 : 'bg-primary text-primary-foreground'
                             }`}>
@@ -978,22 +978,25 @@ export function KitchenBackend() {
                     )}
                   </div>
 
-                  {/* Status workflow */}
-                  <div className="border-t border-border pt-6 space-y-4">
-                    <h4 className="text-sm font-medium text-muted-foreground">Order Controls</h4>
-                    <div className="flex gap-4">
-                      <button
-                        onClick={() => advanceToDeliver(order.id)}
-                        disabled={order.is_advanced_to_deliver}
-                        className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 border ${
-                          !order.is_advanced_to_deliver
-                            ? 'bg-blue-600 hover:bg-blue-700 text-white border-transparent shadow-lg shadow-blue-600/20'
-                            : 'bg-accent/30 text-muted-foreground border-border cursor-not-allowed'
-                        }`}
-                      >
-                        <CheckCircle className="w-5 h-5" />
-                        {order.is_advanced_to_deliver ? 'Advanced to Waiter ✓' : 'Advance to Deliver'}
-                      </button>
+                  {/* Preparation progress */}
+                  <div className="border-t border-border pt-4">
+                    <div className="flex items-center justify-between text-xs font-black text-muted-foreground mb-2 tracking-wider">
+                      <span>PREPARATION PROGRESS</span>
+                      <span>
+                        {(order.items || []).filter(item => item.ready).length} / {(order.items || []).length} ITEMS READY
+                      </span>
+                    </div>
+                    <div className="w-full bg-accent/30 h-2.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-green-500 h-full transition-all duration-500 rounded-full"
+                        style={{
+                          width: `${
+                            (order.items || []).length > 0
+                              ? ((order.items || []).filter(item => item.ready).length / (order.items || []).length) * 100
+                              : 0
+                          }%`
+                        }}
+                      />
                     </div>
                   </div>
                 </div>

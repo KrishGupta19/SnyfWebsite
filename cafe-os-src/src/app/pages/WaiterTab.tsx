@@ -179,7 +179,7 @@ export function WaiterTab() {
         .from('orders')
         .select('*')
         .eq('venue_id', venue.id)
-        .or('and(is_advanced_to_deliver.eq.true,status.neq.ready),special_instructions.like.%[HELP REQUESTED]%')
+        .or('status.neq.ready,special_instructions.like.%[HELP REQUESTED]%')
         .order('updated_at', { ascending: false });
       if (error) throw error;
       setOrders((data || []) as Order[]);
@@ -211,7 +211,7 @@ export function WaiterTab() {
 
           const updated = payload.new as Order;
           const hasHelp = updated.special_instructions?.includes('[HELP REQUESTED]');
-          const isDeliverable = updated.is_advanced_to_deliver && updated.status !== 'ready';
+          const isDeliverable = updated.status !== 'ready';
 
           if (isDeliverable || hasHelp) {
             setOrders(prev => {
@@ -229,13 +229,19 @@ export function WaiterTab() {
                 }
               }
 
-              if (updated.is_advanced_to_deliver && !updated.waiter_delivered) {
-                const wasDeliverable = existing?.is_advanced_to_deliver && !existing.waiter_delivered;
-                const fingerprint = `deliver-${updated.id}`;
-                if (!wasDeliverable) {
-                  if (!recentAlerts.current.has(fingerprint)) {
-                    playWaiterBell();
-                  }
+              // Ring bell if any item was marked ready
+              const becameReady = (prevItems: any[] | undefined, nextItems: any[] | undefined) => {
+                if (!nextItems) return false;
+                const prevReadyMap = new Map((prevItems || []).map(item => [item.id, !!item.ready]));
+                return nextItems.some(item => item.ready && !prevReadyMap.get(item.id));
+              };
+
+              if (becameReady(existing?.items, updated.items)) {
+                const fingerprint = `item-ready-${updated.id}-${Date.now()}`;
+                if (!recentAlerts.current.has(fingerprint)) {
+                  recentAlerts.current.add(fingerprint);
+                  setTimeout(() => recentAlerts.current.delete(fingerprint), 2000);
+                  playWaiterBell();
                 }
               }
 
@@ -294,6 +300,29 @@ export function WaiterTab() {
           }
         }
       )
+      .on(
+        'broadcast',
+        { event: 'item_ready' },
+        (payload) => {
+          const data = payload.payload || {};
+          const orderId = data.order_id;
+          const itemId = data.item_id;
+          if (orderId && itemId) {
+            const fingerprint = `item-ready-${orderId}-${itemId}`;
+            if (!recentAlerts.current.has(fingerprint)) {
+              recentAlerts.current.add(fingerprint);
+              setTimeout(() => {
+                recentAlerts.current.delete(fingerprint);
+              }, 5000);
+
+              // Play waiter bell immediately
+              playWaiterBell();
+              // Refresh order list immediately to show in UI
+              fetchOrders();
+            }
+          }
+        }
+      )
       .subscribe(status => setConnected(status === 'SUBSCRIBED'));
     channelRef.current = channel;
   }
@@ -335,8 +364,8 @@ export function WaiterTab() {
   }
 
   const helpOrders = orders.filter(o => o.special_instructions?.includes('[HELP REQUESTED]'));
-  const deliverOrders = orders.filter(o => o.is_advanced_to_deliver && !o.waiter_delivered && o.status !== 'ready' && o.items && o.items.length > 0);
-  const paymentOrders = orders.filter(o => o.is_advanced_to_deliver && o.waiter_delivered && o.status !== 'ready' && o.items && o.items.length > 0);
+  const deliverOrders = orders.filter(o => !o.waiter_delivered && o.status !== 'ready' && o.items && o.items.length > 0);
+  const paymentOrders = orders.filter(o => o.waiter_delivered && o.status !== 'ready' && o.items && o.items.length > 0);
   const activeList = activeTab === 'deliver' ? deliverOrders : paymentOrders;
 
   return (
@@ -476,7 +505,7 @@ export function WaiterTab() {
           <h2 className="text-2xl font-bold text-muted-foreground">All caught up!</h2>
           <p className="text-muted-foreground mt-2 max-w-sm">
             {activeTab === 'deliver'
-              ? 'Waiting for the kitchen to advance new orders for delivery.'
+              ? 'No active orders currently pending delivery.'
               : 'No orders awaiting payment confirmation right now.'}
           </p>
         </div>
@@ -499,7 +528,7 @@ export function WaiterTab() {
                   <Clock className="w-4 h-4" />
                   <span>
                     {activeTab === 'deliver'
-                      ? `Ready for ${Math.max(0, Math.floor((Date.now() - new Date(order.updated_at).getTime()) / 60000))}m`
+                      ? `Placed ${Math.max(0, Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000))}m ago`
                       : `Delivered ${Math.max(0, Math.floor((Date.now() - new Date(order.updated_at).getTime()) / 60000))}m ago`
                     }
                   </span>
@@ -511,27 +540,41 @@ export function WaiterTab() {
                   <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">Items</h4>
                   <div className="space-y-2">
                     {(() => {
-                      const showCompleteList = activeTab === 'payment';
-                      const hasAddons = order.items.some(item => item.addon);
-                      const itemsToRender = (hasAddons && !showCompleteList)
-                        ? order.items.filter(item => item.addon)
-                        : order.items;
+                      const itemsToRender = order.items || [];
                        return itemsToRender.map((item, idx) => (
-                        <div key={idx} className="flex justify-between items-center bg-accent/30 p-3 rounded-xl text-sm">
-                          <div className="flex-1">
+                        <div
+                          key={idx}
+                          className={`flex justify-between items-center p-3 rounded-xl text-sm border ${
+                            item.ready
+                              ? 'bg-green-50/50 dark:bg-green-950/10 border-green-200/40 dark:border-green-900/30'
+                              : 'bg-accent/30 border-transparent'
+                          }`}
+                        >
+                          <div className="flex-1 min-w-0 pr-2">
                             <div className="font-bold flex items-center gap-1.5 flex-wrap">
-                              <span>{item.name}</span>
-                              <span className="text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded-full">
+                              {item.ready ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[9px] font-black uppercase rounded-lg border border-green-200/50 shrink-0">
+                                  ✓ Ready
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-750 dark:bg-yellow-900/30 dark:text-yellow-400 text-[9px] font-black uppercase rounded-lg border border-yellow-200/50 shrink-0 animate-pulse">
+                                  ○ Preparing
+                                </span>
+                              )}
+                              <span className={item.ready ? "text-green-700 dark:text-green-400 font-semibold" : "text-foreground"}>
+                                {item.name}
+                              </span>
+                              <span className="text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded-full shrink-0">
                                 x{item.qty}
                               </span>
                               {item.addon && (
-                                <span className="px-2 py-0.5 bg-yellow-500 text-white text-[9px] font-black uppercase rounded tracking-wider">
+                                <span className="px-2 py-0.5 bg-yellow-500 text-white text-[9px] font-black uppercase rounded tracking-wider shrink-0">
                                   Add-on
                                 </span>
                               )}
                             </div>
                           </div>
-                          <span className="font-mono font-bold text-foreground">
+                          <span className="font-mono font-bold text-foreground shrink-0">
                             ₹{(item.price * item.qty).toLocaleString('en-IN')}
                           </span>
                         </div>
