@@ -7,6 +7,7 @@ import {
   Order, OrderStatus, MenuItem,
   ORDER_STATUS_LABELS, ORDER_STATUS_FLOW,
 } from '../../lib/types';
+import { getVolume } from '../../lib/audioVolume';
 
 export function KitchenBackend() {
   const { venue }                   = useVenue();
@@ -258,22 +259,24 @@ export function KitchenBackend() {
   function playAlert() {
     try {
       const ctx = getAudioContext();
+      const vol = getVolume('kitchenOrderBell');
+      if (vol === 0) return;
 
       // Rich multi-harmonic bell ring
       function ringBell(startTime: number) {
-        const harmonics = [
+        const baseHarmonics = [
           { freq: 880,  peakGain: 1.0,  decay: 1.4 },
           { freq: 1320, peakGain: 1.0,  decay: 1.0 },
           { freq: 1760, peakGain: 0.9,  decay: 0.8 },
           { freq: 2200, peakGain: 0.5,  decay: 0.6 },
         ];
-        harmonics.forEach(({ freq, peakGain, decay }) => {
+        baseHarmonics.forEach(({ freq, peakGain, decay }) => {
           const osc  = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = 'sine';
           osc.frequency.setValueAtTime(freq, startTime);
           gain.gain.setValueAtTime(0.001, startTime);
-          gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.01);
+          gain.gain.linearRampToValueAtTime(peakGain * vol, startTime + 0.01);
           gain.gain.exponentialRampToValueAtTime(0.001, startTime + decay);
           osc.connect(gain);
           gain.connect(ctx.destination);
@@ -294,6 +297,9 @@ export function KitchenBackend() {
   function playHelpCallAlarm(count = 1) {
     try {
       const ctx  = getAudioContext();
+      const vol  = getVolume('helpCallAlarm');
+      if (vol === 0) return;
+
       const playBeep = (time: number, freq: number, dur: number) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -304,9 +310,9 @@ export function KitchenBackend() {
         const pitchMultiplier = 1 + Math.min(count - 1, 4) * 0.1;
         osc.frequency.setValueAtTime(freq * pitchMultiplier, time);
         
-        // Volume/gain increases as count climbs
-        const volume = Math.min(0.4 + (count - 1) * 0.2, 1.0);
-        gain.gain.setValueAtTime(volume, time);
+        // Volume/gain increases as count climbs, scaled by user volume setting
+        const baseVolume = Math.min(0.4 + (count - 1) * 0.2, 1.0);
+        gain.gain.setValueAtTime(baseVolume * vol, time);
         gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
         
         osc.start(time);

@@ -4,6 +4,7 @@ import { useVenue } from '../../context/VenueContext';
 import { useLock } from '../../context/LockContext';
 import { Order } from '../../lib/types';
 import { CheckCircle, Clock, Utensils, HandPlatter, Wifi, WifiOff, Lock, ShieldAlert, X, Bell } from 'lucide-react';
+import { getVolume } from '../../lib/audioVolume';
 
 export function WaiterTab() {
   const { venue } = useVenue();
@@ -31,6 +32,9 @@ export function WaiterTab() {
   function playWaiterBell() {
     try {
       const audioCtx = getAudioContext();
+      const vol = getVolume('waiterDeliverBell');
+      if (vol === 0) return;
+
       const now = audioCtx.currentTime;
 
       function ringSingleBell(startTime: number) {
@@ -45,7 +49,7 @@ export function WaiterTab() {
           osc.type = 'sine';
           osc.frequency.setValueAtTime(freq, startTime);
           gain.gain.setValueAtTime(0.001, startTime);
-          gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.005);
+          gain.gain.linearRampToValueAtTime(peakGain * vol, startTime + 0.005);
           gain.gain.exponentialRampToValueAtTime(0.001, startTime + decay);
           osc.connect(gain);
           gain.connect(audioCtx.destination);
@@ -66,6 +70,9 @@ export function WaiterTab() {
   function playHelpCallAlarm(count = 1) {
     try {
       const ctx = getAudioContext();
+      const vol = getVolume('helpCallAlarm');
+      if (vol === 0) return;
+
       const playBeep = (time: number, freq: number, dur: number) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -75,8 +82,8 @@ export function WaiterTab() {
         const pitchMultiplier = 1 + Math.min(count - 1, 4) * 0.1;
         osc.frequency.setValueAtTime(freq * pitchMultiplier, time);
 
-        const volume = Math.min(0.4 + (count - 1) * 0.2, 1.0);
-        gain.gain.setValueAtTime(volume, time);
+        const baseVolume = Math.min(0.4 + (count - 1) * 0.2, 1.0);
+        gain.gain.setValueAtTime(baseVolume * vol, time);
         gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
 
         osc.start(time);

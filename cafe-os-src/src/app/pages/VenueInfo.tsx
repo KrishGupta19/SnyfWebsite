@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, Trash2, GripVertical, KeyRound, Eye, EyeOff, Lock, Unlock, ShieldAlert, Key } from 'lucide-react';
+import { Save, Trash2, GripVertical, KeyRound, Eye, EyeOff, Lock, Unlock, ShieldAlert, Key, Volume2, VolumeX } from 'lucide-react';
 import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
 import { useLock } from '../../context/LockContext';
 import { VenuePhoto } from '../../lib/types';
 import { ImageUploader } from '../components/ImageUploader';
+import {
+  getVolume, setVolume, incrementVolume, decrementVolume,
+  VolumeKey, MAX_VOLUME, MIN_VOLUME, STEP
+} from '../../lib/audioVolume';
 
 export function VenueInfo() {
   const navigate = useNavigate();
@@ -18,6 +22,92 @@ export function VenueInfo() {
   const [newPIN, setNewPIN] = useState('');
   const [showPIN, setShowPIN] = useState(false);
   const [pinSaved, setPinSaved] = useState(false);
+
+  // ── Volume settings ──────────────────────────────────
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  function getAudioCtx() {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume().catch(() => {});
+    }
+    return audioCtxRef.current;
+  }
+
+  type VolState = Record<VolumeKey, number>;
+  const [volumes, setVolumes] = useState<VolState>(() => ({
+    kitchenOrderBell:  getVolume('kitchenOrderBell'),
+    helpCallAlarm:     getVolume('helpCallAlarm'),
+    waiterDeliverBell: getVolume('waiterDeliverBell'),
+  }));
+
+  function adjustVolume(key: VolumeKey, direction: 'up' | 'down') {
+    const next = direction === 'up' ? incrementVolume(key) : decrementVolume(key);
+    setVolumes(prev => ({ ...prev, [key]: next }));
+  }
+
+  function testVolume(key: VolumeKey) {
+    try {
+      const ctx = getAudioCtx();
+      const vol = volumes[key];
+      if (vol === 0) return;
+      const now = ctx.currentTime;
+
+      if (key === 'kitchenOrderBell') {
+        // 3-ring bell preview
+        const harmonics = [
+          { freq: 880, peakGain: 1.0, decay: 1.2 },
+          { freq: 1320, peakGain: 1.0, decay: 0.9 },
+          { freq: 1760, peakGain: 0.9, decay: 0.7 },
+        ];
+        const ringAt = (t: number) => harmonics.forEach(({ freq, peakGain, decay }) => {
+          const o = ctx.createOscillator(); const g = ctx.createGain();
+          o.type = 'sine'; o.frequency.setValueAtTime(freq, t);
+          g.gain.setValueAtTime(0.001, t);
+          g.gain.linearRampToValueAtTime(peakGain * vol, t + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.001, t + decay);
+          o.connect(g); g.connect(ctx.destination);
+          o.start(t); o.stop(t + decay);
+        });
+        ringAt(now); ringAt(now + 0.65); ringAt(now + 1.3);
+
+      } else if (key === 'helpCallAlarm') {
+        // Beep siren preview
+        const beep = (t: number, freq: number, dur: number) => {
+          const o = ctx.createOscillator(); const g = ctx.createGain();
+          o.connect(g); g.connect(ctx.destination);
+          o.frequency.setValueAtTime(freq, t);
+          g.gain.setValueAtTime(0.5 * vol, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+          o.start(t); o.stop(t + dur);
+        };
+        beep(now, 987.77, 0.15);
+        beep(now + 0.2, 1318.51, 0.25);
+        beep(now + 0.45, 987.77, 0.15);
+        beep(now + 0.65, 1318.51, 0.35);
+
+      } else {
+        // Waiter desk bell preview
+        const harmonics = [
+          { freq: 1800, peakGain: 1.0, decay: 0.6 },
+          { freq: 2400, peakGain: 0.6, decay: 0.45 },
+          { freq: 3000, peakGain: 3.0, decay: 0.3 },
+        ];
+        const ringAt = (t: number) => harmonics.forEach(({ freq, peakGain, decay }) => {
+          const o = ctx.createOscillator(); const g = ctx.createGain();
+          o.type = 'sine'; o.frequency.setValueAtTime(freq, t);
+          g.gain.setValueAtTime(0.001, t);
+          g.gain.linearRampToValueAtTime(peakGain * vol, t + 0.005);
+          g.gain.exponentialRampToValueAtTime(0.001, t + decay);
+          o.connect(g); g.connect(ctx.destination);
+          o.start(t); o.stop(t + decay);
+        });
+        ringAt(now); ringAt(now + 0.7); ringAt(now + 1.4);
+      }
+    } catch { /* silent */ }
+  }
 
   const [newUsername,     setNewUsername]     = useState('');
   const [userSaving,      setUserSaving]      = useState(false);
@@ -739,6 +829,113 @@ export function VenueInfo() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── Volume Settings ─────────────────────────── */}
+      <div className="bg-card rounded-2xl border border-border p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+            <Volume2 className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-base text-foreground">Alert Volume Settings</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Adjust volume for each alert sound. Max is 1.5× the default. Click Test to preview.
+            </p>
+          </div>
+        </div>
+
+        {([
+          {
+            key: 'kitchenOrderBell' as VolumeKey,
+            label: '🔔 Kitchen Order Bell',
+            desc: 'Rings in Kitchen Backend when a customer places an order',
+          },
+          {
+            key: 'helpCallAlarm' as VolumeKey,
+            label: '🚨 Help Call Alarm',
+            desc: 'Plays in Kitchen & Waiter when a customer calls for help',
+          },
+          {
+            key: 'waiterDeliverBell' as VolumeKey,
+            label: '🛎️ Waiter Delivery Bell',
+            desc: 'Rings in Waiter Tab when kitchen marks an order "Advance to Deliver"',
+          },
+        ] as const).map(({ key, label, desc }) => {
+          const vol = volumes[key];
+          const pct = Math.round((vol / MAX_VOLUME) * 100);
+          const isMin = vol <= MIN_VOLUME;
+          const isMax = vol >= MAX_VOLUME;
+
+          return (
+            <div key={key} className="border border-border rounded-xl p-4 space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-semibold text-sm text-foreground">{label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                </div>
+                <button
+                  onClick={() => testVolume(key)}
+                  className="flex-shrink-0 px-3 py-1.5 text-xs font-bold rounded-lg border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 active:scale-95 transition-all cursor-pointer"
+                >
+                  ▶ Test
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* Decrease */}
+                <button
+                  onClick={() => adjustVolume(key, 'down')}
+                  disabled={isMin}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-border bg-accent/50 text-foreground font-bold text-lg hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer"
+                  aria-label="Decrease volume"
+                >
+                  −
+                </button>
+
+                {/* Volume bar */}
+                <div className="flex-1 relative h-3 bg-accent rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-150"
+                    style={{
+                      width: `${pct}%`,
+                      background: vol === 0
+                        ? '#6b7280'
+                        : vol <= 1.0
+                        ? `hsl(${Math.round(142 - (vol * 42))}, 60%, 42%)`
+                        : `hsl(${Math.round(20 - ((vol - 1.0) / 0.5) * 20)}, 80%, 48%)`,
+                    }}
+                  />
+                </div>
+
+                {/* Increase */}
+                <button
+                  onClick={() => adjustVolume(key, 'up')}
+                  disabled={isMax}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-border bg-accent/50 text-foreground font-bold text-lg hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer"
+                  aria-label="Increase volume"
+                >
+                  +
+                </button>
+
+                {/* Label */}
+                <span className={`w-14 text-right text-sm font-mono font-bold ${
+                  vol === 0 ? 'text-muted-foreground'
+                  : vol > 1.0 ? 'text-orange-500 dark:text-orange-400'
+                  : 'text-foreground'
+                }`}>
+                  {vol === 0 ? 'Muted' : `${pct}%`}
+                </span>
+              </div>
+
+              {vol > 1.0 && (
+                <p className="text-[10px] text-orange-500 dark:text-orange-400 font-medium">
+                  ⚠ Volume boosted above 100% — may sound distorted on some speakers
+                </p>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
