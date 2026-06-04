@@ -51,6 +51,41 @@ async function sendWelcomeEmail(name, email, type) {
 }
 
 const server = http.createServer(async (req, res) => {
+    // Handle phone-login POST
+    if (req.url === '/phone-login' || req.url === '/.netlify/functions/phone-login') {
+        if (req.method === 'OPTIONS') {
+            res.writeHead(200, {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS'
+            });
+            res.end();
+            return;
+        }
+
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => { body += chunk; });
+            req.on('end', async () => {
+                try {
+                    const phoneLoginHandler = require('./netlify/functions/phone-login.js').handler;
+                    const event = {
+                        httpMethod: 'POST',
+                        body: body
+                    };
+                    const result = await phoneLoginHandler(event);
+                    res.writeHead(result.statusCode, result.headers);
+                    res.end(result.body);
+                } catch (err) {
+                    console.error('Local phone-login error:', err);
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ ok: false, error: err.message }));
+                }
+            });
+            return;
+        }
+    }
+
     // Handle waitlist POST
     if (req.method === 'POST' && (req.url === '/waitlist' || req.url === '/.netlify/functions/waitlist')) {
         let body = '';

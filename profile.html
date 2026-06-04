@@ -1011,22 +1011,12 @@
             >
           </div>
         </div>
-        <div class="pf-modal-field" style="margin-bottom:16px; text-align: left;">
-          <label class="pf-auth-label">Password</label>
-          <input
-            type="password"
-            class="pf-auth-input"
-            id="pf-phone-password-input"
-            placeholder="Min 6 characters"
-            autocomplete="current-password"
-          >
-        </div>
         <div class="pf-auth-error" id="pf-phone-error" style="margin-bottom: 16px;"></div>
         <button class="pf-auth-btn" id="pf-signin-phone-btn" onclick="signInWithPhone()">
           Sign In / Create Account →
         </button>
         <div style="font-size:11px;color:var(--muted,#6E6A64);text-align:center;margin-top:8px;line-height:1.5;">
-          New here? Just enter your phone & a password to create an account instantly.
+          New here? Just enter your phone number to sign in/create an account instantly.
         </div>
         <div class="pf-guest-link">
           Just browsing?
@@ -1376,14 +1366,12 @@ async function signInWithEmail() {
 
 async function signInWithPhone() {
   const phoneInput = document.getElementById('pf-phone-input');
-  const passwordInput = document.getElementById('pf-phone-password-input');
   const errEl = document.getElementById('pf-phone-error');
   const btn = document.getElementById('pf-signin-phone-btn');
 
-  if (!phoneInput || !passwordInput || !errEl || !btn) return;
+  if (!phoneInput || !errEl || !btn) return;
 
   let phoneVal = phoneInput.value.trim().replace(/\D/g, '');
-  const password = passwordInput.value;
 
   errEl.classList.remove('show');
 
@@ -1393,68 +1381,63 @@ async function signInWithPhone() {
     return;
   }
 
-  if (!password || password.length < 6) {
-    errEl.textContent = 'Password must be at least 6 characters';
-    errEl.classList.add('show');
-    return;
-  }
-
   btn.disabled = true;
   btn.textContent = 'Verifying...';
 
-  const normalizedPhone = `+91${phoneVal}`;
-  let emailToUse = `${normalizedPhone}@snyf-phone.com`;
-
   try {
-    // 1. Check if user already exists with this phone in public.users table
-    const { data: userProfile, error: profileErr } = await db
-      .from('users')
-      .select('email')
-      .eq('phone', normalizedPhone)
-      .maybeSingle();
-
-    if (userProfile?.email) {
-      emailToUse = userProfile.email;
+    let res;
+    try {
+      res = await fetch('/.netlify/functions/phone-login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phoneVal }),
+      });
+    } catch (netErr) {
+      res = null;
     }
 
-    // 2. Try to Sign In
-    const { data: signInData, error: signInErr } = await db.auth.signInWithPassword({
-      email: emailToUse,
-      password: password,
-    });
+    if (!res || !res.ok) {
+      // Fallback to Supabase Edge Function
+      const fallbackRes = await fetch(`${SNYF_URL}/functions/v1/phone-login`, {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${SNYF_KEY}`,
+        },
+        body: JSON.stringify({ phone: phoneVal }),
+      }).catch(() => null);
 
-    if (signInErr) {
-      // 3. If invalid credentials and profile exists, it's just wrong password
-      if (userProfile?.email || signInErr.message?.toLowerCase().includes('confirm')) {
-        throw signInErr;
+      if (fallbackRes) {
+        res = fallbackRes;
       }
-      
-      // 4. Try automatic registration (Sign Up) for new users
-      btn.textContent = 'Creating account...';
-      const { data: signUpData, error: signUpErr } = await db.auth.signUp({
-        email: emailToUse,
-        password: password,
-        options: {
-          data: {
-            phone: normalizedPhone,
-            account_password: password,
-          }
-        }
+    }
+
+    if (!res) {
+      throw new Error('Connection failed. Please check your internet connection.');
+    }
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || 'Failed to authenticate. Please try again.');
+    }
+
+    if (data.access_token && data.refresh_token) {
+      const { data: sessionData, error: sessionErr } = await db.auth.setSession({
+        access_token:  data.access_token,
+        refresh_token: data.refresh_token,
       });
 
-      if (signUpErr) throw signUpErr;
+      if (sessionErr) throw sessionErr;
 
-      if (signUpData?.user) {
-        await loadSignedInUserProfile(signUpData.user);
+      if (sessionData?.user) {
+        await loadSignedInUserProfile(sessionData.user);
       }
-    } else if (signInData?.user) {
-      await loadSignedInUserProfile(signInData.user);
+    } else {
+      throw new Error('Session establishment failed');
     }
   } catch (err) {
-    errEl.textContent = err.message || 'Failed to sign in. Please check your credentials.';
+    errEl.textContent = err.message || 'Failed to sign in. Please try again.';
     errEl.classList.add('show');
-    passwordInput.value = '';
-    passwordInput.focus();
   } finally {
     btn.disabled = false;
     btn.textContent = 'Sign In / Create Account →';
@@ -1595,8 +1578,6 @@ function showAuthScreen() {
   if (passInp) passInp.value = '';
   const phoneInp = document.getElementById('pf-phone-input');
   if (phoneInp) phoneInp.value = '';
-  const phonePassInp = document.getElementById('pf-phone-password-input');
-  if (phonePassInp) phonePassInp.value = '';
 
   // Clear error labels
   const emailErr = document.getElementById('pf-email-error');
