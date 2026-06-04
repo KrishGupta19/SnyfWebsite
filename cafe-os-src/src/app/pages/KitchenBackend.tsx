@@ -410,6 +410,25 @@ export function KitchenBackend() {
         })
         .eq('id', orderId);
       if (error) throw error;
+
+      // Broadcast instant deliver bell alert to waiter channel
+      try {
+        const waiterBroadcastChan = db.channel(`waiter-${venue.id}`);
+        waiterBroadcastChan.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            waiterBroadcastChan.send({
+              type:    'broadcast',
+              event:   'deliver_bell',
+              payload: {
+                order_id: orderId,
+              }
+            });
+            setTimeout(() => db.removeChannel(waiterBroadcastChan), 3000);
+          }
+        });
+      } catch (e) {
+        console.warn('Failed to send waiter deliver bell broadcast:', e);
+      }
     } catch (err) {
       console.error('[Kitchen] advanceToDeliver:', err);
       fetchOrders();

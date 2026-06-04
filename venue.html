@@ -3020,6 +3020,31 @@
         if (insertErr) throw insertErr;
       }
 
+      // ── Broadcast instant help-call alert to WaiterTab ──────────────────────
+      // This fires immediately so the waiter hears the alarm without Supabase
+      // Realtime postgres_changes delay (which can be 1-3 seconds).
+      try {
+        const helpCount = (newInstructions.match(/\[HELP REQUESTED(?: x(\d+))?\]/) || [])[1]
+          ? parseInt(newInstructions.match(/\[HELP REQUESTED(?: x(\d+))?\]/)[1], 10)
+          : 1;
+        const waiterBroadcastChan = db.channel(`waiter-${VENUE_DATA.id}`);
+        waiterBroadcastChan.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            waiterBroadcastChan.send({
+              type:    'broadcast',
+              event:   'help_call',
+              payload: {
+                table_num:  tableNum,
+                help_count: helpCount,
+              }
+            });
+            setTimeout(() => db.removeChannel(waiterBroadcastChan), 3000);
+          }
+        });
+      } catch (e) {
+        console.warn('Failed to send instant help-call broadcast:', e);
+      }
+
       _lastGlobalHelpCallTime = Date.now();
       btn.classList.remove('loading');
       btn.className = 'menu-bell-btn called';

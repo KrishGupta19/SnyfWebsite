@@ -17,6 +17,7 @@ export function WaiterTab() {
 
   const channelRef = useRef<ReturnType<typeof db.channel> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const recentAlerts = useRef<Set<string>>(new Set());
 
   function getAudioContext() {
     if (!audioContextRef.current) {
@@ -219,15 +220,22 @@ export function WaiterTab() {
               if (hasHelp) {
                 const prevCount = existing ? getHelpCallCount(existing.special_instructions) : 0;
                 const currentCount = getHelpCallCount(updated.special_instructions);
+                const fingerprint = `help-${updated.table_num}-${currentCount}`;
+
                 if (currentCount > prevCount || !existing) {
-                  playHelpCallAlarm(currentCount || 1);
+                  if (!recentAlerts.current.has(fingerprint)) {
+                    playHelpCallAlarm(currentCount || 1);
+                  }
                 }
               }
 
               if (updated.is_advanced_to_deliver && !updated.waiter_delivered) {
                 const wasDeliverable = existing?.is_advanced_to_deliver && !existing.waiter_delivered;
+                const fingerprint = `deliver-${updated.id}`;
                 if (!wasDeliverable) {
-                  playWaiterBell();
+                  if (!recentAlerts.current.has(fingerprint)) {
+                    playWaiterBell();
+                  }
                 }
               }
 
@@ -239,6 +247,50 @@ export function WaiterTab() {
             });
           } else {
             setOrders(prev => prev.filter(o => o.id !== updated.id));
+          }
+        }
+      )
+      .on(
+        'broadcast',
+        { event: 'help_call' },
+        (payload) => {
+          const data = payload.payload || {};
+          const count = data.help_count || 1;
+          const tableNum = data.table_num || 'N/A';
+          const fingerprint = `help-${tableNum}-${count}`;
+
+          if (!recentAlerts.current.has(fingerprint)) {
+            recentAlerts.current.add(fingerprint);
+            setTimeout(() => {
+              recentAlerts.current.delete(fingerprint);
+            }, 15000);
+
+            // Play the alarm immediately
+            playHelpCallAlarm(count);
+            // Refresh order list immediately to show the help request in UI
+            fetchOrders();
+          }
+        }
+      )
+      .on(
+        'broadcast',
+        { event: 'deliver_bell' },
+        (payload) => {
+          const data = payload.payload || {};
+          const orderId = data.order_id;
+          if (orderId) {
+            const fingerprint = `deliver-${orderId}`;
+            if (!recentAlerts.current.has(fingerprint)) {
+              recentAlerts.current.add(fingerprint);
+              setTimeout(() => {
+                recentAlerts.current.delete(fingerprint);
+              }, 15000);
+
+              // Play waiter bell immediately
+              playWaiterBell();
+              // Refresh order list immediately to show in UI
+              fetchOrders();
+            }
           }
         }
       )
