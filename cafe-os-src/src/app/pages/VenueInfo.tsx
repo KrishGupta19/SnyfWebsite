@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, Trash2, GripVertical, KeyRound, Eye, EyeOff, Lock, Unlock, ShieldAlert, Key, Volume2, VolumeX } from 'lucide-react';
+import { Save, Trash2, GripVertical, KeyRound, Eye, EyeOff, Lock, Unlock, ShieldAlert, Key, Volume2, VolumeX, MapPin, Navigation } from 'lucide-react';
 import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
 import { useLock } from '../../context/LockContext';
@@ -109,6 +109,137 @@ export function VenueInfo() {
     } catch { /* silent */ }
   }
 
+  // ── Google Maps Coordinate Picker ──
+  const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const googleMapInstanceRef = useRef<any>(null);
+  const mapMarkerRef = useRef<any>(null);
+  const [fetchingLocation, setFetchingLocation] = useState(false);
+  const [locationError, setLocationError] = useState('');
+
+  useEffect(() => {
+    if ((window as any).google && (window as any).google.maps) {
+      setGoogleMapsLoaded(true);
+      return;
+    }
+    const scriptId = 'google-maps-js-sdk';
+    let script = document.getElementById(scriptId) as HTMLScriptElement;
+    if (!script) {
+      script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://maps.googleapis.com/maps/api/js?v=weekly';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => setGoogleMapsLoaded(true);
+      document.head.appendChild(script);
+    } else {
+      const interval = setInterval(() => {
+        if ((window as any).google && (window as any).google.maps) {
+          setGoogleMapsLoaded(true);
+          clearInterval(interval);
+        }
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!googleMapsLoaded || !mapContainerRef.current) return;
+
+    const defaultLat = form.lat || 28.6139;
+    const defaultLng = form.lng || 77.2090;
+
+    const mapOptions = {
+      center: { lat: defaultLat, lng: defaultLng },
+      zoom: 15,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
+      styles: [
+        { elementType: "geometry", stylers: [{ color: "#212121" }] },
+        { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+        { elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
+        { elementType: "labels.text.stroke", stylers: [{ color: "#212121" }] },
+        { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#757575" }] },
+        { featureType: "poi", elementType: "geometry", stylers: [{ color: "#181818" }] },
+        { featureType: "road", elementType: "geometry.fill", stylers: [{ color: "#2c2c2c" }] },
+        { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212121" }] },
+        { featureType: "water", elementType: "geometry", stylers: [{ color: "#000000" }] }
+      ]
+    };
+
+    const map = new (window as any).google.maps.Map(mapContainerRef.current, mapOptions);
+    googleMapInstanceRef.current = map;
+
+    const marker = new (window as any).google.maps.Marker({
+      position: { lat: defaultLat, lng: defaultLng },
+      map: map,
+      draggable: true,
+      animation: (window as any).google.maps.Animation.DROP
+    });
+    mapMarkerRef.current = marker;
+
+    marker.addListener("dragend", () => {
+      const pos = marker.getPosition();
+      if (pos) {
+        setForm(prev => ({
+          ...prev,
+          lat: parseFloat(pos.lat().toFixed(7)),
+          lng: parseFloat(pos.lng().toFixed(7))
+        }));
+      }
+    });
+
+    map.addListener("click", (e: any) => {
+      const latLng = e.latLng;
+      if (latLng) {
+        marker.setPosition(latLng);
+        setForm(prev => ({
+          ...prev,
+          lat: parseFloat(latLng.lat().toFixed(7)),
+          lng: parseFloat(latLng.lng().toFixed(7))
+        }));
+      }
+    });
+  }, [googleMapsLoaded]);
+
+  useEffect(() => {
+    if (googleMapInstanceRef.current && mapMarkerRef.current && form.lat && form.lng) {
+      const newPos = { lat: Number(form.lat), lng: Number(form.lng) };
+      const currentPos = mapMarkerRef.current.getPosition();
+      if (!currentPos || Math.abs(currentPos.lat() - newPos.lat) > 0.0001 || Math.abs(currentPos.lng() - newPos.lng) > 0.0001) {
+        mapMarkerRef.current.setPosition(newPos);
+        googleMapInstanceRef.current.panTo(newPos);
+      }
+    }
+  }, [form.lat, form.lng]);
+
+  function handleUseMyLocation() {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser.');
+      return;
+    }
+    setFetchingLocation(true);
+    setLocationError('');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const latitude = parseFloat(position.coords.latitude.toFixed(7));
+        const longitude = parseFloat(position.coords.longitude.toFixed(7));
+        setForm(prev => ({
+          ...prev,
+          lat: latitude,
+          lng: longitude
+        }));
+        setFetchingLocation(false);
+      },
+      (err) => {
+        setLocationError(err.message || 'Unable to retrieve location.');
+        setFetchingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
   const [newUsername,     setNewUsername]     = useState('');
   const [userSaving,      setUserSaving]      = useState(false);
   const [userSaved,       setUserSaved]       = useState(false);
@@ -126,6 +257,8 @@ export function VenueInfo() {
     name: '', description: '', tagline: '',
     zone: '', category: '', hours: '', location: '',
     cgst_pct: 0, sgst_pct: 0, service_tax_pct: 0,
+    lat: null as number | null,
+    lng: null as number | null,
   });
 
   useEffect(() => {
@@ -141,6 +274,8 @@ export function VenueInfo() {
         cgst_pct:        venue.cgst_pct        || 0,
         sgst_pct:        venue.sgst_pct        || 0,
         service_tax_pct: venue.service_tax_pct || 0,
+        lat:             venue.lat !== undefined ? venue.lat : null,
+        lng:             venue.lng !== undefined ? venue.lng : null,
       });
       fetchPhotos();
     }
@@ -169,6 +304,8 @@ export function VenueInfo() {
     const cgst = parseFloat(form.cgst_pct.toString()) || 0;
     const sgst = parseFloat(form.sgst_pct.toString()) || 0;
     const service_tax = parseFloat(form.service_tax_pct.toString()) || 0;
+    const lat = form.lat !== null && !isNaN(Number(form.lat)) ? parseFloat(form.lat.toString()) : null;
+    const lng = form.lng !== null && !isNaN(Number(form.lng)) ? parseFloat(form.lng.toString()) : null;
 
     await db.from('venues').update({
       name:            form.name,
@@ -181,6 +318,8 @@ export function VenueInfo() {
       cgst_pct:        cgst,
       sgst_pct:        sgst,
       service_tax_pct: service_tax,
+      lat:             lat,
+      lng:             lng,
       updated_at:      new Date().toISOString(),
     }).eq('id', venue.id);
 
@@ -197,6 +336,8 @@ export function VenueInfo() {
         cgst_pct:        cgst,
         sgst_pct:        sgst,
         service_tax_pct: service_tax,
+        lat:             lat ?? undefined,
+        lng:             lng ?? undefined,
       });
     }
 
@@ -459,6 +600,72 @@ export function VenueInfo() {
             className="w-full px-4 py-3 bg-input-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
             placeholder="Ground floor, DLF Cyber Hub, Gurugram"
           />
+        </div>
+
+        <div className="border-t border-border pt-6 mt-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-base font-semibold">📍 Geofenced Coordinates</h4>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Lock order placement to a 150m physical radius around your venue.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleUseMyLocation}
+              disabled={fetchingLocation}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600/10 hover:bg-cyan-600/20 text-cyan-600 dark:text-cyan-400 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+            >
+              <Navigation className="w-3.5 h-3.5" />
+              {fetchingLocation ? 'Locating...' : 'Use My Location'}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Latitude</label>
+              <input
+                type="number"
+                step="0.0000001"
+                placeholder="e.g. 28.4944"
+                value={form.lat === null ? '' : form.lat}
+                onChange={e => setForm({...form, lat: e.target.value === '' ? null : parseFloat(e.target.value)})}
+                className="w-full px-4 py-3 bg-input-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm font-mono"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Longitude</label>
+              <input
+                type="number"
+                step="0.0000001"
+                placeholder="e.g. 77.0896"
+                value={form.lng === null ? '' : form.lng}
+                onChange={e => setForm({...form, lng: e.target.value === '' ? null : parseFloat(e.target.value)})}
+                className="w-full px-4 py-3 bg-input-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm font-mono"
+              />
+            </div>
+          </div>
+
+          {locationError && (
+            <p className="text-xs text-destructive bg-destructive/10 rounded-lg px-3 py-2">
+              {locationError}
+            </p>
+          )}
+
+          {/* Map Picker Container */}
+          <div className="relative w-full h-64 rounded-xl overflow-hidden border border-border bg-accent/20 flex items-center justify-center">
+            {googleMapsLoaded ? (
+              <div ref={mapContainerRef} className="absolute inset-0 w-full h-full" />
+            ) : (
+              <div className="text-center p-4">
+                <MapPin className="w-8 h-8 text-muted-foreground mx-auto mb-2 animate-bounce" />
+                <p className="text-xs text-muted-foreground">Loading interactive map...</p>
+              </div>
+            )}
+          </div>
+          <p className="text-[10px] text-muted-foreground italic mt-1">
+            Drag the marker or click anywhere on the map to pin your exact location.
+          </p>
         </div>
 
         <div className="border-t border-border pt-6 mt-6">

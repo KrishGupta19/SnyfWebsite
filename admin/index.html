@@ -513,6 +513,21 @@
                   <div class="field"><label class="input-label">Category</label><select class="select" id="edit-category"><option>Café</option><option>Restaurant</option><option>Bar</option></select></div>
                   <div class="field" style="grid-column:1/-1;"><label class="input-label">Description</label><textarea class="input" id="edit-desc" rows="2" style="resize:vertical;"></textarea></div>
                   <div class="field" style="grid-column:1/-1;"><label class="input-label">One-liner tagline <span style="color:var(--dim)">(shows on discover card)</span></label><input class="input" type="text" id="edit-tagline"></div>
+                  <div class="field" style="grid-column:1/-1;">
+                    <label class="input-label">📍 Venue Coordinates <span style="color:var(--dim);font-size:10px;">(GPS lock — prevents remote orders)</span></label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:flex-end;">
+                      <div>
+                        <label style="font-size:10px;color:var(--dim);display:block;margin-bottom:4px;">Latitude</label>
+                        <input class="input" type="number" id="edit-lat" placeholder="e.g. 28.4944" step="0.0000001">
+                      </div>
+                      <div>
+                        <label style="font-size:10px;color:var(--dim);display:block;margin-bottom:4px;">Longitude</label>
+                        <input class="input" type="number" id="edit-lng" placeholder="e.g. 77.0896" step="0.0000001">
+                      </div>
+                      <button type="button" class="btn btn--ghost btn--sm" style="white-space:nowrap;border-color:rgba(0,242,254,0.3);color:var(--cyan);" onclick="fillCurrentLocation('edit-lat','edit-lng')">📡 Use My Location</button>
+                    </div>
+                    <div style="font-size:10px;color:var(--dim);margin-top:6px;">Leave blank to disable GPS verification for this venue.</div>
+                  </div>
                 </div>
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;">
                   <div class="toggle-wrap">
@@ -964,6 +979,24 @@
           </label>
           <input class="input" type="number" id="av-table-count" placeholder="e.g. 12" min="1" max="100" style="max-width:160px;">
         </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label class="input-label">
+            📍 Venue Coordinates
+            <span style="color:var(--dim);font-size:10px;margin-left:4px;">(GPS lock — prevents remote orders)</span>
+          </label>
+          <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:flex-end;">
+            <div>
+              <label style="font-size:10px;color:var(--dim);display:block;margin-bottom:4px;">Latitude</label>
+              <input class="input" type="number" id="av-lat" placeholder="e.g. 28.4944" step="0.0000001">
+            </div>
+            <div>
+              <label style="font-size:10px;color:var(--dim);display:block;margin-bottom:4px;">Longitude</label>
+              <input class="input" type="number" id="av-lng" placeholder="e.g. 77.0896" step="0.0000001">
+            </div>
+            <button type="button" class="btn btn--ghost btn--sm" style="white-space:nowrap;border-color:rgba(0,242,254,0.3);color:var(--cyan);" onclick="fillCurrentLocation('av-lat','av-lng')">📡 Use My Location</button>
+          </div>
+          <div style="font-size:10px;color:var(--dim);margin-top:6px;">Leave blank to skip GPS verification for this venue.</div>
+        </div>
       </div>
       <div id="av-url-preview" style="margin-top:14px;font-family:var(--mono);font-size:11px;color:var(--muted);background:rgba(246,245,242,0.03);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;display:none;">
         Venue URL: <span id="av-url-text" style="color:var(--cyan);"></span><br>
@@ -1078,7 +1111,9 @@ function mapVenueFromRow(row) {
     scoreNote: row.score_note || '',
     scoreLocked: row.score_locked || false,
     username: row.username || `${row.slug}_admin`,
-    password: row.password || 'password123'
+    password: row.password || 'password123',
+    lat: row.lat ?? null,
+    lng: row.lng ?? null,
   };
 }
 
@@ -1534,6 +1569,8 @@ function openVenueDetail(id) {
   document.getElementById('edit-category').value = venue.category;
   document.getElementById('edit-desc').value     = venue.desc;
   document.getElementById('edit-tagline').value  = venue.tagline;
+  document.getElementById('edit-lat').value      = venue.lat ?? '';
+  document.getElementById('edit-lng').value      = venue.lng ?? '';
   document.getElementById('edit-active').checked = venue.status === 'active';
 
   renderTrustSliders(venue);
@@ -2630,6 +2667,22 @@ function autoSlug() {
   } else { preview.style.display = 'none'; }
 }
 
+function fillCurrentLocation(latInputId, lngInputId) {
+  if (!navigator.geolocation) { showToast('GPS not supported in this browser.', 'error'); return; }
+  showToast('📡 Getting your location…');
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      document.getElementById(latInputId).value = pos.coords.latitude.toFixed(7);
+      document.getElementById(lngInputId).value = pos.coords.longitude.toFixed(7);
+      showToast(`📍 Location set: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
+    },
+    (err) => {
+      showToast('⚠ Could not get location: ' + (err.message || 'Permission denied'), 'error');
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+}
+
 function avNextStep() {
   const name = document.getElementById('av-name').value.trim();
   const slug = document.getElementById('av-slug').value.trim();
@@ -2662,6 +2715,8 @@ async function submitNewVenue() {
   const desc   = document.getElementById('av-desc').value.trim();
   const tag    = document.getElementById('av-tagline').value.trim();
   const visits = parseInt(document.getElementById('av-visits').value) || 0;
+  const latVal = document.getElementById('av-lat').value.trim();
+  const lngVal = document.getElementById('av-lng').value.trim();
   const username = `${slug}_admin`;
   const password = generatePassword();
 
@@ -2677,7 +2732,9 @@ async function submitNewVenue() {
     featured: false,
     sort_order: VENUES_DATA.length + 1,
     hours: '9AM – 11PM · Mon–Sun',
-    location: zone + ', NCR'
+    location: zone + ', NCR',
+    lat: latVal ? parseFloat(latVal) : null,
+    lng: lngVal ? parseFloat(lngVal) : null,
   };
 
   try {
@@ -3176,13 +3233,15 @@ async function saveVenueInfo() {
   const venue = VENUES_DATA.find(v => String(v.id) === String(currentVenueId));
   if (!venue) return;
   
-  const name = document.getElementById('edit-name').value.trim();
-  const slug = document.getElementById('edit-slug').value.trim();
-  const zone = document.getElementById('edit-zone').value;
-  const cat  = document.getElementById('edit-category').value;
-  const desc = document.getElementById('edit-desc').value.trim();
-  const tag  = document.getElementById('edit-tagline').value.trim();
+  const name   = document.getElementById('edit-name').value.trim();
+  const slug   = document.getElementById('edit-slug').value.trim();
+  const zone   = document.getElementById('edit-zone').value;
+  const cat    = document.getElementById('edit-category').value;
+  const desc   = document.getElementById('edit-desc').value.trim();
+  const tag    = document.getElementById('edit-tagline').value.trim();
   const active = document.getElementById('edit-active').checked;
+  const latVal = document.getElementById('edit-lat').value.trim();
+  const lngVal = document.getElementById('edit-lng').value.trim();
   
   try {
     const { error } = await db
@@ -3195,6 +3254,8 @@ async function saveVenueInfo() {
         description: desc,
         tagline: tag,
         status: active ? 'active' : 'inactive',
+        lat: latVal ? parseFloat(latVal) : null,
+        lng: lngVal ? parseFloat(lngVal) : null,
         updated_at: new Date().toISOString()
       })
       .eq('id', currentVenueId);
@@ -3202,13 +3263,15 @@ async function saveVenueInfo() {
     if (error) throw error;
     
     // Update locally
-    venue.name = name;
-    venue.slug = slug;
-    venue.zone = zone;
+    venue.name     = name;
+    venue.slug     = slug;
+    venue.zone     = zone;
     venue.category = cat;
-    venue.desc = desc;
-    venue.tagline = tag;
-    venue.status = active ? 'active' : 'inactive';
+    venue.desc     = desc;
+    venue.tagline  = tag;
+    venue.status   = active ? 'active' : 'inactive';
+    venue.lat      = latVal ? parseFloat(latVal) : null;
+    venue.lng      = lngVal ? parseFloat(lngVal) : null;
     
     renderVenuesTable();
     renderOverviewVenues();

@@ -47,6 +47,8 @@ export interface Venue {
   cgst_pct?:   number;
   sgst_pct?:   number;
   service_tax_pct?: number;
+  lat?:        number;
+  lng?:        number;
 }
 
 export interface MenuItem {
