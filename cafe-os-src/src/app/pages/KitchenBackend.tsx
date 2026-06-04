@@ -262,10 +262,10 @@ export function KitchenBackend() {
       // Rich multi-harmonic bell ring
       function ringBell(startTime: number) {
         const harmonics = [
-          { freq: 880,  peakGain: 0.9,  decay: 1.4 },
-          { freq: 1320, peakGain: 0.6,  decay: 1.0 },
-          { freq: 1760, peakGain: 0.45, decay: 0.8 },
-          { freq: 2200, peakGain: 0.25, decay: 0.6 },
+          { freq: 880,  peakGain: 1.0,  decay: 1.4 },
+          { freq: 1320, peakGain: 1.0,  decay: 1.0 },
+          { freq: 1760, peakGain: 0.9,  decay: 0.8 },
+          { freq: 2200, peakGain: 0.5,  decay: 0.6 },
         ];
         harmonics.forEach(({ freq, peakGain, decay }) => {
           const osc  = ctx.createOscillator();
