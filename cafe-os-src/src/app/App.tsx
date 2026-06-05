@@ -62,7 +62,6 @@ function AppContent() {
             <Route path="/growth"    element={<GrowthPlans />}      />
             <Route path="/campaigns" element={<Placeholder title="Campaign Engine"  description="Coming soon" />} />
             <Route path="/qr"        element={<QRCodes />} />
-            <Route path="/rewards"   element={<Placeholder title="Rewards Program"  description="Coming soon" />} />
           </Routes>
         </main>
       </div>

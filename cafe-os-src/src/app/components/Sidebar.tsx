@@ -19,7 +19,6 @@ const navItems = [
   { path: '/growth',    icon: Target,          label: 'Growth Engine'     },
   { path: '/campaigns', icon: Megaphone,       label: 'Campaigns'         },
   { path: '/qr',        icon: QrCode,          label: 'QR Codes'          },
-  { path: '/rewards',   icon: Gift,            label: 'Rewards'           },
 ];
 
 export function Sidebar() {

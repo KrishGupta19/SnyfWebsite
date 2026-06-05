@@ -23,6 +23,14 @@ export function VenueInfo() {
   const [showPIN, setShowPIN] = useState(false);
   const [pinSaved, setPinSaved] = useState(false);
 
+  const [form, setForm] = useState({
+    name: '', description: '', tagline: '',
+    zone: '', category: '', hours: '', location: '',
+    cgst_pct: 0, sgst_pct: 0, service_tax_pct: 0,
+    lat: null as number | null,
+    lng: null as number | null,
+  });
+
   // ── Volume settings ──────────────────────────────────
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -252,14 +260,6 @@ export function VenueInfo() {
   const [passError,       setPassError]       = useState('');
   const [passSaving,      setPassSaving]      = useState(false);
   const [passSaved,       setPassSaved]       = useState(false);
-
-  const [form, setForm] = useState({
-    name: '', description: '', tagline: '',
-    zone: '', category: '', hours: '', location: '',
-    cgst_pct: 0, sgst_pct: 0, service_tax_pct: 0,
-    lat: null as number | null,
-    lng: null as number | null,
-  });
 
   useEffect(() => {
     if (venue) {
