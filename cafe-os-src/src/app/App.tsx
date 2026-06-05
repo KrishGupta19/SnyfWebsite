@@ -15,6 +15,7 @@ import { VenueInfo }        from './pages/VenueInfo';
 import { QRCodes }          from './pages/QRCodes';
 import { Placeholder }      from './pages/Placeholder';
 import { UnlockModal }      from './components/UnlockModal';
+import { Bills }            from './pages/Bills';
 
 export default function App() {
   return (
@@ -56,6 +57,7 @@ function AppContent() {
             <Route path="/kitchen"   element={<KitchenBackend />}   />
             <Route path="/waiter"    element={<WaiterTab />}        />
             <Route path="/menu"      element={<MenuManager />}      />
+            <Route path="/bills"     element={<Bills />}            />
             <Route path="/venue"     element={<VenueInfo />}        />
             <Route path="/revenue"   element={<Revenue />}          />
             <Route path="/customers" element={<CustomerInsights />} />
