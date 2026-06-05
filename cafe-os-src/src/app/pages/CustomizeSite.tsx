@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Palette, Image as ImageIcon, LayoutTemplate, Save, CheckCircle2, Megaphone } from 'lucide-react';
+import { Palette, Image as ImageIcon, LayoutTemplate, Save, CheckCircle2, Megaphone, RotateCcw } from 'lucide-react';
 import { useVenue } from '../../context/VenueContext';
 import { db } from '../../lib/supabase';
 
@@ -63,6 +63,41 @@ export function CustomizeSite() {
     } catch (err) {
       console.error('Error saving theme settings:', err);
       alert('Failed to save settings. Please ensure the theme_settings column exists in the database.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!venue?.id) return;
+    if (!window.confirm('Are you sure you want to reset your site to the default template? All custom styling will be lost.')) return;
+    
+    setSaving(true);
+    setSuccessMessage('');
+
+    const defaultSettings = {
+      primaryColor: '#3b82f6',
+      theme: 'light',
+      buttonShape: 'rounded',
+      menuLayout: 'grid',
+      showAnnouncement: false,
+      announcementText: '',
+    };
+
+    try {
+      const { error } = await db
+        .from('venues')
+        .update({ theme_settings: null } as any)
+        .eq('id', venue.id);
+
+      if (error) throw error;
+
+      setSettings(defaultSettings);
+      setSuccessMessage('Site reset to default successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      console.error('Error resetting theme settings:', err);
+      alert('Failed to reset settings. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -236,6 +271,14 @@ export function CustomizeSite() {
                 {successMessage}
               </span>
             )}
+            <button
+              onClick={handleReset}
+              disabled={saving}
+              className="flex items-center gap-2 bg-background border border-border text-foreground px-6 py-2.5 rounded-xl font-medium hover:bg-accent transition-colors disabled:opacity-50"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Set to Default
+            </button>
             <button
               onClick={handleSave}
               disabled={saving}
