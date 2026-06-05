@@ -14,7 +14,9 @@ export function Bills() {
   
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
-  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'yesterday' | 'week' | 'month'>('all');
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'yesterday' | 'week' | 'month' | '3month' | '6month' | 'custom'>('all');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [selectedBill, setSelectedBill] = useState<Order | null>(null);
 
   useEffect(() => {
@@ -76,10 +78,94 @@ export function Bills() {
       const oneMonthAgo = new Date(today);
       oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
       return billDate >= oneMonthAgo;
+    } else if (dateFilter === '3month') {
+      const threeMonthsAgo = new Date(today);
+      threeMonthsAgo.setDate(threeMonthsAgo.getDate() - 90);
+      return billDate >= threeMonthsAgo;
+    } else if (dateFilter === '6month') {
+      const sixMonthsAgo = new Date(today);
+      sixMonthsAgo.setDate(sixMonthsAgo.getDate() - 180);
+      return billDate >= sixMonthsAgo;
+    } else if (dateFilter === 'custom') {
+      if (customStartDate) {
+        const start = new Date(customStartDate);
+        start.setHours(0,0,0,0);
+        if (billDate < start) return false;
+      }
+      if (customEndDate) {
+        const end = new Date(customEndDate);
+        end.setHours(23,59,59,999);
+        if (billDate > end) return false;
+      }
     }
 
     return true;
   });
+
+  // Export CSV of the filtered transactions
+  const handleExportCSV = () => {
+    if (filteredBills.length === 0) return;
+    
+    // CSV Headers
+    const headers = [
+      'Bill ID',
+      'Date',
+      'Time',
+      'Table Number',
+      'Items Ordered',
+      'Subtotal (INR)',
+      'GST (INR)',
+      'Service Charge (INR)',
+      'Total Amount (INR)'
+    ];
+
+    // CSV Rows mapping
+    const rows = filteredBills.map(bill => {
+      const dateObj = new Date(bill.updated_at);
+      const dateStr = dateObj.toLocaleDateString('en-IN');
+      const timeStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+      
+      const itemsStr = (bill.items || [])
+        .map(item => `${item.name} (x${item.qty})`)
+        .join('; ');
+
+      return [
+        bill.id.toUpperCase(),
+        dateStr,
+        timeStr,
+        bill.table_num || 'N/A',
+        `"${itemsStr.replace(/"/g, '""')}"`, // escape quotes for CSV
+        bill.subtotal,
+        bill.gst,
+        bill.service_charge,
+        bill.total
+      ];
+    });
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    // Create download trigger
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    
+    let filename = `bills-export-${dateFilter}`;
+    if (dateFilter === 'custom') {
+      filename += `-${customStartDate || 'start'}-to-${customEndDate || 'end'}`;
+    }
+    filename += '.csv';
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Option A: Print Receipt (injects CSS specific to thermal receipt paper width 80mm)
   const handlePrint = (bill: Order) => {
@@ -207,6 +293,28 @@ export function Bills() {
     printWindow.document.close();
   };
 
+  // Helper function to wrap text on a 2D canvas context
+  const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] => {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      const width = ctx.measureText(currentLine + ' ' + word).width;
+      if (width < maxWidth) {
+        currentLine += (currentLine ? ' ' : '') + word;
+      } else {
+        lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+    return lines;
+  };
+
   // Export Receipt as a PNG Image using HTML Canvas
   const handleSaveImage = (bill: Order) => {
     if (!venue) return;
@@ -214,12 +322,21 @@ export function Bills() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // First, calculate wrapped items height dynamically
     const width = 450;
     const itemHeight = 35;
     const headerHeight = 220;
     const footerHeight = 220;
-    const itemsHeight = bill.items.length * itemHeight;
-    const height = headerHeight + itemsHeight + footerHeight;
+    const maxNameWidth = 240;
+
+    let itemsTotalHeight = 0;
+    ctx.font = '13px "Courier New", Courier, monospace';
+    bill.items.forEach(item => {
+      const lines = wrapText(ctx, item.name, maxNameWidth);
+      itemsTotalHeight += Math.max(lines.length * 16 + 8, itemHeight);
+    });
+
+    const height = headerHeight + itemsTotalHeight + footerHeight;
 
     canvas.width = width;
     canvas.height = height;
@@ -266,17 +383,21 @@ export function Bills() {
     ctx.textAlign = 'center';
     ctx.fillText('------------------------------------------', width / 2, 220);
 
-    // Render bill items
+    // Render bill items with wrapping
     ctx.font = '13px "Courier New", Courier, monospace';
     let y = 245;
     bill.items.forEach((item) => {
       ctx.textAlign = 'left';
-      const displayName = item.name.length > 20 ? item.name.substring(0, 18) + '..' : item.name;
-      ctx.fillText(displayName, 30, y);
+      const nameLines = wrapText(ctx, item.name, maxNameWidth);
+      nameLines.forEach((line, lineIdx) => {
+        ctx.fillText(line, 30, y + (lineIdx * 16));
+      });
+
       ctx.textAlign = 'right';
       ctx.fillText(String(item.qty), width - 130, y);
       ctx.fillText(`₹${(item.price * item.qty).toLocaleString('en-IN')}`, width - 30, y);
-      y += itemHeight;
+      
+      y += Math.max(nameLines.length * 16 + 8, itemHeight);
     });
 
     ctx.textAlign = 'center';
@@ -352,12 +473,22 @@ export function Bills() {
           </p>
         </div>
         
-        <button
-          onClick={fetchBills}
-          className="px-4 py-2.5 bg-accent/60 hover:bg-accent border border-border/80 rounded-xl text-sm font-semibold transition-all cursor-pointer flex items-center gap-2"
-        >
-          Refresh Data
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportCSV}
+            disabled={filteredBills.length === 0}
+            className="px-4 py-2.5 bg-primary hover:opacity-90 text-primary-foreground rounded-xl text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export CSV ({filteredBills.length})</span>
+          </button>
+          <button
+            onClick={fetchBills}
+            className="px-4 py-2.5 bg-accent/60 hover:bg-accent border border-border/80 rounded-xl text-sm font-semibold transition-all cursor-pointer flex items-center gap-2"
+          >
+            Refresh Data
+          </button>
+        </div>
       </div>
 
       {/* Main layout */}
@@ -386,20 +517,68 @@ export function Bills() {
 
             {/* Date filter toggle list */}
             <div className="flex flex-wrap gap-1.5 pt-1">
-              {(['all', 'today', 'yesterday', 'week', 'month'] as const).map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setDateFilter(filter)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all border cursor-pointer ${
-                    dateFilter === filter
-                      ? 'bg-primary text-primary-foreground border-transparent shadow-sm'
-                      : 'bg-accent/40 border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent/85'
-                  }`}
-                >
-                  {filter}
-                </button>
-              ))}
+              {(['all', 'today', 'yesterday', 'week', 'month', '3month', '6month', 'custom'] as const).map((filter) => {
+                const labelMap = {
+                  all: 'All Time',
+                  today: 'Today',
+                  yesterday: 'Yesterday',
+                  week: 'This Week',
+                  month: '1 Month',
+                  '3month': '3 Months',
+                  '6month': '6 Months',
+                  custom: 'Custom Range'
+                };
+                return (
+                  <button
+                    key={filter}
+                    onClick={() => setDateFilter(filter)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all border cursor-pointer ${
+                      dateFilter === filter
+                        ? 'bg-primary text-primary-foreground border-transparent shadow-sm'
+                        : 'bg-accent/40 border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent/85'
+                    }`}
+                  >
+                    {labelMap[filter]}
+                  </button>
+                );
+              })}
             </div>
+
+            {/* Custom range input drawer */}
+            {dateFilter === 'custom' && (
+              <div className="flex items-center gap-3 pt-2.5 border-t border-border/40 animate-in fade-in duration-200">
+                <div className="flex-1 flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Start Date</label>
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="bg-accent/40 border border-border/60 px-3 py-1.5 rounded-xl text-xs outline-none text-foreground w-full"
+                  />
+                </div>
+                <div className="flex-1 flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">End Date</label>
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="bg-accent/40 border border-border/60 px-3 py-1.5 rounded-xl text-xs outline-none text-foreground w-full"
+                  />
+                </div>
+                {(customStartDate || customEndDate) && (
+                  <button
+                    onClick={() => {
+                      setCustomStartDate('');
+                      setCustomEndDate('');
+                    }}
+                    className="self-end p-2 text-muted-foreground hover:text-foreground hover:bg-accent/80 rounded-xl transition-all cursor-pointer"
+                    title="Clear Custom Dates"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* List display */}
@@ -535,7 +714,7 @@ export function Bills() {
                     
                     {selectedBill.items.map((item, idx) => (
                       <div key={idx} className="flex justify-between text-neutral-800">
-                        <span className="w-1/2 text-left truncate">{item.name}</span>
+                        <span className="w-1/2 text-left break-words pr-2">{item.name}</span>
                         <span className="w-1/6 text-right">x{item.qty}</span>
                         <span className="w-1/3 text-right">₹{(item.price * item.qty).toLocaleString('en-IN')}</span>
                       </div>
