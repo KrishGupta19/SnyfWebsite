@@ -840,7 +840,7 @@
       width: 100%;
       max-width: var(--max-w);
       padding: 14px 16px;
-      background: rgba(246,245,242,0.92);
+      background: var(--nav-bg, rgba(246,245,242,0.92));
       backdrop-filter: blur(20px);
       border-top: 1px solid var(--border);
       z-index: 30;
@@ -855,7 +855,7 @@
       width: 100%;
       height: 52px;
       background: var(--ink);
-      color: #F6F5F2;
+      color: var(--btn-text, #F6F5F2);
       border-radius: 14px;
       font-size: 15px;
       font-weight: 700;
@@ -881,7 +881,7 @@
     .menu-order-total {
       font-family: var(--mono);
       font-size: 12px;
-      color: rgba(246,245,242,0.6);
+      color: var(--btn-text-muted, rgba(246,245,242,0.6));
       margin-left: auto;
     }
 
@@ -889,7 +889,7 @@
     .cart-header {
       position: sticky;
       top: 0;
-      background: rgba(246,245,242,0.9);
+      background: var(--nav-bg, rgba(246,245,242,0.9));
       backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
       padding: 16px;
@@ -2522,7 +2522,7 @@
       // ── Phase 1: Venue basics only (~100ms) — shows page frame immediately ──
       const { data: venue, error } = await db
         .from('venues')
-        .select('id, slug, name, zone, category, description, tagline, status, hours, location, cgst_pct, sgst_pct, service_tax_pct, lat, lng')
+        .select('id, slug, name, zone, category, description, tagline, status, hours, location, cgst_pct, sgst_pct, service_tax_pct, lat, lng, theme_settings')
         .eq('slug', VENUE_SLUG)
         .eq('status', 'active')
         .single();
@@ -2556,6 +2556,78 @@
       waiterBroadcastChan = db.channel(`waiter-${venue.id}`).subscribe();
 
       document.title = venue.name + ' — Snyf';
+
+      // ── Apply custom theme settings if available ──
+      if (venue.theme_settings) {
+        const { primaryColor, theme, buttonShape, menuLayout, showAnnouncement, announcementText } = venue.theme_settings;
+        let customCss = '';
+
+        if (theme === 'dark') {
+          document.documentElement.style.setProperty('--ink', '#FFFFFF');
+          document.documentElement.style.setProperty('--paper', '#121212');
+          document.documentElement.style.setProperty('--white', '#1E1E1B');
+          document.documentElement.style.setProperty('--border', '#333333');
+          document.documentElement.style.setProperty('--hover', '#2A2A2A');
+          document.documentElement.style.setProperty('--muted', '#A0A0A0');
+          document.documentElement.style.setProperty('--nav-bg', 'rgba(18,18,18,0.92)');
+          document.documentElement.style.setProperty('--btn-text', '#121212');
+          document.documentElement.style.setProperty('--btn-text-muted', 'rgba(18,18,18,0.6)');
+          document.body.style.background = '#000000';
+        }
+
+        if (primaryColor) {
+           customCss += `
+             .dish-add-btn, .dish-qty-ctrl, .menu-cat-btn.active, .cart-checkout-btn, .menu-direct-rate-btn, .menu-order-btn { 
+               background: ${primaryColor} !important; 
+               border-color: ${primaryColor} !important;
+               color: #FFFFFF !important;
+             }
+             .menu-order-total { color: rgba(255,255,255,0.7) !important; }
+             .menu-trust-score, .menu-direct-rate-val-display { color: ${primaryColor} !important; }
+             .menu-trust-dim-fill { background: ${primaryColor} !important; }
+           `;
+        }
+
+        if (buttonShape === 'sharp') {
+           customCss += `.dish-add-btn, .dish-qty-ctrl, .cart-checkout-btn, .menu-direct-rate-btn { border-radius: 0px !important; }`;
+        } else if (buttonShape === 'rounded') {
+           customCss += `.dish-add-btn, .dish-qty-ctrl, .cart-checkout-btn, .menu-direct-rate-btn { border-radius: 8px !important; }`;
+        } else if (buttonShape === 'pill') {
+           customCss += `.dish-add-btn, .dish-qty-ctrl, .cart-checkout-btn, .menu-direct-rate-btn { border-radius: 9999px !important; }`;
+        }
+
+        if (menuLayout === 'grid') {
+           customCss += `
+             .menu-dishes { display: grid !important; grid-template-columns: 1fr 1fr; gap: 10px; }
+             .dish-card { flex-direction: column !important; align-items: stretch; padding: 10px; text-align: left; }
+             .dish-img-container { width: 100%; height: 120px; margin-bottom: 8px; }
+             .dish-body { min-height: auto; }
+             .dish-desc { -webkit-line-clamp: 2; }
+             .dish-price-wrap { margin-top: 8px; }
+           `;
+        } else {
+           // Default list layout is the original Snyf horizontal card design
+           customCss += `
+             .menu-dishes { display: flex !important; flex-direction: column; gap: 14px; }
+           `;
+        }
+
+        if (customCss) {
+           const styleTag = document.createElement('style');
+           styleTag.innerHTML = customCss;
+           document.head.appendChild(styleTag);
+        }
+
+        if (showAnnouncement && announcementText) {
+           const rootEl = document.querySelector('.vp-root');
+           if (rootEl) {
+             const bar = document.createElement('div');
+             bar.style.cssText = `background: ${primaryColor || 'var(--ink)'}; color: #FFF; padding: 10px; text-align: center; font-size: 12px; font-weight: 700; width: 100%; z-index: 9999; display: flex; align-items: center; justify-content: center;`;
+             bar.textContent = announcementText;
+             rootEl.insertBefore(bar, rootEl.firstChild);
+           }
+        }
+      }
       initVenuePage(); // renders page frame + skeleton menu immediately
 
       // ── Phase 2: Photos + Menu + Reports in parallel ──

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { TrendingUp, DollarSign, Calendar } from "lucide-react";
+import { TrendingUp, DollarSign, Calendar, ShoppingBag, Star, Package } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { db } from "../../lib/supabase";
 import { useVenue } from "../../context/VenueContext";
@@ -14,6 +14,9 @@ export function Revenue() {
     weeklyPercent: 0,
     thisMonthRevenue: 0,
     monthlyPercent: 0,
+    mostOrderedToday: null as { name: string; count: number } | null,
+    totalItemsSoldToday: 0,
+    mostOrderedOverall: null as { name: string; count: number } | null,
   });
   const [weeklyTrend, setWeeklyTrend] = useState<{ day: string; revenue: number }[]>([]);
   const [monthlyTrend, setMonthlyTrend] = useState<{ month: string; revenue: number }[]>([]);
@@ -25,7 +28,7 @@ export function Revenue() {
       try {
         const { data: orders, error } = await db
           .from('orders')
-          .select('total, created_at, status')
+          .select('total, created_at, status, items')
           .eq('venue_id', venue.id);
 
         if (error) throw error;
@@ -126,6 +129,39 @@ export function Revenue() {
           monthlyData.push({ month: monthName, revenue: monthlyRev });
         }
 
+        // 6. Food Items Insights
+        const todayOrdersList = allOrders.filter(o => new Date(o.created_at).toDateString() === todayStr);
+
+        const todayItemCounts: { [key: string]: number } = {};
+        let totalItemsSoldToday = 0;
+        todayOrdersList.forEach(o => {
+          (o.items || []).forEach((item: any) => {
+            if (item.name) {
+              const qty = item.quantity || 1;
+              todayItemCounts[item.name] = (todayItemCounts[item.name] || 0) + qty;
+              totalItemsSoldToday += qty;
+            }
+          });
+        });
+
+        const overallItemCounts: { [key: string]: number } = {};
+        allOrders.forEach(o => {
+          (o.items || []).forEach((item: any) => {
+            if (item.name) {
+              const qty = item.quantity || 1;
+              overallItemCounts[item.name] = (overallItemCounts[item.name] || 0) + qty;
+            }
+          });
+        });
+
+        const getTopItem = (counts: { [key: string]: number }) => {
+          const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+          return sorted.length > 0 ? { name: sorted[0][0], count: sorted[0][1] } : null;
+        };
+
+        const mostOrderedToday = getTopItem(todayItemCounts);
+        const mostOrderedOverall = getTopItem(overallItemCounts);
+
         setMetrics({
           todayRevenue,
           dailyPercent,
@@ -133,6 +169,9 @@ export function Revenue() {
           weeklyPercent,
           thisMonthRevenue,
           monthlyPercent,
+          mostOrderedToday,
+          totalItemsSoldToday,
+          mostOrderedOverall,
         });
         setWeeklyTrend(weeklyData);
         setMonthlyTrend(monthlyData);
@@ -201,6 +240,53 @@ export function Revenue() {
           <p className={`text-sm ${metrics.monthlyPercent >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
             {metrics.monthlyPercent >= 0 ? '+' : ''}{metrics.monthlyPercent.toFixed(1)}% vs last month
           </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="bg-card rounded-2xl p-6 border border-border">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <ShoppingBag className="w-5 h-5 text-primary" />
+            </div>
+            <h3>Most Ordered (Today)</h3>
+          </div>
+          {metrics.mostOrderedToday ? (
+            <>
+              <p className="text-2xl font-bold mb-2 truncate" title={metrics.mostOrderedToday.name}>{metrics.mostOrderedToday.name}</p>
+              <p className="text-sm text-muted-foreground">{metrics.mostOrderedToday.count} orders today</p>
+            </>
+          ) : (
+            <p className="text-muted-foreground mt-4">No items ordered today</p>
+          )}
+        </div>
+
+        <div className="bg-card rounded-2xl p-6 border border-border">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Star className="w-5 h-5 text-primary" />
+            </div>
+            <h3>Most Ordered (All-Time)</h3>
+          </div>
+          {metrics.mostOrderedOverall ? (
+            <>
+              <p className="text-2xl font-bold mb-2 truncate" title={metrics.mostOrderedOverall.name}>{metrics.mostOrderedOverall.name}</p>
+              <p className="text-sm text-muted-foreground">{metrics.mostOrderedOverall.count} total orders</p>
+            </>
+          ) : (
+            <p className="text-muted-foreground mt-4">No items ordered yet</p>
+          )}
+        </div>
+
+        <div className="bg-card rounded-2xl p-6 border border-border">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Package className="w-5 h-5 text-primary" />
+            </div>
+            <h3>Items Sold Today</h3>
+          </div>
+          <p className="text-4xl font-bold mb-2">{metrics.totalItemsSoldToday}</p>
+          <p className="text-sm text-muted-foreground">Total items prepared</p>
         </div>
       </div>
 

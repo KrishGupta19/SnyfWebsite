@@ -4,7 +4,7 @@ import {
   LayoutDashboard, TrendingUp, Users, Megaphone,
   Target, QrCode, Gift, UtensilsCrossed, Store,
   ChevronLeft, ChevronRight, LogOut, HandPlatter,
-  Settings, ChevronDown, Receipt
+  Settings, ChevronDown, Receipt, Palette
 } from 'lucide-react';
 import { useVenue } from '../../context/VenueContext';
 import { useLock } from '../../context/LockContext';
@@ -19,6 +19,7 @@ const navItems = [
 
 const profileItems = [
   { path: '/venue',     icon: Store,           label: 'Venue Info'        },
+  { path: '/customize', icon: Palette,         label: 'Customize Site'    },
   { path: '/revenue',   icon: TrendingUp,      label: 'Revenue Analytics' },
   { path: '/customers', icon: Users,           label: 'Customer Insights' },
   { path: '/growth',    icon: Target,          label: 'Growth Engine'     },

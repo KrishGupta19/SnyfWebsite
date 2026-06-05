@@ -12,6 +12,7 @@ import { KitchenBackend }   from './pages/KitchenBackend';
 import { WaiterTab }        from './pages/WaiterTab';
 import { MenuManager }      from './pages/MenuManager';
 import { VenueInfo }        from './pages/VenueInfo';
+import { CustomizeSite }    from './pages/CustomizeSite';
 import { QRCodes }          from './pages/QRCodes';
 import { Placeholder }      from './pages/Placeholder';
 import { UnlockModal }      from './components/UnlockModal';
@@ -59,6 +60,7 @@ function AppContent() {
             <Route path="/menu"      element={<MenuManager />}      />
             <Route path="/bills"     element={<Bills />}            />
             <Route path="/venue"     element={<VenueInfo />}        />
+            <Route path="/customize" element={<CustomizeSite />}    />
             <Route path="/revenue"   element={<Revenue />}          />
             <Route path="/customers" element={<CustomerInsights />} />
             <Route path="/growth"    element={<GrowthPlans />}      />
