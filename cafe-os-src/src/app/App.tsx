@@ -12,6 +12,7 @@ import { KitchenBackend }   from './pages/KitchenBackend';
 import { WaiterTab }        from './pages/WaiterTab';
 import { MenuManager }      from './pages/MenuManager';
 import { Inventory }        from './pages/Inventory';
+import { TableManagement }  from './pages/TableManagement';
 import { VenueInfo }        from './pages/VenueInfo';
 import { CustomizeSite }    from './pages/CustomizeSite';
 import { QRCodes }          from './pages/QRCodes';
@@ -57,6 +58,7 @@ function AppContent() {
           <Routes>
             <Route path="/"          element={<Dashboard />}        />
             <Route path="/kitchen"   element={<KitchenBackend />}   />
+            <Route path="/tables"    element={<TableManagement />}  />
             <Route path="/waiter"    element={<WaiterTab />}        />
             <Route path="/menu"      element={<MenuManager />}      />
             <Route path="/inventory" element={<Inventory />}        />
