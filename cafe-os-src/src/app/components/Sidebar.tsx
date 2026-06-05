@@ -4,7 +4,7 @@ import {
   LayoutDashboard, TrendingUp, Users, Megaphone,
   Target, QrCode, Gift, UtensilsCrossed, Store,
   ChevronLeft, ChevronRight, LogOut, HandPlatter,
-  Settings, ChevronDown, Receipt, Palette
+  Settings, ChevronDown, Receipt, Palette, Package
 } from 'lucide-react';
 import { useVenue } from '../../context/VenueContext';
 import { useLock } from '../../context/LockContext';
@@ -14,6 +14,7 @@ const navItems = [
   { path: '/kitchen',   icon: UtensilsCrossed, label: 'Kitchen Backend'   },
   { path: '/waiter',    icon: HandPlatter,     label: 'Waiter'            },
   { path: '/menu',      icon: Store,           label: 'Menu Manager'      },
+  { path: '/inventory', icon: Package,         label: 'Inventory & Recipes'},
   { path: '/bills',     icon: Receipt,         label: 'Bills'             },
 ];
 
