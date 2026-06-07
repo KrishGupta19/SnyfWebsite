@@ -1,4 +1,4 @@
-import { Users, Clock, TrendingUp, Heart } from "lucide-react";
+import { Users, Clock, TrendingUp, Heart, Search, ArrowUpDown, ChevronLeft, ChevronRight, Award, DollarSign, ShoppingBag } from "lucide-react";
 import { useEffect, useState } from 'react';
 import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
@@ -24,6 +24,33 @@ export function CustomerInsights() {
   const [hasHistory, setHasHistory] = useState(false);
   const [hasOrders, setHasOrders] = useState(false);
 
+  // Food Behaviour Analysis States
+  const [foodStats, setFoodStats] = useState<any[]>([]);
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
+  const [categoryShares, setCategoryShares] = useState<any[]>([]);
+  const [topPerformer, setTopPerformer] = useState<any>(null);
+  const [revenueChampion, setRevenueChampion] = useState<any>(null);
+  const [totalQtySold, setTotalQtySold] = useState(0);
+  const [totalRevenueSold, setTotalRevenueSold] = useState(0);
+
+  // Filter, Sort, Pagination states
+  const [foodSearch, setFoodSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [sortBy, setSortBy] = useState<'qty' | 'revenue' | 'name'>('qty');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [foodPage, setFoodPage] = useState(1);
+  const foodPageSize = 6;
+
+  const handleSort = (field: 'qty' | 'revenue' | 'name') => {
+    if (sortBy === field) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+    setFoodPage(1);
+  };
+
   useEffect(() => {
     if (!venue?.id) return;
 
@@ -38,6 +65,19 @@ export function CustomerInsights() {
         if (ordersErr) throw ordersErr;
         const allOrders = orders || [];
         setHasOrders(allOrders.length > 0);
+
+        // Fetch menu items to associate categories
+        const { data: menuItems, error: menuErr } = await db
+          .from('menu_items')
+          .select('id, name, price, category')
+          .eq('venue_id', venue.id);
+
+        const categoryMap: Record<string, string> = {};
+        if (menuItems) {
+          menuItems.forEach(item => {
+            categoryMap[item.id] = item.category || 'Uncategorised';
+          });
+        }
 
         // Fetch all verified reviews for this venue
         const { data: reviews, error: reviewsErr } = await db
@@ -267,6 +307,57 @@ export function CustomerInsights() {
           value: valCount > 0 ? Number(((valSum / valCount / 7) * 10).toFixed(1)) : 0,
         };
 
+        // 10. Food Behaviour Analysis data processing
+        const itemStats: Record<string, { id: string; name: string; price: number; qty: number; revenue: number; category: string }> = {};
+        let sumQty = 0;
+        let sumRevenue = 0;
+
+        allOrders.forEach(o => {
+          const items = o.items || [];
+          items.forEach((item: any) => {
+            const itemId = item.id || item.name;
+            if (!itemId) return;
+            if (!itemStats[itemId]) {
+              itemStats[itemId] = {
+                id: itemId,
+                name: item.name || 'Unknown Item',
+                price: Number(item.price) || 0,
+                qty: 0,
+                revenue: 0,
+                category: categoryMap[itemId] || 'Uncategorised'
+              };
+            }
+            const qty = Number(item.qty) || 1;
+            const itemPrice = Number(item.price) || 0;
+            itemStats[itemId].qty += qty;
+            itemStats[itemId].revenue += qty * itemPrice;
+            sumQty += qty;
+            sumRevenue += qty * itemPrice;
+          });
+        });
+
+        const foodBehaviourList = Object.values(itemStats);
+        const sortedByQty = [...foodBehaviourList].sort((a, b) => b.qty - a.qty);
+        const sortedByRevenue = [...foodBehaviourList].sort((a, b) => b.revenue - a.revenue);
+
+        // Category Share calculations
+        const categoryMapStats: Record<string, { qty: number; revenue: number }> = {};
+        foodBehaviourList.forEach(item => {
+          const cat = item.category;
+          if (!categoryMapStats[cat]) {
+            categoryMapStats[cat] = { qty: 0, revenue: 0 };
+          }
+          categoryMapStats[cat].qty += item.qty;
+          categoryMapStats[cat].revenue += item.revenue;
+        });
+
+        const catSharesList = Object.entries(categoryMapStats).map(([cat, stats]) => ({
+          category: cat,
+          qty: stats.qty,
+          revenue: stats.revenue,
+          percent: sumRevenue > 0 ? (stats.revenue / sumRevenue) * 100 : 0
+        })).sort((a, b) => b.revenue - a.revenue);
+
         setMetrics({
           repeatPercent,
           repeatDiff,
@@ -282,6 +373,14 @@ export function CustomerInsights() {
         setPeakHours({ lunch: lunchCount, dinner: dinnerCount, morning: morningCount });
         setGroupPatterns(gp);
         setSentiment(sentimentScores);
+
+        setFoodStats(foodBehaviourList);
+        setCategoriesList(['All', ...new Set(foodBehaviourList.map(item => item.category).filter(Boolean))]);
+        setCategoryShares(catSharesList);
+        setTopPerformer(sortedByQty[0] || null);
+        setRevenueChampion(sortedByRevenue[0] || null);
+        setTotalQtySold(sumQty);
+        setTotalRevenueSold(sumRevenue);
 
       } catch (err) {
         console.error('Error fetching customer insights data:', err);
@@ -645,6 +744,285 @@ export function CustomerInsights() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Food Behaviour Analysis Section */}
+      <div className="bg-card rounded-2xl p-6 border border-border mt-8 space-y-6">
+        <div>
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <ShoppingBag className="w-6 h-6 text-primary" />
+            Food Behaviour Analysis
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Deep dive into item-level sales, category contributions, and popularity trends
+          </p>
+        </div>
+
+        {!hasOrders ? (
+          <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
+            <span>No order details available to perform analysis</span>
+          </div>
+        ) : (
+          <>
+            {/* Top performing highlights */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-primary/5 border border-primary/10 rounded-2xl p-5 relative overflow-hidden flex items-start gap-4">
+                <div className="p-3 bg-primary/10 rounded-xl text-primary flex-shrink-0">
+                  <Award className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-semibold text-primary uppercase tracking-wider">Star Performer</span>
+                  <h4 className="font-bold text-lg text-foreground mt-1 truncate max-w-[200px]">
+                    {topPerformer?.name || 'N/A'}
+                  </h4>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <span className="font-semibold text-foreground">{topPerformer?.qty || 0}</span> portions sold
+                  </p>
+                  <span className="absolute bottom-2 right-4 text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">
+                    {topPerformer?.category || 'Category'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-accent/5 border border-accent/10 rounded-2xl p-5 relative overflow-hidden flex items-start gap-4">
+                <div className="p-3 bg-accent/10 rounded-xl text-accent flex-shrink-0">
+                  <DollarSign className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-semibold text-accent uppercase tracking-wider">Revenue Champion</span>
+                  <h4 className="font-bold text-lg text-foreground mt-1 truncate max-w-[200px]">
+                    {revenueChampion?.name || 'N/A'}
+                  </h4>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Generated <span className="font-semibold text-foreground">₹{(revenueChampion?.revenue || 0).toLocaleString('en-IN')}</span>
+                  </p>
+                  <span className="absolute bottom-2 right-4 text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium">
+                    {revenueChampion?.category || 'Category'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-card border border-border rounded-2xl p-5 flex items-start gap-4">
+                <div className="p-3 bg-muted/40 rounded-xl text-muted-foreground flex-shrink-0">
+                  <ShoppingBag className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Total Sales Volume</span>
+                  <h4 className="font-bold text-2xl text-foreground mt-0.5">
+                    {totalQtySold.toLocaleString('en-IN')}
+                  </h4>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Items sold across <span className="font-semibold text-foreground">{foodStats.length}</span> unique menu offerings
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive Grid & Category Breakdown */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
+              {/* Left Column: Interactive Paginated Food List */}
+              <div className="lg:col-span-2 space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                  <div className="relative w-full sm:max-w-xs">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search food item..."
+                      value={foodSearch}
+                      onChange={(e) => { setFoodSearch(e.target.value); setFoodPage(1); }}
+                      className="w-full pl-9 pr-4 py-2 bg-input-background border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">Filter Category:</span>
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => { setSelectedCategory(e.target.value); setFoodPage(1); }}
+                      className="px-3 py-2 bg-input-background border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 font-medium"
+                    >
+                      {categoriesList.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto border border-border rounded-2xl bg-card">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/20">
+                        <th
+                          onClick={() => handleSort('name')}
+                          className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-primary transition-colors"
+                        >
+                          <div className="flex items-center gap-1">
+                            Item Name
+                            <ArrowUpDown className="w-3.5 h-3.5" />
+                          </div>
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                          Category
+                        </th>
+                        <th
+                          onClick={() => handleSort('qty')}
+                          className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-primary transition-colors"
+                        >
+                          <div className="flex items-center justify-end gap-1">
+                            Sold Qty
+                            <ArrowUpDown className="w-3.5 h-3.5" />
+                          </div>
+                        </th>
+                        <th
+                          onClick={() => handleSort('revenue')}
+                          className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-primary transition-colors"
+                        >
+                          <div className="flex items-center justify-end gap-1">
+                            Revenue
+                            <ArrowUpDown className="w-3.5 h-3.5" />
+                          </div>
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-[120px]">
+                          Sales Share
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const filteredFoodStats = foodStats.filter(item => {
+                          const matchesSearch = item.name.toLowerCase().includes(foodSearch.toLowerCase());
+                          const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
+                          return matchesSearch && matchesCategory;
+                        });
+
+                        const sortedFoodStats = [...filteredFoodStats].sort((a, b) => {
+                          let fieldA: any = a[sortBy];
+                          let fieldB: any = b[sortBy];
+
+                          if (sortBy === 'name') {
+                            fieldA = a.name.toLowerCase();
+                            fieldB = b.name.toLowerCase();
+                            return sortOrder === 'asc' ? fieldA.localeCompare(fieldB) : fieldB.localeCompare(fieldA);
+                          }
+
+                          return sortOrder === 'asc' ? fieldA - fieldB : fieldB - fieldA;
+                        });
+
+                        const totalPages = Math.ceil(sortedFoodStats.length / foodPageSize) || 1;
+                        const paginatedFoodStats = sortedFoodStats.slice((foodPage - 1) * foodPageSize, foodPage * foodPageSize);
+
+                        if (sortedFoodStats.length === 0) {
+                          return (
+                            <tr>
+                              <td colSpan={5} className="py-8 text-center text-muted-foreground text-sm">
+                                No matching food items found
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        return paginatedFoodStats.map((item, idx) => {
+                          const sharePct = totalRevenueSold > 0 ? (item.revenue / totalRevenueSold) * 100 : 0;
+                          return (
+                            <tr key={idx} className="border-b border-border hover:bg-accent/20 transition-colors">
+                              <td className="py-3 px-4 font-semibold text-sm">{item.name}</td>
+                              <td className="py-3 px-4">
+                                <span className="px-2 py-0.5 bg-accent text-accent-foreground rounded-full text-[10px] font-medium">
+                                  {item.category}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-right font-medium text-sm">{item.qty}</td>
+                              <td className="py-3 px-4 text-right font-bold text-sm">₹{Math.round(item.revenue).toLocaleString('en-IN')}</td>
+                              <td className="py-3 px-4">
+                                <div className="space-y-1">
+                                  <div className="h-2 bg-accent/20 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
+                                      style={{ width: `${Math.min(sharePct * 3.5, 100)}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-[10px] text-muted-foreground">{sharePct.toFixed(1)}%</span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        });
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls */}
+                {(() => {
+                  const filteredFoodStats = foodStats.filter(item => {
+                    const matchesSearch = item.name.toLowerCase().includes(foodSearch.toLowerCase());
+                    const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
+                    return matchesSearch && matchesCategory;
+                  });
+                  const totalPages = Math.ceil(filteredFoodStats.length / foodPageSize) || 1;
+
+                  if (filteredFoodStats.length === 0) return null;
+
+                  return (
+                    <div className="flex items-center justify-between px-2">
+                      <span className="text-xs text-muted-foreground">
+                        Showing {(foodPage - 1) * foodPageSize + 1} - {Math.min(foodPage * foodPageSize, filteredFoodStats.length)} of {filteredFoodStats.length} items
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setFoodPage(p => Math.max(p - 1, 1))}
+                          disabled={foodPage === 1}
+                          className="p-1.5 border border-border bg-card hover:bg-accent rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <span className="text-xs font-semibold">
+                          Page {foodPage} of {totalPages}
+                        </span>
+                        <button
+                          onClick={() => setFoodPage(p => Math.min(p + 1, totalPages))}
+                          disabled={foodPage === totalPages}
+                          className="p-1.5 border border-border bg-card hover:bg-accent rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Right Column: Category Share breakdown */}
+              <div className="bg-card border border-border rounded-2xl p-5 space-y-4 font-sans">
+                <h3 className="text-sm font-semibold tracking-wider uppercase text-muted-foreground">Category Share</h3>
+                <div className="space-y-4">
+                  {categoryShares.map((cat, idx) => (
+                    <div key={idx} className="space-y-1.5">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-semibold text-foreground flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-primary" style={{ opacity: 1 - idx * 0.2 }} />
+                          {cat.category}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {cat.qty} portions · <span className="font-bold text-foreground">₹{Math.round(cat.revenue).toLocaleString('en-IN')}</span>
+                        </span>
+                      </div>
+                      <div className="h-2.5 bg-accent/20 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all"
+                          style={{ width: `${cat.percent}%`, opacity: 1 - idx * 0.15 }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-right text-muted-foreground font-medium">
+                        {cat.percent.toFixed(1)}% of total revenue
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
