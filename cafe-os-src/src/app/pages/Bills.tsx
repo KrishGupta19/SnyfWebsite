@@ -4,13 +4,19 @@ import { useVenue } from '../../context/VenueContext';
 import { Order } from '../../lib/types';
 import { 
   Search, Receipt, Printer, Image, FileText, 
-  Calendar, Clock, Download, ChevronRight, X 
+  Calendar, Clock, Download, ChevronRight, X, Bluetooth 
 } from 'lucide-react';
 
 export function Bills() {
   const { venue } = useVenue();
   const [bills, setBills] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Bluetooth Printer State
+  const [connectedDevice, setConnectedDevice] = useState<any>(null);
+  const [printerChar, setPrinterChar] = useState<any>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [printStatus, setPrintStatus] = useState<string | null>(null);
   
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -165,6 +171,224 @@ export function Bills() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Direct Bluetooth BLE Thermal Printing Functions
+  async function connectPrinter() {
+    if (typeof window === 'undefined' || !navigator.bluetooth) {
+      alert("Web Bluetooth is not supported in this browser. Please use Google Chrome, Microsoft Edge, or Opera on Desktop/Android over secure HTTPS.");
+      return null;
+    }
+    
+    try {
+      setIsConnecting(true);
+      setPrintStatus("Scanning...");
+      
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: [
+          '000018f0-0000-1000-8000-00805f9b34fb', // standard thermal printer service UUID
+          '00001101-0000-1000-8000-00805f9b34fb', // SPP UUID
+          'e7e1a12c-a0ae-11e2-b999-0002a5d5c51b'  // alternative BLE thermal printer
+        ]
+      });
+
+      setPrintStatus(`Connecting...`);
+      const server = await device.gatt?.connect();
+      if (!server) throw new Error("GATT Connection failed to the selected device.");
+
+      setPrintStatus("Discovering...");
+      let service;
+      try {
+        service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+      } catch (e) {
+        const services = await server.getPrimaryServices();
+        if (services.length > 0) {
+          service = services[0];
+        } else {
+          throw new Error("No primary service found on the Bluetooth device.");
+        }
+      }
+
+      setPrintStatus("Configuring...");
+      const characteristics = await service.getCharacteristics();
+      const writeChar = characteristics.find(c => 
+        c.properties.write || c.properties.writeWithoutResponse
+      );
+
+      if (!writeChar) {
+        throw new Error("No writable characteristic found on this device.");
+      }
+
+      setPrinterChar(writeChar);
+      setConnectedDevice(device);
+      setPrintStatus(null);
+      return writeChar;
+    } catch (err: any) {
+      console.error("[Bluetooth Printer Connection Error]:", err);
+      setPrintStatus(null);
+      alert(`Bluetooth connection failed: ${err.message || err}`);
+      return null;
+    } finally {
+      setIsConnecting(false);
+    }
+  }
+
+  const sendEscPosToPrinter = async (characteristic: any, data: Uint8Array) => {
+    // BLE packets are typically capped at 20 bytes. Sending in chunks prevents buffer overrun.
+    const CHUNK_SIZE = 20;
+    for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+      const chunk = data.slice(i, i + CHUNK_SIZE);
+      await characteristic.writeValue(chunk);
+      await new Promise(resolve => setTimeout(resolve, 15));
+    }
+  };
+
+  const generateEscPosData = (bill: Order): Uint8Array => {
+    const encoder = new TextEncoder();
+    const parts: Uint8Array[] = [];
+
+    const addBytes = (...bytes: number[]) => {
+      parts.push(new Uint8Array(bytes));
+    };
+
+    const addText = (text: string) => {
+      // Replaces Rupee symbol with "Rs." for cheap/legacy generic thermal printers
+      const sanitized = text.replace(/₹/g, 'Rs.');
+      parts.push(encoder.encode(sanitized + '\n'));
+    };
+
+    // 1. Initialize printer
+    addBytes(0x1B, 0x40);
+
+    // 2. Align center
+    addBytes(0x1B, 0x61, 0x01);
+    
+    // Bold, Double height Cafe Name
+    addBytes(0x1B, 0x45, 0x01); // bold on
+    addBytes(0x1B, 0x21, 0x10); // double height
+    addText(venue?.name.toUpperCase() || 'SNYF CAFE');
+    addBytes(0x1B, 0x21, 0x00); // reset font size
+    addBytes(0x1B, 0x45, 0x00); // bold off
+
+    // Subtitle
+    addText(venue?.zone || 'Venue Partner');
+    addText('--------------------------------'); // 32 characters
+
+    // 3. Align left
+    addBytes(0x1B, 0x61, 0x00);
+    const dateStr = new Date(bill.updated_at).toLocaleString('en-IN');
+    addText(`Date: ${dateStr}`);
+    addText(`Table: ${bill.table_num || 'N/A'}`);
+    addText(`Bill No: #${bill.id.slice(-6).toUpperCase()}`);
+    
+    // Header divider
+    addBytes(0x1B, 0x61, 0x01);
+    addText('--------------------------------');
+
+    // 4. Items Header (32-character layout compatible with 58mm/80mm)
+    // Columns: ITEM (16 chars), QTY (5 chars), PRICE (11 chars)
+    addBytes(0x1B, 0x61, 0x00);
+    addBytes(0x1B, 0x45, 0x01); // bold on
+    addText('ITEM             QTY      PRICE');
+    addBytes(0x1B, 0x45, 0x00); // bold off
+    addText('--------------------------------');
+
+    // Items
+    bill.items.forEach(item => {
+      let namePart = item.name;
+      if (namePart.length > 16) {
+        namePart = namePart.substring(0, 14) + '..';
+      } else {
+        namePart = namePart.padEnd(16, ' ');
+      }
+      
+      const qtyPart = `x${item.qty}`.padEnd(5, ' ');
+      const priceVal = `Rs.${(item.price * item.qty).toLocaleString('en-IN')}`;
+      const pricePart = priceVal.padStart(11, ' ');
+      
+      addText(`${namePart}${qtyPart}${pricePart}`);
+    });
+    
+    addText('--------------------------------');
+
+    // Totals
+    const subtotalLabel = 'Subtotal:'.padEnd(18, ' ');
+    const subtotalVal = `Rs.${bill.subtotal.toLocaleString('en-IN')}`.padStart(14, ' ');
+    addText(`${subtotalLabel}${subtotalVal}`);
+
+    if (bill.gst > 0) {
+      const cgstVal = `Rs.${(bill.gst / 2).toLocaleString('en-IN')}`;
+      const cgstLabel = 'CGST (2.5%):'.padEnd(18, ' ');
+      addText(`${cgstLabel}${cgstVal.padStart(14, ' ')}`);
+
+      const sgstLabel = 'SGST (2.5%):'.padEnd(18, ' ');
+      addText(`${sgstLabel}${cgstVal.padStart(14, ' ')}`);
+    }
+
+    if (bill.service_charge > 0) {
+      const scLabel = 'Service Charge:'.padEnd(18, ' ');
+      const scVal = `Rs.${bill.service_charge.toLocaleString('en-IN')}`.padStart(14, ' ');
+      addText(`${scLabel}${scVal}`);
+    }
+
+    addText('--------------------------------');
+
+    // Grand Total (Bold)
+    addBytes(0x1B, 0x45, 0x01); // bold on
+    const totalLabel = 'GRAND TOTAL:'.padEnd(16, ' ');
+    const totalVal = `Rs.${bill.total.toLocaleString('en-IN')}`.padStart(16, ' ');
+    addText(`${totalLabel}${totalVal}`);
+    addBytes(0x1B, 0x45, 0x00); // bold off
+
+    addText('--------------------------------');
+    
+    // Footer message
+    addBytes(0x1B, 0x61, 0x01); // center alignment
+    addBytes(0x1B, 0x45, 0x01); // bold on
+    addText('THANK YOU FOR DINING WITH US!');
+    addBytes(0x1B, 0x45, 0x00); // bold off
+    addText('\n\n\n\n'); // Feed lines
+
+    // Cut paper command
+    addBytes(0x1D, 0x56, 0x42, 0x00);
+
+    // Flatten lists of segments into a single Uint8Array
+    let totalLen = 0;
+    parts.forEach(p => totalLen += p.length);
+    const finalBuffer = new Uint8Array(totalLen);
+    let offset = 0;
+    parts.forEach(p => {
+      finalBuffer.set(p, offset);
+      offset += p.length;
+    });
+
+    return finalBuffer;
+  };
+
+  const handleBluetoothPrint = async (bill: Order) => {
+    let activeChar = printerChar;
+    
+    // Connect if not already connected
+    if (!activeChar || !connectedDevice || !connectedDevice.gatt.connected) {
+      activeChar = await connectPrinter();
+    }
+    
+    if (!activeChar) return;
+    
+    try {
+      setPrintStatus("Printing...");
+      const escPosData = generateEscPosData(bill);
+      await sendEscPosToPrinter(activeChar, escPosData);
+      setPrintStatus(null);
+    } catch (err: any) {
+      console.error('[Bluetooth Print Error]', err);
+      setPrintStatus(null);
+      alert(`Direct Print Failed: ${err.message || err}`);
+      // Clear invalid state on failure
+      setPrinterChar(null);
+      setConnectedDevice(null);
+    }
   };
 
   // Option A: Print Receipt (injects CSS specific to thermal receipt paper width 80mm)
@@ -651,15 +875,31 @@ export function Bills() {
             <div className="flex flex-col h-full overflow-hidden">
               {/* Receipt Control Panel Actions */}
               <div className="p-4 bg-accent/20 border-b border-border flex items-center justify-between gap-2 flex-wrap shrink-0">
-                <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">Receipt Actions</span>
+                <span className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <span>Receipt Actions</span>
+                  {printStatus && (
+                    <span className="px-2 py-0.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded text-[9px] font-extrabold uppercase tracking-wider animate-pulse">
+                      {printStatus}
+                    </span>
+                  )}
+                </span>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleBluetoothPrint(selectedBill)}
+                    disabled={isConnecting}
+                    className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all shadow-sm border border-transparent cursor-pointer flex items-center gap-1.5 text-xs font-bold disabled:opacity-50"
+                    title="Print directly to paired Bluetooth Thermal Printer"
+                  >
+                    <Bluetooth className="w-4 h-4" />
+                    <span>Direct BLE Print</span>
+                  </button>
                   <button
                     onClick={() => handlePrint(selectedBill)}
                     className="p-2 bg-primary hover:opacity-90 text-primary-foreground rounded-lg transition-all shadow-sm border border-transparent cursor-pointer flex items-center gap-1.5 text-xs font-bold"
                     title="Print Receipt (Option A)"
                   >
                     <Printer className="w-4 h-4" />
-                    <span>Print Bill</span>
+                    <span>Print (USB/System)</span>
                   </button>
                   <button
                     onClick={() => handleSaveImage(selectedBill)}
