@@ -5155,7 +5155,85 @@ function subscribeActiveOrderBar() {
   });
 }
 
+let _userOrdersChannel = null;
+function subscribeUserNewOrders(user) {
+  if (_userOrdersChannel) {
+    db.removeChannel(_userOrdersChannel);
+    _userOrdersChannel = null;
+  }
+  if (!user || !VENUE_DATA || !VENUE_DATA.id) return;
+
+  _userOrdersChannel = db
+    .channel(`user-new-orders-${user.id}`)
+    .on('postgres_changes', {
+      event:  'INSERT',
+      schema: 'public',
+      table:  'orders',
+      filter: `user_id=eq.${user.id}`,
+    }, (payload) => {
+      const newOrder = payload.new;
+      if (newOrder.venue_id === VENUE_DATA.id && newOrder.status !== 'ready') {
+        let localOrders = getActiveOrders();
+        const exists = localOrders.some(o => o.id === newOrder.id);
+        if (!exists) {
+          localOrders.push({
+            id:        newOrder.id,
+            venueId:   VENUE_DATA.id,
+            venueName: VENUE_DATA.name,
+            createdAt: newOrder.created_at || new Date().toISOString(),
+            status:    newOrder.status,
+          });
+          localStorage.setItem(AOB_KEY(), JSON.stringify(localOrders));
+          
+          window._lastOrderId   = newOrder.id;
+          window._lastVenueName = VENUE_DATA.name;
+
+          refreshActiveOrderBar();
+          subscribeActiveOrderBar();
+        }
+      }
+    })
+    .subscribe();
+}
+
 async function initActiveOrderBar() {
+  // Sync active orders from DB if user is logged in
+  try {
+    const user = window._currentUser || await snyfGetUser();
+    if (user && VENUE_DATA && VENUE_DATA.id) {
+      subscribeUserNewOrders(user);
+      const { data: dbActiveOrders } = await db
+        .from('orders')
+        .select('id, status, items, total, special_instructions, created_at')
+        .eq('user_id', user.id)
+        .eq('venue_id', VENUE_DATA.id)
+        .neq('status', 'ready');
+
+      if (dbActiveOrders && dbActiveOrders.length > 0) {
+        let localOrders = getActiveOrders();
+        let changed = false;
+        dbActiveOrders.forEach(dbo => {
+          const exists = localOrders.some(lo => lo.id === dbo.id);
+          if (!exists) {
+            localOrders.push({
+              id: dbo.id,
+              venueId: VENUE_DATA.id,
+              venueName: VENUE_DATA.name,
+              createdAt: dbo.created_at || new Date().toISOString(),
+              status: dbo.status
+            });
+            changed = true;
+          }
+        });
+        if (changed) {
+          localStorage.setItem(AOB_KEY(), JSON.stringify(localOrders));
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('AOB: could not sync user active orders from DB', e);
+  }
+
   // Restore persisted orders after refresh
   const savedOrders = getActiveOrders();
   if (!savedOrders.length) return;

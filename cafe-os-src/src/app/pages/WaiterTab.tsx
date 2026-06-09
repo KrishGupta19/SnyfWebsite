@@ -22,6 +22,140 @@ export function WaiterTab() {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
 
+  // Manual order placement states
+  const [showManualOrderModal, setShowManualOrderModal] = useState(false);
+  const [manualPhone, setManualPhone] = useState('');
+  const [manualTable, setManualTable] = useState('');
+  const [manualCart, setManualCart] = useState<any[]>([]);
+  const [manualSpecialInstructions, setManualSpecialInstructions] = useState('');
+  const [manualSearchQuery, setManualSearchQuery] = useState('');
+  const [manualSearchFocused, setManualSearchFocused] = useState(false);
+  const [placingManualOrder, setPlacingManualOrder] = useState(false);
+  const [manualError, setManualError] = useState('');
+
+  function addManualCartItem(menuItem: any) {
+    const exists = manualCart.find(item => item.id === menuItem.id);
+    if (exists) {
+      setManualCart(manualCart.map(item => 
+        item.id === menuItem.id ? { ...item, qty: item.qty + 1 } : item
+      ));
+    } else {
+      setManualCart([...manualCart, {
+        id: menuItem.id,
+        name: menuItem.name,
+        price: Number(menuItem.price),
+        qty: 1,
+        addon: false,
+        ready: false
+      }]);
+    }
+  }
+
+  function updateManualCartItemQty(itemId: string, delta: number) {
+    setManualCart(manualCart.map(item => {
+      if (item.id === itemId) {
+        return { ...item, qty: Math.max(1, item.qty + delta) };
+      }
+      return item;
+    }));
+  }
+
+  function toggleManualCartItemAddon(itemId: string) {
+    setManualCart(manualCart.map(item => {
+      if (item.id === itemId) {
+        return { ...item, addon: !item.addon };
+      }
+      return item;
+    }));
+  }
+
+  function removeManualCartItem(itemId: string) {
+    setManualCart(manualCart.filter(item => item.id !== itemId));
+  }
+
+  function getManualOrderTotals() {
+    const subtotal = manualCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const cgstPct = venue?.cgst_pct || 0;
+    const sgstPct = venue?.sgst_pct || 0;
+    const serviceTaxPct = venue?.service_tax_pct || 0;
+
+    const cgst = (subtotal * cgstPct) / 100;
+    const sgst = (subtotal * sgstPct) / 100;
+    const gst = cgst + sgst;
+    const service_charge = (subtotal * serviceTaxPct) / 100;
+    const total = subtotal + gst + service_charge;
+    
+    return { subtotal, gst, service_charge, total };
+  }
+
+  async function submitManualOrder() {
+    setManualError('');
+    if (!manualPhone.trim() || manualPhone.trim().replace(/\D/g, '').length !== 10) {
+      setManualError('Please enter a valid 10-digit customer phone number.');
+      return;
+    }
+    if (!manualTable.trim() || isNaN(Number(manualTable))) {
+      setManualError('Please enter a valid table number.');
+      return;
+    }
+    if (manualCart.length === 0) {
+      setManualError('Please add at least one item to the order.');
+      return;
+    }
+
+    setPlacingManualOrder(true);
+    try {
+      const phoneDigits = manualPhone.trim().replace(/\D/g, '');
+      const userRes = await fetch('/get-or-create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phoneDigits })
+      });
+      const userData = await userRes.json();
+      if (!userData.ok) {
+        throw new Error(userData.error || 'Failed to retrieve or create user account.');
+      }
+      const userId = userData.userId;
+
+      const { subtotal, gst, service_charge, total } = getManualOrderTotals();
+      
+      const { error: orderError } = await db
+        .from('orders')
+        .insert({
+          venue_id: venue?.id,
+          table_num: Number(manualTable),
+          items: manualCart,
+          subtotal,
+          gst,
+          service_charge,
+          total,
+          special_instructions: manualSpecialInstructions.trim() || null,
+          status: 'received',
+          user_id: userId,
+          source: 'waiter_manual',
+          table_verified: true,
+          is_advanced_to_deliver: false,
+          waiter_delivered: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (orderError) throw orderError;
+
+      setShowManualOrderModal(false);
+      setManualPhone('');
+      setManualTable('');
+      setManualCart([]);
+      setManualSpecialInstructions('');
+      fetchOrders();
+    } catch (err: any) {
+      console.error('[Waiter] submitManualOrder:', err);
+      setManualError(err.message || 'An error occurred while placing the order.');
+    } finally {
+      setPlacingManualOrder(false);
+    }
+  }
+
   const channelRef = useRef<ReturnType<typeof db.channel> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const recentAlerts = useRef<Set<string>>(new Set());
@@ -582,6 +716,16 @@ export function WaiterTab() {
             }`}>
             {connected ? <><Wifi className="w-4 h-4" /> Live</> : <><WifiOff className="w-4 h-4" /> Connecting...</>}
           </div>
+
+          <button
+            onClick={() => {
+              setManualError('');
+              setShowManualOrderModal(true);
+            }}
+            className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground border border-transparent hover:opacity-90 rounded-xl font-bold transition-all shadow-sm cursor-pointer"
+          >
+            <Plus className="w-5 h-5" /> Manual Order
+          </button>
 
           <button
             onClick={() => isWaiterMode ? setShowUnlockModal(true) : lockWaiterMode()}
@@ -1275,6 +1419,245 @@ export function WaiterTab() {
                 className="flex-1 py-2.5 bg-primary hover:bg-primary/95 text-primary-foreground font-semibold rounded-xl text-sm transition-colors"
               >
                 Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Manual Order Modal */}
+      {showManualOrderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-background border border-border rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+            {/* Header */}
+            <div className="p-6 border-b border-border flex items-center justify-between bg-accent/20">
+              <div>
+                <h3 className="font-bold text-lg">Place Order Manually</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Enter customer details and select dishes</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowManualOrderModal(false)}
+                className="p-1 rounded-lg hover:bg-accent transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              {/* Error message */}
+              {manualError && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl p-3 text-xs font-semibold">
+                  {manualError}
+                </div>
+              )}
+
+              {/* Customer Info row */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Customer Phone</label>
+                  <input
+                    type="tel"
+                    placeholder="e.g. 9876543210"
+                    maxLength={10}
+                    value={manualPhone}
+                    onChange={(e) => setManualPhone(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Table Number</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 5"
+                    value={manualTable}
+                    onChange={(e) => setManualTable(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Selected items list */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm flex items-center gap-2">
+                  <ChefHat className="w-4 h-4 text-primary" />
+                  Selected Dishes ({manualCart.reduce((sum, item) => sum + item.qty, 0)})
+                </h4>
+                <div className="space-y-2 max-h-[20vh] overflow-y-auto pr-1">
+                  {manualCart.length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic py-3 text-center border border-dashed border-border rounded-xl bg-accent/5">
+                      No items added yet. Search and select items below.
+                    </p>
+                  ) : (
+                    manualCart.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-accent/30 rounded-xl border border-border/50">
+                        <div className="min-w-0 flex-1 pr-2">
+                          <p className="font-medium text-sm truncate">{item.name}</p>
+                          <div className="flex items-center gap-3 mt-1">
+                            <span className="text-xs text-muted-foreground font-mono">₹{item.price}</span>
+                            <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={item.addon}
+                                onChange={() => toggleManualCartItemAddon(item.id)}
+                                className="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                              />
+                              <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Add-on</span>
+                            </label>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {/* Qty controls */}
+                          <div className="flex items-center border border-border rounded-lg overflow-hidden bg-background">
+                            <button
+                              type="button"
+                              onClick={() => updateManualCartItemQty(item.id, -1)}
+                              className="p-1.5 hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="w-8 text-center text-sm font-semibold font-mono">{item.qty}</span>
+                            <button
+                              type="button"
+                              onClick={() => updateManualCartItemQty(item.id, 1)}
+                              className="p-1.5 hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          
+                          {/* Remove */}
+                          <button
+                            type="button"
+                            onClick={() => removeManualCartItem(item.id)}
+                            className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Add menu item input */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm">Add Item to Cart</h4>
+                <div className="relative">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search items by name..."
+                      value={manualSearchQuery}
+                      onChange={(e) => setManualSearchQuery(e.target.value)}
+                      onFocus={() => setManualSearchFocused(true)}
+                      onBlur={() => setTimeout(() => setManualSearchFocused(false), 200)}
+                      className="w-full bg-background border border-border rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    {manualSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setManualSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Suggestions list */}
+                  {(manualSearchFocused || manualSearchQuery.trim() !== '') && (
+                    <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto py-1">
+                      {menuItems
+                        .filter(mi => mi.name.toLowerCase().includes(manualSearchQuery.toLowerCase()))
+                        .length === 0 ? (
+                        <p className="text-xs text-muted-foreground italic px-4 py-3 text-center">
+                          No matching items found
+                        </p>
+                      ) : (
+                        menuItems
+                          .filter(mi => mi.name.toLowerCase().includes(manualSearchQuery.toLowerCase()))
+                          .map(mi => (
+                            <button
+                              key={mi.id}
+                              type="button"
+                              onClick={() => {
+                                addManualCartItem(mi);
+                                setManualSearchQuery('');
+                              }}
+                              className="w-full text-left px-4 py-2 flex justify-between items-center hover:bg-accent transition-colors border-b border-border/30 last:border-b-0"
+                            >
+                              <div className="min-w-0 pr-2">
+                                <p className="font-medium text-foreground text-sm truncate">{mi.name}</p>
+                                {mi.category && (
+                                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{mi.category}</p>
+                                )}
+                              </div>
+                              <div className="text-primary font-semibold text-xs shrink-0 font-mono">₹{mi.price}</div>
+                            </button>
+                          ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Special Instructions */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Special Instructions</label>
+                <textarea
+                  className="w-full bg-background border border-border rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary min-h-[60px]"
+                  placeholder="e.g. Extra spicy, no onion..."
+                  value={manualSpecialInstructions}
+                  onChange={(e) => setManualSpecialInstructions(e.target.value)}
+                />
+              </div>
+
+              {/* Cost Summary */}
+              {manualCart.length > 0 && (
+                <div className="border-t border-border pt-4 space-y-2 text-sm bg-accent/15 -mx-6 px-6 py-4">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Subtotal:</span>
+                    <span className="font-mono">₹{getManualOrderTotals().subtotal.toLocaleString('en-IN')}</span>
+                  </div>
+                  {getManualOrderTotals().gst > 0 && (
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>GST ({(venue?.cgst_pct || 0) + (venue?.sgst_pct || 0)}%):</span>
+                      <span className="font-mono">₹{getManualOrderTotals().gst.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  {getManualOrderTotals().service_charge > 0 && (
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Service Charge ({venue?.service_tax_pct || 0}%):</span>
+                      <span className="font-mono">₹{getManualOrderTotals().service_charge.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  <div className="border-t border-border/40 my-2 pt-2 flex justify-between font-bold text-base text-foreground">
+                    <span>Total Estimate:</span>
+                    <span className="text-primary font-mono">₹{getManualOrderTotals().total.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-border flex gap-3 bg-accent/10">
+              <button
+                type="button"
+                onClick={() => setShowManualOrderModal(false)}
+                className="flex-1 py-2.5 border border-border hover:bg-accent text-accent-foreground font-semibold rounded-xl text-sm transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={submitManualOrder}
+                disabled={placingManualOrder}
+                className="flex-1 py-2.5 bg-primary hover:bg-primary/95 text-primary-foreground font-semibold rounded-xl text-sm transition-all shadow-md active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                {placingManualOrder ? 'Placing Order...' : 'Place Order →'}
               </button>
             </div>
           </div>

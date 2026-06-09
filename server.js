@@ -51,6 +51,7 @@ async function sendWelcomeEmail(name, email, type) {
 }
 
 const server = http.createServer(async (req, res) => {
+    console.log('[Server Request]', req.method, req.url);
     // Handle phone-login POST
     if (req.url === '/phone-login' || req.url === '/.netlify/functions/phone-login') {
         if (req.method === 'OPTIONS') {
@@ -78,6 +79,41 @@ const server = http.createServer(async (req, res) => {
                     res.end(result.body);
                 } catch (err) {
                     console.error('Local phone-login error:', err);
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ ok: false, error: err.message }));
+                }
+            });
+            return;
+        }
+    }
+
+    // Handle get-or-create-user POST
+    if (req.url === '/get-or-create-user' || req.url === '/.netlify/functions/get-or-create-user') {
+        if (req.method === 'OPTIONS') {
+            res.writeHead(200, {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS'
+            });
+            res.end();
+            return;
+        }
+
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => { body += chunk; });
+            req.on('end', async () => {
+                try {
+                    const getOrCreateHandler = require('./netlify/functions/get-or-create-user.js').handler;
+                    const event = {
+                        httpMethod: 'POST',
+                        body: body
+                    };
+                    const result = await getOrCreateHandler(event);
+                    res.writeHead(result.statusCode, result.headers);
+                    res.end(result.body);
+                } catch (err) {
+                    console.error('Local get-or-create-user error:', err);
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ ok: false, error: err.message }));
                 }

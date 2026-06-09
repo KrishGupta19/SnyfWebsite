@@ -140,10 +140,18 @@ export function VenueProvider({ children }: { children: ReactNode }) {
 
   return (
     <VenueContext.Provider value={{ venue, slug, isLoaded, logout, username, credentialId, updateUsername, updateVenue }}>
-      {!venue && isLoaded
-        ? <LoginScreen slug={slug} onLogin={login} />
-        : children
-      }
+      {!isLoaded ? (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-xs text-muted-foreground font-mono uppercase tracking-widest">Loading Café OS...</p>
+          </div>
+        </div>
+      ) : !venue ? (
+        <LoginScreen slug={slug} onLogin={login} />
+      ) : (
+        children
+      )}
     </VenueContext.Provider>
   );
 }
