@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
 import { useLock } from '../../context/LockContext';
-import { Order } from '../../lib/types';
 import { CheckCircle, Clock, Utensils, HandPlatter, Wifi, WifiOff, Lock, ShieldAlert, X, Bell, RefreshCw, Edit, Minus, Plus, Trash2, Search, ChefHat } from 'lucide-react';
 import { getVolume } from '../../lib/audioVolume';
+import { queueOrder, flushQueue, getPendingCount, getPendingOrders } from '../../lib/offlineQueue';
+import { localOrderBus } from '../../lib/localOrderBus';
+import type { Order } from '../../lib/types';
 
 export function WaiterTab() {
   const { venue } = useVenue();
@@ -32,6 +34,9 @@ export function WaiterTab() {
   const [manualSearchFocused, setManualSearchFocused] = useState(false);
   const [placingManualOrder, setPlacingManualOrder] = useState(false);
   const [manualError, setManualError] = useState('');
+
+  // Online/offline state
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   function addManualCartItem(menuItem: any) {
     const exists = manualCart.find(item => item.id === menuItem.id);
@@ -90,6 +95,8 @@ export function WaiterTab() {
 
   async function submitManualOrder() {
     setManualError('');
+
+    // ── Validation (same as before) ───────────────────────────
     if (!manualPhone.trim() || manualPhone.trim().replace(/\D/g, '').length !== 10) {
       setManualError('Please enter a valid 10-digit customer phone number.');
       return;
@@ -104,12 +111,81 @@ export function WaiterTab() {
     }
 
     setPlacingManualOrder(true);
+    const phoneDigits = manualPhone.trim().replace(/\D/g, '');
+    const { subtotal, gst, service_charge, total } = getManualOrderTotals();
+
+    const orderPayload = {
+      venue_id:               venue!.id,
+      table_num:              Number(manualTable),
+      items:                  manualCart,
+      subtotal,
+      gst,
+      service_charge,
+      total,
+      special_instructions:   manualSpecialInstructions.trim() || null,
+      status:                 'received' as const,
+      source:                 'waiter_manual' as const,
+      table_verified:         true as const,
+      is_advanced_to_deliver: false as const,
+      waiter_delivered:       false as const,
+      created_at:             new Date().toISOString(),
+      updated_at:             new Date().toISOString(),
+    };
+
+    // ── OFFLINE PATH ──────────────────────────────────────────
+    if (!navigator.onLine) {
+      try {
+        // Save to localStorage queue
+        const queuedItem = queueOrder(phoneDigits, orderPayload);
+
+        // Build a local order object for immediate UI display
+        const localOrder: Order = {
+          id:                   queuedItem.local_id,
+          venue_id:             orderPayload.venue_id,
+          table_num:            orderPayload.table_num,
+          items:                orderPayload.items,
+          subtotal:             orderPayload.subtotal,
+          gst:                  orderPayload.gst,
+          service_charge:       orderPayload.service_charge,
+          total:                orderPayload.total,
+          special_instructions: orderPayload.special_instructions,
+          status:               'received',
+          session_id:           null,
+          table_verified:       true,
+          is_advanced_to_deliver: false,
+          waiter_delivered:     false,
+          created_at:           orderPayload.created_at,
+          updated_at:           orderPayload.updated_at,
+        };
+
+        // Add to local orders list immediately
+        setOrders(prev => [localOrder, ...prev]);
+
+        // Broadcast to Kitchen tab (same device)
+        localOrderBus.publish({ type: 'new_order', order: localOrder });
+
+        // Close modal and reset
+        setShowManualOrderModal(false);
+        setManualPhone('');
+        setManualTable('');
+        setManualCart([]);
+        setManualSpecialInstructions('');
+        setManualError('');
+      } catch (err: any) {
+        console.error('[Waiter] offline queueOrder:', err);
+        setManualError('Failed to save order locally. Please try again.');
+      } finally {
+        setPlacingManualOrder(false);
+      }
+      return;
+    }
+
+    // ── ONLINE PATH (unchanged from original) ─────────────────
     try {
-      const phoneDigits = manualPhone.trim().replace(/\D/g, '');
       const userRes = await fetch('/get-or-create-user', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneDigits })
+        body:    JSON.stringify({ phone: phoneDigits }),
       });
       const userData = await userRes.json();
       if (!userData.ok) {
@@ -117,27 +193,11 @@ export function WaiterTab() {
       }
       const userId = userData.userId;
 
-      const { subtotal, gst, service_charge, total } = getManualOrderTotals();
-      
       const { error: orderError } = await db
         .from('orders')
         .insert({
-          venue_id: venue?.id,
-          table_num: Number(manualTable),
-          items: manualCart,
-          subtotal,
-          gst,
-          service_charge,
-          total,
-          special_instructions: manualSpecialInstructions.trim() || null,
-          status: 'received',
+          ...orderPayload,
           user_id: userId,
-          source: 'waiter_manual',
-          table_verified: true,
-          is_advanced_to_deliver: false,
-          waiter_delivered: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
         });
 
       if (orderError) throw orderError;
@@ -148,9 +208,53 @@ export function WaiterTab() {
       setManualCart([]);
       setManualSpecialInstructions('');
       fetchOrders();
+
     } catch (err: any) {
-      console.error('[Waiter] submitManualOrder:', err);
-      setManualError(err.message || 'An error occurred while placing the order.');
+      // ── NETWORK DIED MID-REQUEST — fallback to offline queue ──
+      const isNetworkError =
+        err instanceof TypeError ||
+        err?.message?.toLowerCase().includes('network') ||
+        err?.message?.toLowerCase().includes('fetch') ||
+        err?.message?.toLowerCase().includes('failed to fetch') ||
+        !navigator.onLine;
+
+      if (isNetworkError) {
+        // Save to queue and show in UI
+        try {
+          const queuedItem = queueOrder(phoneDigits, orderPayload);
+          const localOrder: Order = {
+            id:                   queuedItem.local_id,
+            venue_id:             orderPayload.venue_id,
+            table_num:            orderPayload.table_num,
+            items:                orderPayload.items,
+            subtotal:             orderPayload.subtotal,
+            gst:                  orderPayload.gst,
+            service_charge:       orderPayload.service_charge,
+            total:                orderPayload.total,
+            special_instructions: orderPayload.special_instructions,
+            status:               'received',
+            session_id:           null,
+            table_verified:       true,
+            is_advanced_to_deliver: false,
+            waiter_delivered:     false,
+            created_at:           orderPayload.created_at,
+            updated_at:           orderPayload.updated_at,
+          };
+          setOrders(prev => [localOrder, ...prev]);
+          localOrderBus.publish({ type: 'new_order', order: localOrder });
+          setShowManualOrderModal(false);
+          setManualPhone('');
+          setManualTable('');
+          setManualCart([]);
+          setManualSpecialInstructions('');
+          setManualError('');
+        } catch (qErr: any) {
+          setManualError('Network error and offline save failed. Please retry.');
+        }
+      } else {
+        console.error('[Waiter] submitManualOrder online error:', err);
+        setManualError(err.message || 'An error occurred while placing the order.');
+      }
     } finally {
       setPlacingManualOrder(false);
     }
@@ -308,6 +412,53 @@ export function WaiterTab() {
       setSearchFocused(false);
     }
   }, [editingOrder]);
+  // Online/offline tracking + local order bus subscription
+  useEffect(() => {
+    const handleOnline = async () => {
+      setIsOnline(true);
+      // Flush queued orders on reconnect
+      const count = getPendingCount();
+      if (count > 0) {
+        try {
+          await flushQueue();
+          // Refresh orders from DB after sync
+          fetchOrders();
+        } catch (e) {
+          console.warn('[Waiter] flushQueue error:', e);
+        }
+      }
+    };
+
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online',  handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Subscribe to local order bus — receive offline orders from OTHER tabs
+    // (e.g. if kitchen is open in another tab, it gets orders placed here offline)
+    const unsubscribe = localOrderBus.subscribe((event) => {
+      if (event.type === 'new_order') {
+        setOrders(prev => {
+          const exists = prev.some(o => o.id === event.order.id);
+          if (exists) return prev;
+          return [event.order, ...prev];
+        });
+      } else if (event.type === 'update_order') {
+        setOrders(prev => prev.map(o =>
+          o.id === event.order_id ? { ...o, ...event.data } : o
+        ));
+      } else if (event.type === 'delete_order') {
+        setOrders(prev => prev.filter(o => o.id !== event.order_id));
+      }
+    });
+
+    return () => {
+      window.removeEventListener('online',  handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      unsubscribe();
+    };
+  }, [venue?.id]);
+
   useEffect(() => {
     if (!venue?.id) return;
     fetchOrders();
@@ -657,15 +808,35 @@ export function WaiterTab() {
   }
 
   async function markAsDelivered(orderId: string) {
-    // Optimistic update
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, waiter_delivered: true } : o));
+    // Optimistic update always
+    setOrders(prev => prev.map(o =>
+      o.id === orderId ? { ...o, waiter_delivered: true } : o
+    ));
+
+    // Broadcast to other tabs
+    localOrderBus.publish({
+      type: 'update_order',
+      order_id: orderId,
+      data: { waiter_delivered: true },
+    });
+
+    // Skip DB write for local-only (offline) orders
+    if (orderId.startsWith('local_')) return;
+
+    if (!navigator.onLine) {
+      const { queueWrite } = await import('../../lib/offlineQueue');
+      queueWrite({
+        type:     'mark_delivered',
+        order_id: orderId,
+        data:     { waiter_delivered: true },
+      });
+      return;
+    }
+
     try {
       const { error } = await db
         .from('orders')
-        .update({
-          waiter_delivered: true,
-          updated_at: new Date().toISOString()
-        })
+        .update({ waiter_delivered: true, updated_at: new Date().toISOString() })
         .eq('id', orderId);
       if (error) throw error;
     } catch (err) {
@@ -675,15 +846,32 @@ export function WaiterTab() {
   }
 
   async function markAsPaid(orderId: string) {
-    // Optimistic update
+    // Optimistic update always
     setOrders(prev => prev.filter(o => o.id !== orderId));
+
+    // Broadcast to other tabs
+    localOrderBus.publish({
+      type: 'delete_order',
+      order_id: orderId,
+    });
+
+    // Skip DB write for local-only (offline) orders
+    if (orderId.startsWith('local_')) return;
+
+    if (!navigator.onLine) {
+      const { queueWrite } = await import('../../lib/offlineQueue');
+      queueWrite({
+        type:     'mark_paid',
+        order_id: orderId,
+        data:     { status: 'ready' },
+      });
+      return;
+    }
+
     try {
       const { error } = await db
         .from('orders')
-        .update({
-          status: 'ready',
-          updated_at: new Date().toISOString()
-        })
+        .update({ status: 'ready', updated_at: new Date().toISOString() })
         .eq('id', orderId);
       if (error) throw error;
     } catch (err) {

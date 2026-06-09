@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, Trash2, GripVertical, KeyRound, Eye, EyeOff, Lock, Unlock, ShieldAlert, Key, Volume2, VolumeX, MapPin, Navigation } from 'lucide-react';
+import { Save, Trash2, GripVertical, KeyRound, Eye, EyeOff, Lock, Unlock, ShieldAlert, Key, Volume2, VolumeX, MapPin, Navigation, Download, Smartphone, CheckCircle2 } from 'lucide-react';
 import { db } from '../../lib/supabase';
 import { useVenue } from '../../context/VenueContext';
 import { useLock } from '../../context/LockContext';
@@ -22,6 +22,12 @@ export function VenueInfo() {
   const [newPIN, setNewPIN] = useState('');
   const [showPIN, setShowPIN] = useState(false);
   const [pinSaved, setPinSaved] = useState(false);
+
+  // PWA install prompt
+  const [installPrompt,    setInstallPrompt]    = useState<any>(null);
+  const [isInstalled,      setIsInstalled]       = useState(false);
+  const [showIosHint,      setShowIosHint]       = useState(false);
+  const [showHintPlatform, setShowHintPlatform]  = useState<'ios' | 'android' | 'windows' | null>(null);
 
   const [form, setForm] = useState({
     name: '', description: '', tagline: '',
@@ -124,6 +130,61 @@ export function VenueInfo() {
   const mapMarkerRef = useRef<any>(null);
   const [fetchingLocation, setFetchingLocation] = useState(false);
   const [locationError, setLocationError] = useState('');
+
+  // PWA install prompt handling
+  useEffect(() => {
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true);
+      return;
+    }
+
+    // Android/Desktop Chrome — capture the install prompt
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+
+    // Listen for successful install
+    window.addEventListener('appinstalled', () => {
+      setIsInstalled(true);
+      setInstallPrompt(null);
+    });
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+    };
+  }, []);
+
+  async function handleInstallClick() {
+    const ua = navigator.userAgent;
+    const isIos     = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
+    const isAndroid = /Android/.test(ua);
+    const isWindows = /Windows/.test(ua);
+
+    if (isIos) {
+      setShowHintPlatform('ios');
+      return;
+    }
+
+    if (installPrompt) {
+      // Chrome on Android or Windows — show native prompt
+      installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setIsInstalled(true);
+      }
+      setInstallPrompt(null);
+      return;
+    }
+
+    // Prompt not available — show manual instructions for detected platform
+    if (isAndroid)      setShowHintPlatform('android');
+    else if (isWindows) setShowHintPlatform('windows');
+    else                setShowHintPlatform('windows'); // default to Windows/desktop
+  }
 
   useEffect(() => {
     if ((window as any).google && (window as any).google.maps) {
@@ -1143,6 +1204,144 @@ export function VenueInfo() {
             </div>
           );
         })}
+      </div>
+
+      {/* ── Install App Section ─────────────────────────── */}
+      <div className="bg-card rounded-2xl border border-border p-6 space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+            <Smartphone className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-base">Install Café OS App</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Download to your device for faster access and offline order management.
+            </p>
+          </div>
+        </div>
+
+        {isInstalled ? (
+          <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+            <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-green-700 dark:text-green-400">
+                App installed on this device
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Open from your home screen for the best experience.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="w-4 h-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">✓</span>
+                Works offline — place orders without internet
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="w-4 h-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">✓</span>
+                Loads instantly — no browser needed
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="w-4 h-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">✓</span>
+                No app store — installs directly from this page
+              </div>
+            </div>
+
+            <button
+              onClick={handleInstallClick}
+              className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:opacity-90 transition-opacity"
+            >
+              <Download className="w-4 h-4" />
+              Install App
+            </button>
+
+            {/* Platform instruction tabs */}
+            {showHintPlatform && (
+              <div className="border border-border rounded-2xl overflow-hidden">
+
+                {/* Tab headers */}
+                <div className="flex border-b border-border">
+                  {(['windows', 'android', 'ios'] as const).map(p => (
+                    <button
+                      key={p}
+                      onClick={() => setShowHintPlatform(p)}
+                      className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                        showHintPlatform === p
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-accent/30 text-muted-foreground hover:bg-accent/60'
+                      }`}
+                    >
+                      {p === 'windows' ? '🖥 Windows' : p === 'android' ? '🤖 Android' : '🍎 iPhone'}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Windows instructions */}
+                {showHintPlatform === 'windows' && (
+                  <div className="p-4 space-y-3">
+                    <p className="text-xs font-semibold text-foreground">Install on Windows (Chrome or Edge):</p>
+                    <ol className="text-xs text-muted-foreground space-y-2 list-decimal list-inside">
+                      <li>Open this page in <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong></li>
+                      <li>Look for the <strong>install icon</strong> (⊕) in the browser address bar on the right side</li>
+                      <li>Click it and select <strong>&quot;Install&quot;</strong></li>
+                      <li>The app opens as a standalone window — pin it to your taskbar for quick access</li>
+                    </ol>
+                    <div className="bg-accent/40 rounded-lg px-3 py-2 mt-1">
+                      <p className="text-[11px] text-muted-foreground">
+                        💡 <strong>Don't see the icon?</strong> Go to Chrome menu (⋮) →
+                        <strong> Save and share</strong> → <strong>Install page as app</strong>
+                      </p>
+                    </div>
+                    <button onClick={() => setShowHintPlatform(null)} className="text-xs text-primary font-semibold">Got it ✓</button>
+                  </div>
+                )}
+
+                {/* Android instructions */}
+                {showHintPlatform === 'android' && (
+                  <div className="p-4 space-y-3">
+                    <p className="text-xs font-semibold text-foreground">Install on Android (Chrome):</p>
+                    <ol className="text-xs text-muted-foreground space-y-2 list-decimal list-inside">
+                      <li>Open this page in <strong>Google Chrome</strong></li>
+                      <li>Tap the <strong>three-dot menu</strong> (⋮) in the top-right corner</li>
+                      <li>Tap <strong>&quot;Add to Home Screen&quot;</strong> or <strong>&quot;Install app&quot;</strong></li>
+                      <li>Tap <strong>Install</strong> on the confirmation dialog</li>
+                      <li>Find the app icon on your home screen — it opens fullscreen like a native app</li>
+                    </ol>
+                    <div className="bg-accent/40 rounded-lg px-3 py-2 mt-1">
+                      <p className="text-[11px] text-muted-foreground">
+                        💡 <strong>Tip:</strong> If Chrome shows a banner at the bottom of the screen saying &quot;Add Café OS to Home screen&quot; — just tap that instead!
+                      </p>
+                    </div>
+                    <button onClick={() => setShowHintPlatform(null)} className="text-xs text-primary font-semibold">Got it ✓</button>
+                  </div>
+                )}
+
+                {/* iOS instructions */}
+                {showHintPlatform === 'ios' && (
+                  <div className="p-4 space-y-3">
+                    <p className="text-xs font-semibold text-foreground">Install on iPhone / iPad:</p>
+                    <ol className="text-xs text-muted-foreground space-y-2 list-decimal list-inside">
+                      <li>Open this page in <strong>Safari</strong> (Chrome on iOS cannot install PWAs)</li>
+                      <li>Tap the <strong>Share</strong> button — the box with an upward arrow at the bottom of the screen</li>
+                      <li>Scroll down and tap <strong>&quot;Add to Home Screen&quot;</strong></li>
+                      <li>Tap <strong>Add</strong> in the top-right corner</li>
+                      <li>The app icon appears on your home screen and opens fullscreen</li>
+                    </ol>
+                    <div className="bg-accent/40 rounded-lg px-3 py-2 mt-1">
+                      <p className="text-[11px] text-muted-foreground">
+                        💡 <strong>Tip:</strong> On iPad, the Share button is in the top toolbar next to the address bar.
+                      </p>
+                    </div>
+                    <button onClick={() => setShowHintPlatform(null)} className="text-xs text-primary font-semibold">Got it ✓</button>
+                  </div>
+                )}
+
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

@@ -62,6 +62,19 @@
   to     = "/venue.html?slug=:slug"
   status = 200
 
+# ── PWA \u2014 service worker + manifest headers ─────────────────────
+[[headers]]
+  for = "/cafe-os/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Service-Worker-Allowed = "/"
+
+[[headers]]
+  for = "/cafe-os/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+    Cache-Control = "no-cache"
+
 # ── Security headers ──────────────────────────────────────────
 [[headers]]
   for = "/*"

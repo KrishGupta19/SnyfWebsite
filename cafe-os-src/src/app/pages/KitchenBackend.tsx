@@ -8,6 +8,8 @@ import {
   ORDER_STATUS_LABELS, ORDER_STATUS_FLOW,
 } from '../../lib/types';
 import { getVolume } from '../../lib/audioVolume';
+import { queueWrite, getPendingCount } from '../../lib/offlineQueue';
+import { localOrderBus } from '../../lib/localOrderBus';
 
 export function KitchenBackend() {
   const { venue }                   = useVenue();
@@ -22,6 +24,7 @@ export function KitchenBackend() {
   const [newOrderId, setNewOrderId] = useState<string | null>(null);
   const [updatedOrderId, setUpdatedOrderId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<'pending' | 'completed'>('pending');
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const channelRef                  = useRef<ReturnType<typeof db.channel> | null>(null);
   const audioContextRef             = useRef<AudioContext | null>(null);
   const recentAlerts                = useRef<Set<string>>(new Set());
@@ -32,6 +35,41 @@ export function KitchenBackend() {
       setSearchFocused(false);
     }
   }, [editingOrder]);
+
+  // Online/offline tracking + local order bus subscription
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online',  handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Subscribe to local bus — receive offline manual orders from WaiterTab
+    const unsubscribe = localOrderBus.subscribe((event) => {
+      if (event.type === 'new_order') {
+        setOrders(prev => {
+          const exists = prev.some(o => o.id === event.order.id);
+          if (exists) return prev;
+          // Flash new order highlight
+          setNewOrderId(event.order.id);
+          setTimeout(() => setNewOrderId(null), 4000);
+          return [event.order, ...prev];
+        });
+      } else if (event.type === 'update_order') {
+        setOrders(prev => prev.map(o =>
+          o.id === event.order_id ? { ...o, ...event.data } : o
+        ));
+      } else if (event.type === 'delete_order') {
+        setOrders(prev => prev.filter(o => o.id !== event.order_id));
+      }
+    });
+
+    return () => {
+      window.removeEventListener('online',  handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      unsubscribe();
+    };
+  }, []);
 
   function getAudioContext() {
     if (!audioContextRef.current) {
@@ -145,8 +183,27 @@ export function KitchenBackend() {
       }
 
       setOrders(newOrders);
+      // Cache to localStorage for offline use
+      try {
+        if (venue?.id) {
+          localStorage.setItem(
+            `snyf_orders_cache_${venue.id}`,
+            JSON.stringify({ orders: newOrders, cached_at: Date.now() })
+          );
+        }
+      } catch {}
     } catch (err) {
       console.error('[Kitchen] fetchOrders:', err);
+      // Load from cache if fetch fails (offline fallback)
+      if (orders.length === 0 && venue?.id) {
+        try {
+          const cached = localStorage.getItem(`snyf_orders_cache_${venue.id}`);
+          if (cached) {
+            const { orders: cachedOrders } = JSON.parse(cached);
+            setOrders(cachedOrders || []);
+          }
+        } catch {}
+      }
     } finally {
       if (isInitialLoad) setLoading(false);
     }
@@ -342,8 +399,30 @@ export function KitchenBackend() {
 
   // ── Advance status ────────────────────────────────────────────
   async function updateOrderStatus(orderId: string, newStatus: OrderStatus) {
-    // Optimistic update
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+    // Optimistic update always
+    setOrders(prev => prev.map(o =>
+      o.id === orderId ? { ...o, status: newStatus } : o
+    ));
+
+    // Broadcast to other tabs
+    localOrderBus.publish({
+      type: 'update_order',
+      order_id: orderId,
+      data: { status: newStatus },
+    });
+
+    // Skip DB write for local-only (offline) orders
+    if (orderId.startsWith('local_')) return;
+
+    if (!navigator.onLine) {
+      queueWrite({
+        type:     'update_status',
+        order_id: orderId,
+        data:     { status: newStatus },
+      });
+      return;
+    }
+
     try {
       const { error } = await db
         .from('orders')
@@ -352,7 +431,7 @@ export function KitchenBackend() {
       if (error) throw error;
     } catch (err) {
       console.error('[Kitchen] updateStatus:', err);
-      fetchOrders(); // revert on failure
+      fetchOrders();
     }
   }
 
@@ -370,14 +449,35 @@ export function KitchenBackend() {
     const isToggledOn = updatedItems[itemIndex]?.ready;
     const itemId = updatedItems[itemIndex]?.id;
 
-    // Optimistic update
+    // Optimistic update always
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, items: updatedItems } : o));
+
+    // Broadcast item update to other tabs
+    localOrderBus.publish({
+      type: 'update_order',
+      order_id: orderId,
+      data: { items: updatedItems },
+    });
+
+    // Skip DB write for local-only (offline) orders
+    if (orderId.startsWith('local_')) {
+      return;
+    }
+
+    if (!navigator.onLine) {
+      queueWrite({
+        type:     'toggle_item_ready',
+        order_id: orderId,
+        data:     { items: updatedItems },
+      });
+      return;
+    }
 
     try {
       const { error } = await db
         .from('orders')
         .update({
-          items: updatedItems,
+          items:      updatedItems,
           updated_at: new Date().toISOString()
         })
         .eq('id', orderId);

@@ -1,8 +1,9 @@
-import { Bell, Search, Sun, Moon, LogOut, Copy, Check, ExternalLink } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Bell, Search, Sun, Moon, LogOut, Copy, Check, ExternalLink, WifiOff, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { useVenue } from '../../context/VenueContext';
 import { db } from '../../lib/supabase';
 import { useLock } from '../../context/LockContext';
+import { flushQueue, getPendingCount } from '../../lib/offlineQueue';
 
 export function TopBar() {
   const [isDark, setIsDark] = useState(false);
@@ -13,6 +14,11 @@ export function TopBar() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const [isOnline,       setIsOnline]       = useState(navigator.onLine);
+  const [pendingCount,   setPendingCount]   = useState(0);
+  const [syncMsg,        setSyncMsg]        = useState('');
+  const [isSyncing,      setIsSyncing]      = useState(false);
 
   const toggleTheme = () => {
     setIsDark(!isDark);
@@ -27,6 +33,48 @@ export function TopBar() {
     document.addEventListener('click', handleOutsideClick);
     return () => {
       document.removeEventListener('click', handleOutsideClick);
+    };
+  }, []);
+
+  // Track online/offline state and auto-sync queue on reconnect
+  useEffect(() => {
+    const handleOnline = async () => {
+      setIsOnline(true);
+      const count = getPendingCount();
+      if (count > 0) {
+        setIsSyncing(true);
+        setSyncMsg('Syncing offline data...');
+        try {
+          const synced = await flushQueue();
+          if (synced > 0) {
+            setSyncMsg(`✓ ${synced} item${synced > 1 ? 's' : ''} synced`);
+            setPendingCount(getPendingCount());
+            setTimeout(() => setSyncMsg(''), 4000);
+          } else {
+            setSyncMsg('');
+          }
+        } catch {
+          setSyncMsg('');
+        } finally {
+          setIsSyncing(false);
+        }
+      }
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      setPendingCount(getPendingCount());
+    };
+
+    window.addEventListener('online',  handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Check pending count on mount
+    setPendingCount(getPendingCount());
+
+    return () => {
+      window.removeEventListener('online',  handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
@@ -135,6 +183,28 @@ export function TopBar() {
   };
 
   return (
+    <>
+    {/* Offline banner — only shown when offline */}
+    {!isOnline && (
+      <div className="bg-yellow-500/90 text-yellow-950 text-xs font-bold text-center py-1.5 px-4 flex items-center justify-center gap-2 sticky top-0 z-20">
+        <WifiOff className="w-3.5 h-3.5 flex-shrink-0" />
+        <span>
+          You're offline — manual orders will sync when reconnected
+          {pendingCount > 0 && ` · ${pendingCount} pending`}
+        </span>
+      </div>
+    )}
+
+    {/* Sync message — shown briefly after reconnect */}
+    {isOnline && syncMsg && (
+      <div className="bg-green-500/90 text-white text-xs font-bold text-center py-1.5 px-4 flex items-center justify-center gap-2 sticky top-0 z-20">
+        {isSyncing
+          ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" />{syncMsg}</>
+          : <span>{syncMsg}</span>
+        }
+      </div>
+    )}
+
     <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10 select-none">
       <style>{`
         @keyframes slideUp {
@@ -312,5 +382,6 @@ export function TopBar() {
 
       </div>
     </header>
+    </>
   );
 }
