@@ -900,6 +900,21 @@ body.visual-mode-on .nav-inner {
     transform: translateY(-1px) !important;
 }
 
+/* ── "For Venues" CTA pill — orange brand accent ── */
+.nav-cta.nav-cta--venue {
+    background: transparent !important;
+    color: var(--surface) !important;
+    border: 1.5px solid var(--surface) !important;
+    box-shadow: none !important;
+}
+
+.nav-cta.nav-cta--venue:hover {
+    background: var(--surface) !important;
+    color: #F6F5F2 !important;
+    transform: translateY(-1px) !important;
+    border-color: var(--surface) !important;
+}
+
 @keyframes nav-commons-sheen {
     0%, 42% { transform: translateX(0) skewX(-18deg); opacity: 0; }
     52% { opacity: 1; }

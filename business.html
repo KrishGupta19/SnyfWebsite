@@ -1,0 +1,1825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#F6F5F2">
+  <title>Snyf for Venues — Partner with Us</title>
+  <meta name="description" content="Snyf gives your venue a live ordering system, real guest intelligence, and verified reviews. Join the Snyf partner network across NCR.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Oswald:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    /* ── Token System (inherits from Snyf brand) ── */
+    :root {
+      --bg:        #F6F5F2;
+      --surface:   #1E1E1B;
+      --cyan:      #6FB7D6;
+      --orange:    #D97A4A;
+      --mint:      #7BC6A4;
+      --gold:      #D4A853;
+      --border:    #D8D5CF;
+      --muted:     #6E6A64;
+      --hover:     #ECE9E2;
+      --text:      #1E1E1B;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-display: 'Oswald', sans-serif;
+      --radius:    6px;
+      --transition: 0.22s cubic-bezier(.4,0,.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+
+    /* Paper grain overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      mix-blend-mode: multiply;
+    }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── NAVBAR ── */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(246,245,242,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .nav-logo svg { width: 28px; height: 28px; }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+    .nav-links a {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      transition: color var(--transition);
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a.active { color: var(--text); }
+    .nav-cta {
+      background: var(--surface);
+      color: var(--bg) !important;
+      padding: 8px 18px;
+      border-radius: var(--radius);
+      font-size: 12px !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.04em;
+      transition: opacity var(--transition) !important;
+    }
+    .nav-cta:hover { opacity: 0.85; }
+
+    /* ── SECTION SYSTEM ── */
+    .section { padding: 96px 0; }
+    .section-tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      display: inline-block;
+      font-family: var(--font-mono);
+      border-radius: var(--radius);
+    }
+    .section-tag::before { content: '◈ '; color: var(--cyan); }
+    .section-header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+    .section-header h2 {
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 5vw, 3.4rem);
+      font-weight: 900;
+      line-height: 1.1;
+      color: var(--text);
+      margin: 14px 0 16px;
+      text-transform: uppercase;
+      letter-spacing: -0.5px;
+    }
+    .section-header p {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 560px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 80px 0 96px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-grid-bg {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(30,30,27,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(30,30,27,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+    .hero-inner {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+    .hero-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .hero-eyebrow::before {
+      content: '';
+      display: block;
+      width: 32px;
+      height: 1px;
+      background: var(--cyan);
+    }
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.8rem, 5vw, 4.2rem);
+      font-weight: 900;
+      line-height: 1.05;
+      text-transform: uppercase;
+      letter-spacing: -1px;
+      margin-bottom: 24px;
+    }
+    .hero h1 em {
+      font-style: normal;
+      color: var(--cyan);
+    }
+    .hero-sub {
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.7;
+      max-width: 440px;
+      margin-bottom: 36px;
+    }
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      color: var(--bg);
+      padding: 13px 26px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      transition: opacity var(--transition);
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary:hover { opacity: 0.82; }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: transparent;
+      color: var(--text);
+      padding: 13px 26px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      transition: all var(--transition);
+      cursor: pointer;
+    }
+    .btn-secondary:hover {
+      background: var(--hover);
+      border-color: var(--muted);
+    }
+
+    /* Hero right — dashboard mockup */
+    .hero-visual {
+      position: relative;
+    }
+    .dashboard-mockup {
+      background: var(--surface);
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(246,245,242,0.08);
+      box-shadow: 0 24px 60px rgba(30,30,27,0.2);
+    }
+    .mock-topbar {
+      background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .mock-dots { display: flex; gap: 6px; }
+    .mock-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+    }
+    .mock-dot:nth-child(1) { background: #ff5f57; }
+    .mock-dot:nth-child(2) { background: #febc2e; }
+    .mock-dot:nth-child(3) { background: #28c840; }
+    .mock-title {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: rgba(246,245,242,0.35);
+      letter-spacing: 0.1em;
+    }
+    .mock-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .mock-row-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: rgba(246,245,242,0.3);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .mock-orders {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .mock-order {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .mock-order-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .mock-table-badge {
+      background: var(--cyan);
+      color: var(--surface);
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .mock-order-info {}
+    .mock-order-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(246,245,242,0.85);
+      margin-bottom: 2px;
+    }
+    .mock-order-items {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: rgba(246,245,242,0.35);
+    }
+    .mock-status {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .mock-status.received { background: rgba(111,183,214,0.15); color: var(--cyan); }
+    .mock-status.preparing { background: rgba(212,168,83,0.15); color: var(--gold); }
+    .mock-status.ready { background: rgba(123,198,164,0.15); color: var(--mint); }
+    .mock-divider {
+      height: 1px;
+      background: rgba(255,255,255,0.05);
+    }
+    .mock-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    .mock-stat {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .mock-stat-val {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: var(--cyan);
+      line-height: 1;
+      margin-bottom: 3px;
+    }
+    .mock-stat-label {
+      font-family: var(--font-mono);
+      font-size: 8px;
+      color: rgba(246,245,242,0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .hero-trust-bar {
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: rgba(111,183,214,0.06);
+      border: 1px solid rgba(111,183,214,0.15);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .trust-bar-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--cyan);
+      letter-spacing: 0.1em;
+    }
+    .trust-bar-val {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: var(--cyan);
+    }
+    .trust-bar-dims {
+      display: flex;
+      gap: 6px;
+    }
+    .trust-dim {
+      font-family: var(--font-mono);
+      font-size: 8px;
+      color: rgba(246,245,242,0.4);
+    }
+
+    /* Floating badge */
+    .hero-badge {
+      position: absolute;
+      top: -16px;
+      right: -16px;
+      background: var(--orange);
+      color: white;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 6px 12px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      box-shadow: 0 4px 16px rgba(217,122,74,0.35);
+    }
+
+    /* ── MARQUEE STRIP ── */
+    .marquee-strip {
+      background: var(--surface);
+      border-top: 1px solid rgba(246,245,242,0.06);
+      border-bottom: 1px solid rgba(246,245,242,0.06);
+      padding: 14px 0;
+      overflow: hidden;
+    }
+    .marquee-track {
+      display: flex;
+      gap: 0;
+      animation: marquee 28s linear infinite;
+      width: max-content;
+    }
+    .marquee-track:hover { animation-play-state: paused; }
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    .marquee-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 32px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(246,245,242,0.45);
+      white-space: nowrap;
+      border-right: 1px solid rgba(246,245,242,0.06);
+    }
+    .marquee-item span {
+      color: var(--cyan);
+      font-size: 14px;
+    }
+
+    /* ── WHY SNYF (problem/solution) ── */
+    .why-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .why-card {
+      padding: 40px 36px;
+      background: white;
+      position: relative;
+    }
+    .why-card:nth-child(2) { background: var(--surface); }
+    .why-card:nth-child(3) { background: var(--hover); }
+    .why-card:nth-child(4) { background: var(--surface); }
+    .why-card-tag {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .why-card:nth-child(odd) .why-card-tag { color: var(--muted); }
+    .why-card:nth-child(even) .why-card-tag { color: rgba(246,245,242,0.4); }
+    .why-card-tag-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+    }
+    .why-card h3 {
+      font-family: var(--font-display);
+      font-size: clamp(1.3rem, 2.5vw, 1.8rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      line-height: 1.15;
+      margin-bottom: 14px;
+    }
+    .why-card:nth-child(odd) h3 { color: var(--text); }
+    .why-card:nth-child(even) h3 { color: rgba(246,245,242,0.9); }
+    .why-card p {
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+    .why-card:nth-child(odd) p { color: var(--muted); }
+    .why-card:nth-child(even) p { color: rgba(246,245,242,0.45); }
+
+    /* ── SERVICES ── */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .service-card {
+      background: var(--bg);
+      padding: 36px 28px;
+      transition: background var(--transition);
+    }
+    .service-card:hover { background: var(--hover); }
+    .service-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      background: white;
+    }
+    .service-num {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      margin-bottom: 12px;
+      display: block;
+    }
+    .service-card h3 {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--text);
+      margin-bottom: 10px;
+      line-height: 1.2;
+    }
+    .service-card p {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+    .service-tag {
+      margin-top: 16px;
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: start;
+    }
+    .how-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .how-step {
+      display: flex;
+      gap: 20px;
+      padding: 28px 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .how-step:last-child { border-bottom: none; }
+    .how-step-num {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--border);
+      line-height: 1;
+      flex-shrink: 0;
+      width: 40px;
+      transition: color var(--transition);
+    }
+    .how-step:hover .how-step-num { color: var(--cyan); }
+    .how-step-content h3 {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .how-step-content p {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+    .how-visual {
+      position: sticky;
+      top: 96px;
+    }
+    .cafe-os-preview {
+      background: var(--surface);
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(246,245,242,0.07);
+      box-shadow: 0 16px 48px rgba(30,30,27,0.18);
+    }
+    .cos-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .cos-header-left {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: rgba(246,245,242,0.4);
+      letter-spacing: 0.1em;
+    }
+    .cos-header-right {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .cos-status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--mint);
+      box-shadow: 0 0 6px rgba(123,198,164,0.5);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .cos-status-text {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--mint);
+      letter-spacing: 0.08em;
+    }
+    .cos-body {
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 12px;
+    }
+    .cos-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .cos-nav-item {
+      padding: 7px 8px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: rgba(246,245,242,0.35);
+      letter-spacing: 0.06em;
+      cursor: default;
+    }
+    .cos-nav-item.active {
+      background: rgba(111,183,214,0.12);
+      color: var(--cyan);
+    }
+    .cos-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .cos-order-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .cos-order-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .cos-table {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 900;
+      color: rgba(246,245,242,0.9);
+    }
+    .cos-badge {
+      font-family: var(--font-mono);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 3px 7px;
+      border-radius: 4px;
+    }
+    .cos-badge.new { background: rgba(111,183,214,0.15); color: var(--cyan); }
+    .cos-badge.prep { background: rgba(212,168,83,0.12); color: var(--gold); }
+    .cos-items {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .cos-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: rgba(246,245,242,0.45);
+    }
+    .cos-item-check {
+      color: var(--mint);
+      font-size: 10px;
+    }
+
+    /* ── TRUST SCORE ── */
+    .trust-section { background: var(--surface); }
+    .trust-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .trust-left h2 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      color: rgba(246,245,242,0.92);
+      line-height: 1.1;
+      margin-bottom: 20px;
+    }
+    .trust-left h2 em {
+      font-style: normal;
+      color: var(--cyan);
+    }
+    .trust-left p {
+      color: rgba(246,245,242,0.45);
+      font-size: 0.95rem;
+      line-height: 1.75;
+      margin-bottom: 32px;
+    }
+    .trust-features {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .trust-feature {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .trust-feature-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: rgba(111,183,214,0.1);
+      border: 1px solid rgba(111,183,214,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .trust-feature-text h4 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: rgba(246,245,242,0.8);
+      margin-bottom: 3px;
+    }
+    .trust-feature-text p {
+      font-size: 0.825rem;
+      color: rgba(246,245,242,0.38);
+      line-height: 1.6;
+      margin: 0;
+    }
+    .trust-right {}
+    .trust-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 28px;
+    }
+    .trust-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .trust-card-title {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--cyan);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+    .trust-score-big {
+      font-family: var(--font-display);
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: var(--cyan);
+      line-height: 1;
+    }
+    .trust-score-denom {
+      font-size: 14px;
+      color: rgba(246,245,242,0.3);
+      margin-left: 2px;
+    }
+    .trust-dims-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .trust-dim-row {
+      display: grid;
+      grid-template-columns: 68px 1fr 28px;
+      align-items: center;
+      gap: 12px;
+    }
+    .trust-dim-label {
+      font-size: 11px;
+      color: rgba(246,245,242,0.4);
+      text-align: right;
+    }
+    .trust-dim-track {
+      height: 4px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .trust-dim-fill {
+      height: 100%;
+      background: var(--cyan);
+      border-radius: 2px;
+      transition: width 1.2s cubic-bezier(0.22,1,0.36,1);
+    }
+    .trust-dim-fill.amber { background: var(--gold); }
+    .trust-dim-val {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: rgba(246,245,242,0.6);
+      text-align: right;
+    }
+    .trust-verified {
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .trust-verified-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: rgba(246,245,242,0.3);
+      letter-spacing: 0.1em;
+    }
+    .trust-verified-count {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--mint);
+      letter-spacing: 0.08em;
+    }
+
+    /* ── METRICS STRIP ── */
+    .metrics-strip {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 60px 0;
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+    }
+    .metric-item {
+      text-align: center;
+      padding: 0 32px;
+      border-right: 1px solid var(--border);
+    }
+    .metric-item:last-child { border-right: none; }
+    .metric-val {
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 4vw, 3rem);
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: -1px;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .metric-val em {
+      font-style: normal;
+      color: var(--cyan);
+    }
+    .metric-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    /* ── PRICING ── */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .pricing-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 32px 28px;
+      background: white;
+      position: relative;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    .pricing-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(30,30,27,0.08);
+    }
+    .pricing-card.featured {
+      background: var(--surface);
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 1px var(--cyan), 0 16px 48px rgba(30,30,27,0.2);
+    }
+    .pricing-featured-tag {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--cyan);
+      color: var(--surface);
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      padding: 4px 14px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .pricing-tier {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .pricing-card:not(.featured) .pricing-tier { color: var(--muted); }
+    .pricing-card.featured .pricing-tier { color: rgba(246,245,242,0.45); }
+    .pricing-price {
+      font-family: var(--font-display);
+      font-size: 2.4rem;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .pricing-card:not(.featured) .pricing-price { color: var(--text); }
+    .pricing-card.featured .pricing-price { color: rgba(246,245,242,0.9); }
+    .pricing-price-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+    .pricing-card.featured .pricing-price-note { color: rgba(246,245,242,0.35); }
+    .pricing-divider {
+      height: 1px;
+      margin-bottom: 24px;
+    }
+    .pricing-card:not(.featured) .pricing-divider { background: var(--border); }
+    .pricing-card.featured .pricing-divider { background: rgba(255,255,255,0.07); }
+    .pricing-features {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .pricing-feature {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .pricing-card:not(.featured) .pricing-feature { color: var(--muted); }
+    .pricing-card.featured .pricing-feature { color: rgba(246,245,242,0.55); }
+    .pricing-check {
+      flex-shrink: 0;
+      margin-top: 2px;
+      font-size: 12px;
+    }
+    .pricing-card:not(.featured) .pricing-check { color: var(--mint); }
+    .pricing-card.featured .pricing-check { color: var(--mint); }
+    .pricing-btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      text-align: center;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: all var(--transition);
+      border: none;
+    }
+    .pricing-card:not(.featured) .pricing-btn {
+      background: var(--hover);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .pricing-card:not(.featured) .pricing-btn:hover { background: var(--border); }
+    .pricing-card.featured .pricing-btn {
+      background: var(--cyan);
+      color: var(--surface);
+    }
+    .pricing-card.featured .pricing-btn:hover { opacity: 0.88; }
+
+    /* ── CTA SECTION ── */
+    .cta-section {
+      background: var(--surface);
+      padding: 100px 0;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px; height: 300px;
+      background: radial-gradient(ellipse, rgba(111,183,214,0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cta-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 20px;
+    }
+    .cta-section h2 {
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 5vw, 3.8rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      color: rgba(246,245,242,0.9);
+      line-height: 1.05;
+      letter-spacing: -0.5px;
+      margin-bottom: 20px;
+    }
+    .cta-section h2 em {
+      font-style: normal;
+      color: var(--cyan);
+    }
+    .cta-section p {
+      color: rgba(246,245,242,0.4);
+      font-size: 1rem;
+      max-width: 480px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+    .cta-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .btn-cta-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--cyan);
+      color: var(--surface);
+      padding: 14px 32px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      transition: opacity var(--transition);
+    }
+    .btn-cta-primary:hover { opacity: 0.85; }
+    .btn-cta-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: transparent;
+      color: rgba(246,245,242,0.6);
+      padding: 14px 28px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid rgba(246,245,242,0.12);
+      transition: all var(--transition);
+    }
+    .btn-cta-secondary:hover {
+      border-color: rgba(246,245,242,0.3);
+      color: rgba(246,245,242,0.85);
+    }
+
+    /* ── FOOTER ── */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 48px 0 32px;
+    }
+    .footer-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 48px;
+      margin-bottom: 40px;
+    }
+    .footer-brand .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .footer-brand .logo svg { width: 24px; height: 24px; }
+    .footer-brand p {
+      font-size: 12px;
+      color: var(--muted);
+      max-width: 240px;
+      line-height: 1.6;
+    }
+    .footer-links {
+      display: flex;
+      gap: 48px;
+    }
+    .footer-col h4 {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+    .footer-col a {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      transition: color var(--transition);
+    }
+    .footer-col a:hover { color: var(--text); }
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .hero-inner { grid-template-columns: 1fr; gap: 40px; }
+      .hero-visual { display: none; }
+      .why-grid { grid-template-columns: 1fr; }
+      .services-grid { grid-template-columns: 1fr 1fr; }
+      .how-grid { grid-template-columns: 1fr; }
+      .how-visual { display: none; }
+      .trust-inner { grid-template-columns: 1fr; gap: 48px; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+      .metric-item { border-right: none; padding: 0; }
+      .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+      .nav-links { display: none; }
+      .footer-top { flex-direction: column; }
+      .footer-links { flex-wrap: wrap; gap: 32px; }
+    }
+    @media (max-width: 600px) {
+      .section { padding: 64px 0; }
+      .hero { padding: 48px 0 64px; }
+      .services-grid { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <svg viewBox="290 205 460 600" fill="none">
+        <path d="M 545.500 217.030 C 524.226 220.316, 502.003 231.768, 483.981 248.733 C 448.819 281.833, 422.448 337.634, 401.087 424.134 C 388.150 476.521, 382.288 517.708, 383.316 549 C 384.599 588.041, 394.818 610.893, 415.560 621.104 C 421.010 623.787, 423.463 624.355, 431.387 624.770 C 451.756 625.835, 461.447 619.381, 487.698 587.270 C 510.136 559.823, 524.938 546.615, 543.378 537.585 C 557.397 530.720, 569.200 528, 584.968 528 C 605.834 528, 618.436 532.166, 630.213 542.958 C 645.364 556.841, 650.843 579.426, 644.449 601.638 C 634.739 635.369, 600.050 661.214, 550.784 671.422 C 531.560 675.406, 518.429 676.317, 489.098 675.702 C 466.098 675.219, 458.848 674.649, 435.500 671.486 C 402.131 666.964, 376.647 665.882, 362.322 668.377 C 343.381 671.675, 331.756 677.263, 320.454 688.500 C 307.781 701.100, 302.978 712.386, 303.024 729.460 C 303.054 740.563, 304.125 745.443, 308.554 754.667 C 321.085 780.763, 354.131 794.178, 406 794.225 C 427.882 794.245, 442.730 793.007, 464 789.389 C 543.382 775.888, 617.688 743.093, 668.256 699.241 C 707.931 664.835, 731.169 626.059, 738.511 582.010 C 740.800 568.281, 740.117 541.774, 737.145 529 C 729.739 497.162, 712.126 471.116, 686.873 454.657 C 667.594 442.091, 648.307 436.683, 623 436.747 C 582.969 436.848, 547.507 452.865, 516.980 484.634 C 506.596 495.441, 498.888 505.289, 483.431 527.500 C 465.304 553.547, 457.749 560, 445.380 560 C 440.507 560, 438.550 559.466, 434.874 557.135 C 428.263 552.943, 426.500 548.703, 426.500 537 C 426.500 528.449, 426.809 526.851, 429.593 521 C 439.059 501.103, 461.024 479.871, 529.570 424.361 C 609.162 359.905, 633.551 326.425, 631.774 284.058 C 630.948 264.346, 624.620 249.708, 611 236.005 C 598.166 223.092, 583.814 217.266, 563 216.517 C 556.675 216.289, 548.800 216.520, 545.500 217.030" fill="currentColor" fill-rule="evenodd"/>
+      </svg>
+      Snyf
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="discover.html">Discover</a></li>
+      <li><a href="#partner-cta" class="nav-cta">Become a Partner →</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-left" data-aos="fade-up">
+        <div class="hero-eyebrow">Snyf for Venues</div>
+        <h1>Your Venue.<br><em>Smarter.</em><br>From Day One.</h1>
+        <p class="hero-sub">
+          Snyf gives cafes, bars and restaurants a complete operating layer —
+          live QR ordering, real-time kitchen management, verified guest intelligence
+          and data that actually helps you grow.
+        </p>
+        <div class="hero-actions">
+          <a href="#partner-cta" class="btn-primary">Partner with Snyf →</a>
+          <a href="discover.html" class="btn-secondary">See Live Venues</a>
+        </div>
+      </div>
+
+      <div class="hero-visual" data-aos="fade-up" data-aos-delay="150">
+        <div style="position:relative;">
+          <div class="hero-badge">LIVE · NCR</div>
+          <div class="dashboard-mockup">
+            <div class="mock-topbar">
+              <div class="mock-dots">
+                <div class="mock-dot"></div>
+                <div class="mock-dot"></div>
+                <div class="mock-dot"></div>
+              </div>
+              <div class="mock-title">CAFÉ OS · KITCHEN BACKEND</div>
+            </div>
+            <div class="mock-body">
+              <div class="mock-row-label">Active Orders</div>
+              <div class="mock-orders">
+                <div class="mock-order">
+                  <div class="mock-order-left">
+                    <div class="mock-table-badge">T4</div>
+                    <div class="mock-order-info">
+                      <div class="mock-order-name">Truffle Fries + Sangria</div>
+                      <div class="mock-order-items">2 items · ₹800</div>
+                    </div>
+                  </div>
+                  <div class="mock-status received">RECEIVED</div>
+                </div>
+                <div class="mock-order">
+                  <div class="mock-order-left">
+                    <div class="mock-table-badge">T7</div>
+                    <div class="mock-order-info">
+                      <div class="mock-order-name">Lobster Ravioli + Wine</div>
+                      <div class="mock-order-items">3 items · ₹2,100</div>
+                    </div>
+                  </div>
+                  <div class="mock-status preparing">PREPARING</div>
+                </div>
+                <div class="mock-order">
+                  <div class="mock-order-left">
+                    <div class="mock-table-badge">T2</div>
+                    <div class="mock-order-info">
+                      <div class="mock-order-name">Old Fashioned × 2</div>
+                      <div class="mock-order-items">2 items · ₹1,440</div>
+                    </div>
+                  </div>
+                  <div class="mock-status ready">READY</div>
+                </div>
+              </div>
+              <div class="mock-divider"></div>
+              <div class="mock-stats">
+                <div class="mock-stat">
+                  <div class="mock-stat-val">14</div>
+                  <div class="mock-stat-label">Orders Today</div>
+                </div>
+                <div class="mock-stat">
+                  <div class="mock-stat-val">₹18k</div>
+                  <div class="mock-stat-label">Revenue</div>
+                </div>
+                <div class="mock-stat">
+                  <div class="mock-stat-val">5.8</div>
+                  <div class="mock-stat-label">Trust Score</div>
+                </div>
+              </div>
+              <div class="hero-trust-bar">
+                <div class="trust-bar-label">◈ SNYF TRUST INDEX</div>
+                <div class="trust-bar-dims">
+                  <div class="trust-dim">Food 6.1</div>
+                  <div class="trust-dim">·</div>
+                  <div class="trust-dim">Ambience 5.8</div>
+                  <div class="trust-dim">·</div>
+                  <div class="trust-dim">Service 5.4</div>
+                </div>
+                <div class="trust-bar-val">5.8<span style="font-size:12px;color:rgba(111,183,214,0.5)">/7</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── MARQUEE ── -->
+<div class="marquee-strip">
+  <div class="marquee-track">
+    <div class="marquee-item"><span>📱</span> QR Table Ordering</div>
+    <div class="marquee-item"><span>🍳</span> Live Kitchen OS</div>
+    <div class="marquee-item"><span>⭐</span> Verified Reviews</div>
+    <div class="marquee-item"><span>📊</span> Guest Intelligence</div>
+    <div class="marquee-item"><span>🔔</span> Waiter Terminal</div>
+    <div class="marquee-item"><span>📈</span> Revenue Analytics</div>
+    <div class="marquee-item"><span>🌐</span> Offline Mode</div>
+    <div class="marquee-item"><span>🗺</span> Discovery Platform</div>
+    <div class="marquee-item"><span>💳</span> Seamless Billing</div>
+    <div class="marquee-item"><span>🤝</span> Partner Dashboard</div>
+    <!-- duplicate for seamless loop -->
+    <div class="marquee-item"><span>📱</span> QR Table Ordering</div>
+    <div class="marquee-item"><span>🍳</span> Live Kitchen OS</div>
+    <div class="marquee-item"><span>⭐</span> Verified Reviews</div>
+    <div class="marquee-item"><span>📊</span> Guest Intelligence</div>
+    <div class="marquee-item"><span>🔔</span> Waiter Terminal</div>
+    <div class="marquee-item"><span>📈</span> Revenue Analytics</div>
+    <div class="marquee-item"><span>🌐</span> Offline Mode</div>
+    <div class="marquee-item"><span>🗺</span> Discovery Platform</div>
+    <div class="marquee-item"><span>💳</span> Seamless Billing</div>
+    <div class="marquee-item"><span>🤝</span> Partner Dashboard</div>
+  </div>
+</div>
+
+<!-- ── WHY SNYF ── -->
+<section class="section">
+  <div class="container">
+    <div class="section-header" data-aos="fade-up">
+      <span class="section-tag">The Case for Snyf</span>
+      <h2>What Changes<br>When You Partner</h2>
+      <p>Most venues lose revenue to friction — slow ordering, fake reviews, zero data. Snyf removes all three.</p>
+    </div>
+    <div class="why-grid" data-aos="fade-up" data-aos-delay="100">
+      <div class="why-card">
+        <div class="why-card-tag">
+          <div class="why-card-tag-dot" style="background:var(--orange)"></div>
+          Before Snyf
+        </div>
+        <h3>Customers wait.<br>Staff get overwhelmed.</h3>
+        <p>Manual ordering slows down table turns. Staff spend time taking orders instead of delivering them. Reviews on Zomato and Google are anonymous, unverified and easily gamed. You have no idea what your regulars order, when they come, or why they don't come back.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-card-tag">
+          <div class="why-card-tag-dot" style="background:var(--cyan)"></div>
+          After Snyf
+        </div>
+        <h3>Guests order.<br>You just deliver.</h3>
+        <p>Every table has a QR. Guests order directly. The kitchen sees it in real time. Waiters deliver and confirm payment. Reviews are tied to actual orders — verified, structured, weighted. You get a live trust score and a guest intelligence layer that gets sharper every week.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-card-tag">
+          <div class="why-card-tag-dot" style="background:var(--mint)"></div>
+          For Your Guests
+        </div>
+        <h3>No app install.<br>No friction.</h3>
+        <p>Guests scan a QR code, browse your full menu, add items and place the order — all in their browser. No app download, no account required. After the meal they rate their experience, and that rating feeds directly into your Snyf Trust Score on the Discover page.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-card-tag">
+          <div class="why-card-tag-dot" style="background:var(--gold)"></div>
+          For Your Team
+        </div>
+        <h3>Kitchen, waiter,<br>all in sync.</h3>
+        <p>Café OS is the operating layer for your staff. Kitchen staff see orders the moment they're placed. Waiters get notified when items are ready. Manual orders can be placed from the waiter terminal. Everything works offline too — so a dropped WiFi connection doesn't stop service.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SERVICES ── -->
+<section class="section" id="services" style="padding-top:0;">
+  <div class="container">
+    <div class="section-header" data-aos="fade-up">
+      <span class="section-tag">What You Get</span>
+      <h2>The Complete<br>Snyf Stack</h2>
+      <p>Every tool your venue needs to run smoother, earn more and understand your guests — included in one partner agreement.</p>
+    </div>
+    <div class="services-grid" data-aos="fade-up" data-aos-delay="80">
+
+      <div class="service-card">
+        <div class="service-icon">📱</div>
+        <span class="service-num">01</span>
+        <h3>QR Table Ordering</h3>
+        <p>Branded QR stands on every table. Guests scan and order directly from their phone — no app, no account. Orders reach the kitchen in under 2 seconds.</p>
+        <span class="service-tag" style="background:rgba(111,183,214,0.08);color:var(--cyan);border:1px solid rgba(111,183,214,0.2)">Live · Real-time</span>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">🍳</div>
+        <span class="service-num">02</span>
+        <h3>Café OS — Kitchen Backend</h3>
+        <p>A live kitchen management screen your staff will actually use. Orders arrive, items get marked ready, status updates reach the waiter automatically. Works offline too.</p>
+        <span class="service-tag" style="background:rgba(212,168,83,0.08);color:var(--gold);border:1px solid rgba(212,168,83,0.2)">Downloadable PWA</span>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">🔔</div>
+        <span class="service-num">03</span>
+        <h3>Waiter Terminal</h3>
+        <p>Waiters get their own view — items ready to deliver, tables awaiting payment, help calls from guests. Manual orders can be placed from the waiter side for walk-in tables.</p>
+        <span class="service-tag" style="background:rgba(123,198,164,0.08);color:var(--mint);border:1px solid rgba(123,198,164,0.2)">Table-verified</span>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">⭐</div>
+        <span class="service-num">04</span>
+        <h3>Snyf Trust Score</h3>
+        <p>Guests who order can rate the experience — food, ambience, service, value, wait time. Only verified orders generate a rating. No more fake reviews. Your score is real.</p>
+        <span class="service-tag" style="background:rgba(111,183,214,0.08);color:var(--cyan);border:1px solid rgba(111,183,214,0.2)">Verified · Weighted</span>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">🗺</div>
+        <span class="service-num">05</span>
+        <h3>Discovery Listing</h3>
+        <p>Your venue appears on Snyf Discover — a curated map of NCR venues with real trust scores. Customers browsing Snyf can find you, see your menu and navigate to you.</p>
+        <span class="service-tag" style="background:rgba(212,168,83,0.08);color:var(--gold);border:1px solid rgba(212,168,83,0.2)">NCR-wide Reach</span>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">📊</div>
+        <span class="service-num">06</span>
+        <h3>Guest Intelligence</h3>
+        <p>See which items sell, when your peak hours are, what your regulars order, and how trust scores trend over time. Data that helps you make real decisions about your menu and staffing.</p>
+        <span class="service-tag" style="background:rgba(123,198,164,0.08);color:var(--mint);border:1px solid rgba(123,198,164,0.2)">Revenue Analytics</span>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon"></div>
+        <span class="service-num">07</span>
+        <h3>Menu Management</h3>
+        <p>Add, remove and update menu items, prices and categories directly from Café OS. Set item availability by time of day. Upload photos. Changes go live instantly on your QR menu.</p>
+        <span class="service-tag" style="background:rgba(111,183,214,0.08);color:var(--cyan);border:1px solid rgba(111,183,214,0.2)">Real-time Updates</span>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">🌐</div>
+        <span class="service-num">08</span>
+        <h3>Offline Mode</h3>
+        <p>Café OS installs as a PWA. If your WiFi drops mid-service, staff can continue placing manual orders. Orders queue locally and sync to the system the moment connection returns.</p>
+        <span class="service-tag" style="background:rgba(212,168,83,0.08);color:var(--gold);border:1px solid rgba(212,168,83,0.2)">Zero Downtime</span>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">🔒</div>
+        <span class="service-num">09</span>
+        <h3>Venue Admin Panel</h3>
+        <p>A dedicated Café OS login for your venue. Control your menu, photos, operating hours, tax settings and branding. Password-protected, separate from every other venue on the platform.</p>
+        <span class="service-tag" style="background:rgba(123,198,164,0.08);color:var(--mint);border:1px solid rgba(123,198,164,0.2)">Fully Isolated</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── METRICS STRIP ── -->
+<div class="metrics-strip" data-aos="fade-up">
+  <div class="container">
+    <div class="metrics-grid">
+      <div class="metric-item">
+        <div class="metric-val"><em>2s</em></div>
+        <div class="metric-label">Order to Kitchen</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-val">7<em>pt</em></div>
+        <div class="metric-label">Trust Score Scale</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-val"><em>0</em></div>
+        <div class="metric-label">App Installs for Guests</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-val">NCR<em>+</em></div>
+        <div class="metric-label">Coverage Area</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── HOW IT WORKS ── -->
+<section class="section" id="how-it-works">
+  <div class="container">
+    <div class="section-header" data-aos="fade-up">
+      <span class="section-tag">Getting Started</span>
+      <h2>Live in Under<br>48 Hours</h2>
+      <p>From sign-up to first order — the onboarding is simple and the team at Snyf handles the setup with you.</p>
+    </div>
+    <div class="how-grid">
+      <div class="how-steps" data-aos="fade-up" data-aos-delay="80">
+        <div class="how-step">
+          <div class="how-step-num">01</div>
+          <div class="how-step-content">
+            <h3>Apply and get onboarded</h3>
+            <p>Submit your venue details — name, location, category and operating hours. The Snyf team reviews and activates your account within 24 hours. You get a Café OS login, your venue slug and a setup checklist.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="how-step-num">02</div>
+          <div class="how-step-content">
+            <h3>Build your menu in Café OS</h3>
+            <p>Log into Café OS and add your menu items — names, descriptions, prices, categories, photos. Set item availability (e.g. brunch only, evening only). Your menu goes live on the QR ordering page automatically.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="how-step-num">03</div>
+          <div class="how-step-content">
+            <h3>Place your QR stands</h3>
+            <p>Snyf generates a QR code for each table in your venue. Download the print file, print at your local shop, or order our matte black acrylic QR stands. Each QR links directly to your live menu with the table number pre-set.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="how-step-num">04</div>
+          <div class="how-step-content">
+            <h3>Go live and start receiving orders</h3>
+            <p>Open Kitchen OS on the kitchen screen and Waiter Terminal on your floor staff's phones or tablets. The moment a guest scans and orders, your team sees it. No training required — the UI is built for kitchens, not tech teams.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="how-step-num">05</div>
+          <div class="how-step-content">
+            <h3>Watch your trust score grow</h3>
+            <p>Every verified order generates a post-meal review. As reviews accumulate, your Snyf Trust Score builds — visible on your Discover listing and inside your Café OS dashboard. The score updates daily.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="how-visual" data-aos="fade-up" data-aos-delay="200">
+        <div class="cafe-os-preview">
+          <div class="cos-header">
+            <div class="cos-header-left">CAFÉ OS · KITCHEN</div>
+            <div class="cos-header-right">
+              <div class="cos-status-dot"></div>
+              <div class="cos-status-text">LIVE</div>
+            </div>
+          </div>
+          <div class="cos-body">
+            <div class="cos-sidebar">
+              <div class="cos-nav-item active">Kitchen</div>
+              <div class="cos-nav-item">Waiter</div>
+              <div class="cos-nav-item">Menu</div>
+              <div class="cos-nav-item">Revenue</div>
+              <div class="cos-nav-item">Guests</div>
+              <div class="cos-nav-item">QR Codes</div>
+              <div class="cos-nav-item">Settings</div>
+            </div>
+            <div class="cos-content">
+              <div class="cos-order-card">
+                <div class="cos-order-top">
+                  <div class="cos-table">Table 4</div>
+                  <div class="cos-badge new">NEW ORDER</div>
+                </div>
+                <div class="cos-items">
+                  <div class="cos-item"><span>Truffle Parmesan Fries</span><span>₹480</span></div>
+                  <div class="cos-item"><span>Pomegranate Sangria</span><span>₹380</span></div>
+                  <div class="cos-item" style="color:rgba(246,245,242,0.25);font-size:8px;margin-top:4px;"><span>Special: No capsicum</span></div>
+                </div>
+              </div>
+              <div class="cos-order-card">
+                <div class="cos-order-top">
+                  <div class="cos-table">Table 7</div>
+                  <div class="cos-badge prep">PREPARING</div>
+                </div>
+                <div class="cos-items">
+                  <div class="cos-item">
+                    <span><span class="cos-item-check">✓</span> Lobster Ravioli</span><span>₹1,080</span>
+                  </div>
+                  <div class="cos-item"><span>Old Fashioned</span><span>₹720</span></div>
+                  <div class="cos-item"><span>Midnight Tiramisu</span><span>₹390</span></div>
+                </div>
+              </div>
+              <div style="padding:10px;background:rgba(111,183,214,0.05);border:1px solid rgba(111,183,214,0.1);border-radius:8px;">
+                <div style="font-family:var(--font-mono);font-size:9px;color:rgba(246,245,242,0.3);letter-spacing:0.1em;margin-bottom:6px;">TODAY'S SNAPSHOT</div>
+                <div style="display:flex;justify-content:space-between;">
+                  <div style="text-align:center;">
+                    <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:900;color:var(--cyan)">14</div>
+                    <div style="font-family:var(--font-mono);font-size:8px;color:rgba(246,245,242,0.3)">ORDERS</div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-family:var(--font-mint);font-size:1.1rem;font-weight:900;color:var(--mint)">₹18k</div>
+                    <div style="font-family:var(--font-mono);font-size:8px;color:rgba(246,245,242,0.3)">REVENUE</div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:900;color:var(--gold)">5.8</div>
+                    <div style="font-family:var(--font-mono);font-size:8px;color:rgba(246,245,242,0.3)">TRUST</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TRUST SCORE SECTION ── -->
+<section class="section trust-section">
+  <div class="container">
+    <div class="trust-inner">
+      <div class="trust-left" data-aos="fade-right">
+        <span class="section-tag" style="border-color:rgba(111,183,214,0.25);color:rgba(246,245,242,0.4);">◈ TRUST INTELLIGENCE</span>
+        <h2 style="margin-top:16px;">Reviews That<br>Actually <em>Mean</em><br>Something.</h2>
+        <p>Snyf Trust Scores are built on verified orders only. No anonymous ratings, no paid placements, no algorithmic inflation. A guest can only rate your venue if they placed a real order through the Snyf system.</p>
+        <div class="trust-features">
+          <div class="trust-feature">
+            <div class="trust-feature-icon">✓</div>
+            <div class="trust-feature-text">
+              <h4>Order-verified reviews</h4>
+              <p>Only guests who completed an order can leave a rating. Every review is tied to a real visit.</p>
+            </div>
+          </div>
+          <div class="trust-feature">
+            <div class="trust-feature-icon">📐</div>
+            <div class="trust-feature-text">
+              <h4>5-dimension scoring</h4>
+              <p>Food, ambience, service, value and wait time — each scored separately, weighted into an overall 7-point Trust Score.</p>
+            </div>
+          </div>
+          <div class="trust-feature">
+            <div class="trust-feature-icon">📈</div>
+            <div class="trust-feature-text">
+              <h4>Score visible on Discovery</h4>
+              <p>Your Trust Score appears on your Snyf Discover listing, helping you stand out to guests actively looking for verified venues.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="trust-right" data-aos="fade-left" data-aos-delay="150">
+        <div class="trust-card">
+          <div class="trust-card-header">
+            <div class="trust-card-title">◈ Snyf Trust Index</div>
+            <div>
+              <span class="trust-score-big">5.8</span>
+              <span class="trust-score-denom">/7</span>
+            </div>
+          </div>
+          <div class="trust-dims-list">
+            <div class="trust-dim-row">
+              <div class="trust-dim-label">Food</div>
+              <div class="trust-dim-track"><div class="trust-dim-fill" style="width:87%"></div></div>
+              <div class="trust-dim-val">6.1</div>
+            </div>
+            <div class="trust-dim-row">
+              <div class="trust-dim-label">Ambience</div>
+              <div class="trust-dim-track"><div class="trust-dim-fill" style="width:83%"></div></div>
+              <div class="trust-dim-val">5.8</div>
+            </div>
+            <div class="trust-dim-row">
+              <div class="trust-dim-label">Service</div>
+              <div class="trust-dim-track"><div class="trust-dim-fill" style="width:77%"></div></div>
+              <div class="trust-dim-val">5.4</div>
+            </div>
+            <div class="trust-dim-row">
+              <div class="trust-dim-label">Value</div>
+              <div class="trust-dim-track"><div class="trust-dim-fill amber" style="width:70%"></div></div>
+              <div class="trust-dim-val">4.9</div>
+            </div>
+            <div class="trust-dim-row">
+              <div class="trust-dim-label">Wait Time</div>
+              <div class="trust-dim-track"><div class="trust-dim-fill" style="width:79%"></div></div>
+              <div class="trust-dim-val">5.5</div>
+            </div>
+          </div>
+          <div class="trust-verified">
+            <div class="trust-verified-label">◈ 24 VERIFIED VISITS</div>
+            <div class="trust-verified-count">✓ All order-verified</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:16px 20px;border:1px solid rgba(246,245,242,0.07);border-radius:10px;display:flex;align-items:center;gap:12px;">
+          <div style="width:36px;height:36px;border-radius:8px;background:rgba(123,198,164,0.1);border:1px solid rgba(123,198,164,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">📍</div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:rgba(246,245,242,0.7);margin-bottom:3px;">Listed on Snyf Discover</div>
+            <div style="font-family:var(--font-mono);font-size:9px;color:rgba(246,245,242,0.3);letter-spacing:0.08em;">Visible to all NCR guests browsing verified venues</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── CTA ── -->
+<section class="cta-section" id="partner-cta">
+  <div class="container" style="position:relative;z-index:2;">
+    <div class="cta-eyebrow" data-aos="fade-up">Ready to Partner?</div>
+    <h2 data-aos="fade-up" data-aos-delay="60">Your Venue on Snyf.<br><em>In 48 Hours.</em></h2>
+    <p data-aos="fade-up" data-aos-delay="120">
+      Fill in your details and the Snyf team will reach out within one business day to walk you through setup.
+    </p>
+    <div class="cta-actions" data-aos="fade-up" data-aos-delay="180">
+      <a href="mailto:thenarcissistdev@gmail.com?subject=Snyf Partner Application&body=Venue Name:%0D%0ALocation:%0D%0ACategory (Cafe/Bar/Restaurant):%0D%0ANumber of Tables:%0D%0AContact Name:%0D%0APhone:" class="btn-cta-primary">
+        Apply to Partner →
+      </a>
+      <a href="discover.html" class="btn-cta-secondary">
+        Browse Live Venues
+      </a>
+    </div>
+    <p style="margin-top:24px;font-family:var(--font-mono);font-size:10px;color:rgba(246,245,242,0.25);letter-spacing:0.1em;" data-aos="fade-up" data-aos-delay="240">
+      ◈ CURRENTLY ONBOARDING VENUES ACROSS DELHI NCR
+    </p>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="index.html" class="logo">
+          <svg viewBox="290 205 460 600" fill="none">
+            <path d="M 545.500 217.030 C 524.226 220.316, 502.003 231.768, 483.981 248.733 C 448.819 281.833, 422.448 337.634, 401.087 424.134 C 388.150 476.521, 382.288 517.708, 383.316 549 C 384.599 588.041, 394.818 610.893, 415.560 621.104 C 421.010 623.787, 423.463 624.355, 431.387 624.770 C 451.756 625.835, 461.447 619.381, 487.698 587.270 C 510.136 559.823, 524.938 546.615, 543.378 537.585 C 557.397 530.720, 569.200 528, 584.968 528 C 605.834 528, 618.436 532.166, 630.213 542.958 C 645.364 556.841, 650.843 579.426, 644.449 601.638 C 634.739 635.369, 600.050 661.214, 550.784 671.422 C 531.560 675.406, 518.429 676.317, 489.098 675.702 C 466.098 675.219, 458.848 674.649, 435.500 671.486 C 402.131 666.964, 376.647 665.882, 362.322 668.377 C 343.381 671.675, 331.756 677.263, 320.454 688.500 C 307.781 701.100, 302.978 712.386, 303.024 729.460 C 303.054 740.563, 304.125 745.443, 308.554 754.667 C 321.085 780.763, 354.131 794.178, 406 794.225 C 427.882 794.245, 442.730 793.007, 464 789.389 C 543.382 775.888, 617.688 743.093, 668.256 699.241 C 707.931 664.835, 731.169 626.059, 738.511 582.010 C 740.800 568.281, 740.117 541.774, 737.145 529 C 729.739 497.162, 712.126 471.116, 686.873 454.657 C 667.594 442.091, 648.307 436.683, 623 436.747 C 582.969 436.848, 547.507 452.865, 516.980 484.634 C 506.596 495.441, 498.888 505.289, 483.431 527.500 C 465.304 553.547, 457.749 560, 445.380 560 C 440.507 560, 438.550 559.466, 434.874 557.135 C 428.263 552.943, 426.500 548.703, 426.500 537 C 426.500 528.449, 426.809 526.851, 429.593 521 C 439.059 501.103, 461.024 479.871, 529.570 424.361 C 609.162 359.905, 633.551 326.425, 631.774 284.058 C 630.948 264.346, 624.620 249.708, 611 236.005 C 598.166 223.092, 583.814 217.266, 563 216.517 C 556.675 216.289, 548.800 216.520, 545.500 217.030" fill="currentColor" fill-rule="evenodd"/>
+          </svg>
+          Snyf
+        </a>
+        <p>The institutional standard for verified local intelligence — built for venues that take hospitality seriously.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>For Venues</h4>
+          <a href="#services">Services</a>
+          <a href="#how-it-works">How It Works</a>
+          <a href="#partner-cta">Apply to Partner</a>
+        </div>
+        <div class="footer-col">
+          <h4>Platform</h4>
+          <a href="index.html">Home</a>
+          <a href="discover.html">Discover</a>
+          <a href="community.html">Commons</a>
+          <a href="mailto:thenarcissistdev@gmail.com">Contact</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Snyf. All rights reserved.</span>
+      <a href="https://www.linkedin.com/company/snyflabs/" target="_blank" rel="noopener noreferrer" style="color:var(--muted);display:flex;align-items:center;gap:6px;font-size:12px;transition:color 0.2s;" onmouseover="this.style.color='#1E1E1B'" onmouseout="this.style.color='#6E6A64'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452H16.89v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a1.977 1.977 0 0 1-1.972-1.98 1.976 1.976 0 1 1 1.972 1.98zm1.709 13.019H3.626V9h3.42v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+        LinkedIn
+      </a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+  AOS.init({ duration: 600, once: true, offset: 60, easing: 'ease-out-cubic' });
+
+  // Animate trust score bars on scroll into view
+  const trustFills = document.querySelectorAll('.trust-dim-fill');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // Already set via inline style — trigger CSS transition
+        entry.target.style.transition = 'width 1.2s cubic-bezier(0.22,1,0.36,1)';
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+  trustFills.forEach(el => {
+    const target = el.style.width;
+    el.style.width = '0%';
+    observer.observe(el);
+    setTimeout(() => { el.style.width = target; }, 100);
+  });
+
+  // Nav active on scroll
+  const sections = document.querySelectorAll('[id]');
+  const navLinks = document.querySelectorAll('.nav-links a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 80) current = s.id;
+    });
+    navLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('href') === '#' + current) link.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
