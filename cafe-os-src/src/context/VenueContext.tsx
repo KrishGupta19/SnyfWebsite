@@ -74,7 +74,8 @@ export function VenueProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (venueErr || !venueData) return false;
-      if (venueData.slug !== slug)   return false;
+      // Skip slug check when running as a PWA (slug is empty — app opened from home screen)
+      if (slug && venueData.slug !== slug) return false;
 
       setVenue(venueData as Venue);
       
